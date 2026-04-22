@@ -1,0 +1,19 @@
+.add-card {
+  border-radius: 12px;
+  padding: 16px;
+  box-sizing: border-box;
+  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+  border: #CACACA solid 1px;
+  font-size: 4rem;
+  color: #818181;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%; // ou 150px
+
+  &:hover {
+    background-color: #d8d8d8;
+    transition: all 0.1s ease;
+  }
+}

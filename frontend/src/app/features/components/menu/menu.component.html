@@ -4,7 +4,8 @@
     class="menu__element"
     [routerLink]="item.route"
     routerLinkActive="menu__element--active"
-    [routerLinkActiveOptions]="{ exact: item.exact ?? false }">
+    [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+    (click)="closeMenu.emit()">
     <span>{{ item.titre }}</span>
   </div>
 </div>

@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
 import { DashboardComponent } from './features/pages/dashboard/dashboard.component';
 
-import {ModuleComponent} from './features/pages/training-courses/modules/modules.component'
-import {CreationComponent} from './features/pages/training-courses/creation/creation.component'
-import {PlanningComponent} from './features/pages/training-courses/planning/planning.component'
+import {ModuleComponent} from './features/training-course/pages/modules/modules.component'
+import {CreationComponent} from './features/training-course/pages/creation/creation.component'
+import {PlanningComponent} from './features/training-course/pages/planning/planning.component'
 
 import { UsersComponent } from './features/pages/users/users.component';
 import { SupervisorsComponent } from './features/pages/supervisors/supervisors.component';

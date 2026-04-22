@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
@@ -18,4 +18,5 @@ export interface MenuItem {
 export class MenuComponent {
   @Input() open = false;
   @Input() items: MenuItem[] = [];
+  @Output() closeMenu = new EventEmitter<void>();
 }

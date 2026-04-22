@@ -50,6 +50,10 @@ export class App implements OnInit, OnDestroy {
     this.menuOpen = !this.menuOpen;
   }
 
+  closeMenu() {
+    this.menuOpen = false;
+  }
+
   menuItems: MenuItem[] = [
     { titre: 'Dashboard', route: '/', exact: true },
     { titre: 'Parcours de formation', route: '/training-courses'},
