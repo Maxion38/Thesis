@@ -1,0 +1,79 @@
+$hauteur: 70px;
+$bg: #1F4541;
+$color: white;
+
+.navbar {
+    height: $hauteur;
+    background: $bg;
+    color: $color;
+    display: flex;
+    padding: 0 2rem;
+
+  &__app-name {
+    font-size: 1.8rem;
+    font-family: 'Joan';
+  }
+
+  &__menu-name {
+    font-size: 1rem;
+    font-family: 'Joan';
+  }
+
+  &__btn {
+    all: unset;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 2.8rem;
+    background-color: #2A5853;
+    transition: all ease 0.1s;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      background-color: #3d7c75;
+    }
+
+    &--open { 
+      background-color: #D9D9D9;
+      color: black;
+
+      &:hover {
+        background-color: #bbbbbb;
+      }
+    }
+  }
+
+  &__profile {
+    color: black;
+    font-size: 1.2rem;
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: 3.2rem;
+    background-color: #D9D9D9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  &__left {
+    flex: 1;
+  }
+
+  &__right {
+    flex: 1;
+    justify-content: right;
+  }
+
+  &__center {
+    flex: 10;
+  }
+}

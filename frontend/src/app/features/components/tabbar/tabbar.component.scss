@@ -1,0 +1,36 @@
+$hauteur: 70px;
+
+.tabbar {
+    height: $hauteur;
+    font-family: 'Joan';
+    font-size: 1.1rem;
+    color: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9rem;
+    padding: 0 2rem;
+    margin-bottom: 10px;
+
+    &__element {
+      cursor: pointer;
+      padding: 8px;
+      transition: all ease 0.2s;
+      border-radius: 6px;
+
+      &:hover:not(.tabbar__element--active) {
+        border-radius: 12px;
+        background-color: #E2E2E2;
+      }
+
+      &--active {
+        border-bottom: 6px solid #E2E2E2;
+      }
+    }
+}
+
+.tabbar > div {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}

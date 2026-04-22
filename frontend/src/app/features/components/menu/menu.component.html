@@ -1,0 +1,10 @@
+<div class="menu" [class.menu--open]="open">
+  <div 
+    *ngFor="let item of items"
+    class="menu__element"
+    [routerLink]="item.route"
+    routerLinkActive="menu__element--active"
+    [routerLinkActiveOptions]="{ exact: item.exact ?? false }">
+    <span>{{ item.titre }}</span>
+  </div>
+</div>

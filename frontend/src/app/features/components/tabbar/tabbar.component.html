@@ -1,0 +1,9 @@
+<div class="tabbar">
+  <div 
+    *ngFor="let item of items"
+    class="tabbar__element"
+    [routerLink]="item.route"
+    routerLinkActive="tabbar__element--active">
+    <span>{{ item.titre }}</span>
+  </div>
+</div>

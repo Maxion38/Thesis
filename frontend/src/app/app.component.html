@@ -1,0 +1,5 @@
+<app-navbar [open]="menuOpen" [menuName]="currentMenuName" (menuToggle)="toggleMenu()"></app-navbar>
+<app-menu [open]="menuOpen" [items]="menuItems"></app-menu>
+<div class="content">
+    <router-outlet />
+</div>
