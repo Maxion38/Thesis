@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { DashboardComponent } from './features/pages/dashboard/dashboard.component';
 
-import {TrainingCourseComponent} from './features/training-course/pages/training-courses/training-courses.component'
+import {TrainingCourseComponent} from './features/training-course/pages/training-courses/training-course-layout.component'
 import {ModuleComponent} from './features/training-course/pages/modules/modules.component'
 import {ModuleEditorComponent} from './features/training-course/pages/modules-editor/modules-editor.component'
 import {CreationComponent} from './features/training-course/pages/creation/creation.component'
