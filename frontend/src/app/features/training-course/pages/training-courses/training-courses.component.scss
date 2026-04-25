@@ -4,7 +4,7 @@
     height: 100%;
 }
 
-.modules {
+.training-course {
     text-align: center;
     display: flex;
     flex-direction: column;
@@ -18,9 +18,22 @@
         margin-left: 50px;
         margin-right: 50px;
         margin-bottom: 40px;
-        padding: 50px 50px 25px 50px;
+        padding: 25px 50px 25px 50px;
         overflow-y: auto;
         overflow-x: hidden;
+    }
+
+    &__title-div {
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 30px;
+    }
+
+    &__title {
+        font-size: 1.2rem;
+        font-family: 'Joan';
     }
 }
 

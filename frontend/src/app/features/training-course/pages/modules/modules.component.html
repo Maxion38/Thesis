@@ -1,20 +1,13 @@
 <div class="modules">
   <app-tabbar [items]="tabbarItems" />
   <div class="modules__section">
-    <div class="modules__title-div">
-      <span class="modules__title">Tous les modules</span>
-    </div>
     <div class="grid">
-      <app-card type="Formulaire" id="01">
-        Choix du sujet et du client
+      <app-card *ngFor="let module of modules$ | async" [type]="'Formulaire'" [id]="module.id">
+        {{ module.name }}
       </app-card>
-      <app-card type="Travail - évaluation" id="02">
-        Cahier des charges (éval #1)
-      </app-card>
-      <app-card type="Travail - évaluation" id="03">
-        Analyse (éval #2)
-      </app-card>
-      <app-add-card />
+      <app-add-card [routerLink]="['/training-courses/modules/editor']" />
     </div>
   </div>
 </div>
+
+<router-outlet></router-outlet>

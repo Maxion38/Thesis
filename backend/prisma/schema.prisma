@@ -59,7 +59,6 @@ model TrainingCourse {
 model Module {
   id          Int      @id @default(autoincrement())
   name        String
-  type        String
   description String?
 
   courseModules CourseModule[]
