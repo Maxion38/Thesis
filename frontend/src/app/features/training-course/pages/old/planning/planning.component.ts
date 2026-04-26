@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { TabbarComponent, TabbarItem } from '../../../components/tabbar/tabbar.component';
+import { TabbarComponent, TabbarItem } from '../../../../components/tabbar/tabbar.component';
 
 @Component({
   selector: 'app-planning',
