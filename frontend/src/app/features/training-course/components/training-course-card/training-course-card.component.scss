@@ -1,0 +1,69 @@
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-sizing: border-box;
+  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+
+  display: grid;
+  aspect-ratio: 4 / 2;
+  grid-template-rows: 2fr 3fr;
+
+  &__header {
+    display: grid;
+    grid-template-columns: 6fr 1fr;
+    gap: 8px;
+
+    &__left {
+      text-align: left;
+      font-family: 'joan';
+      font-size: 1.3rem;
+      padding-left: 10px;
+      padding-top: 10px; 
+    }
+
+    &__right {
+      display: flex;
+      align-items: start;
+      justify-content: center;
+    }
+
+    &__edit {
+      width: 40px;
+      height: 40px;
+      border-radius: 40px;
+      background-color: #d9d9d9;
+      cursor: pointer;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      transition: all 0.1s ease;
+
+      &:hover {
+        background-color: #a5a5a5;
+      }
+    }
+  }
+
+  &__infos {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    align-items: center;
+    padding-left: 10px;
+    
+    font-size: 0.9rem;
+    font-weight: 300;
+
+    &__top, &__bottom {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  &__label {
+    font-family: 'joan';
+    margin-right: 3px;
+  }
+}

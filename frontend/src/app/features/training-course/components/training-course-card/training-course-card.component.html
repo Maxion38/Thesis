@@ -1,0 +1,30 @@
+<div class="card">
+  <div class="card__header">
+    <div class="card__header__left">
+      {{ card.title }}
+    </div>
+    <div class="card__header__right">
+      <div class="card__header__edit" [routerLink]="['/training-courses/:id/modules']">
+        <span class="material-symbols-outlined card__icon">edit</span>  
+      </div>
+    </div>
+  </div>
+
+  <div class="card__infos">
+    <div class="card__infos__top">
+      <ng-container *ngIf="card.startDate; else notPlanned">
+        <div><span class="card__label">Début</span> {{ card.startDate | date:'dd-MM-yy' }} </div>
+        <div><span class="card__label">Fin</span> {{ card.endDate | date:'dd-MM-yy' }} </div>
+      </ng-container>
+
+      <ng-template #notPlanned>
+        <span class="card__label">Non planifié</span>
+      </ng-template>
+    </div>
+
+    <div class="card__infos__bottom">
+      <div><span class="card__label">Utilisateurs</span> {{ card.usersNumber }} </div>
+      <div><span class="card__label">Enseignants</span> {{ card.teachersNumber }} </div>
+    </div>
+  </div>
+</div>

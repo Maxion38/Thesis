@@ -1,0 +1,35 @@
+:host {
+    display: flex;
+    flex: 1;
+    overflow-y: hidden;
+}
+
+.training-courses {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    background-color: #F4F4F4;
+    border-radius: 12px;
+    padding: 40px;
+    overflow-y: auto;
+
+    &__top-bar {
+        height: 60px;
+        margin-bottom: 40px;
+        display: flex;
+        align-items: center;
+
+        &__title {
+            margin-left: 50px;
+            font-size: 1.4rem;
+            font-family: 'joan';
+        }
+    }
+
+
+    &__cards-div {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 16px;
+    }
+}

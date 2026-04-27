@@ -1,22 +1,18 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterModule, RouterOutlet } from '@angular/router';
-// import { Observable } from 'rxjs';
-import { CardComponent } from '../../components/card/card.component'
+import { RouterOutlet } from '@angular/router';
+import { TabbarComponent, TabbarItem } from '../../../components/tabbar/tabbar.component';
+
 
 @Component({
-  selector: 'app-training-courses',
-  imports: [CommonModule, CardComponent, RouterOutlet, RouterModule],
-  templateUrl: './training-courses.component.html',
-  styleUrls: ['./training-courses.component.scss'],
+  selector: 'app-training-courses-layout',
+  imports: [TabbarComponent, RouterOutlet],
+  templateUrl: './training-courses-layout.component.html',
+  styleUrls: ['./training-courses-layout.component.scss'],
 })
 
-export class TrainingCourseComponent {
-  /*
-  modules$: Observable<Module[]>;
-
-  constructor(private modulesService: ModulesService) {
-    this.modules$ = this.modulesService.getModules();
-  }
-  */
+export class TrainingCoursesLayoutComponent {
+  tabbarItems: TabbarItem[] = [
+    { titre: 'Création', route: '/training-courses/creation'},
+    { titre: 'Planification', route: '/training-courses/planning'},
+  ];
 }
