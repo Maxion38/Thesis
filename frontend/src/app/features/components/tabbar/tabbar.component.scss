@@ -1,4 +1,4 @@
-$hauteur: 70px;
+$hauteur: 80px;
 
 .tabbar {
     height: $hauteur;
@@ -9,8 +9,6 @@ $hauteur: 70px;
     align-items: center;
     justify-content: center;
     gap: 9rem;
-    padding: 0 2rem;
-    margin-bottom: 10px;
 
     &__element {
       cursor: pointer;

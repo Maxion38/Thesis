@@ -7,7 +7,7 @@ import { TrainingCoursesComponent } from './features/training-course/pages/train
 import { TrainingCoursesPlanningComponent } from './features/training-course/pages/trainings-planning/training-courses-planning.component'
 import { AssignmentsComponent } from './features/training-course/pages/assignments/assignments.component'
 import { PlanningComponent } from './features/training-course/pages/planning/planning.component'
-import { ModuleComponent } from './features/training-course/pages/modules/modules.component'
+import { ModulesComponent } from './features/training-course/pages/modules/modules.component'
 import { ModuleEditorComponent } from './features/training-course/pages/modules/editor/module-editor.component'
 import { ModuleConditionsComponent } from './features/training-course/pages/modules/conditions/module-conditions.component'
 
@@ -31,7 +31,7 @@ export const routes: Routes = [
     path: 'training-courses/:id', component: TrainingCourseLayoutComponent,
     children: [
       {path: '', redirectTo: 'modules', pathMatch: 'full'},
-      {path: 'modules', component: ModuleComponent},
+      {path: 'modules', component: ModulesComponent},
       {path: 'assignments', component: AssignmentsComponent},
       {path: 'planning', component: PlanningComponent},
     ]

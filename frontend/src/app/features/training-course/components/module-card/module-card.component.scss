@@ -1,0 +1,63 @@
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-sizing: border-box;
+  box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+
+  display: grid;
+  height: 100%; // ou 150px
+  grid-template-rows: 4fr 2fr 1fr;
+
+  &__top {
+    display: grid;
+    grid-template-columns: 6fr 1fr;
+    gap: 8px;
+  }
+
+  &__top-left {
+    text-align: left;
+    font-family: 'joan';
+    font-size: 1.2rem;
+    padding-left: 10px;
+    padding-top: 10px;
+  }
+
+  &__top-right {
+    display: flex;
+    align-items: start;
+    justify-content: center;
+  }
+
+  &__middle {
+    font-size: 1rem;
+    font-weight: 300;
+  }
+
+  &__bottom {
+    display: flex;
+    justify-content: end;
+    align-items: end;
+
+    font-size: 1rem;
+    font-weight: 300;
+  }
+
+  &__edit {
+    width: 40px;
+    height: 40px;
+    border-radius: 40px;
+    background-color: #d9d9d9;
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: all 0.1s ease;
+
+    &:hover {
+      background-color: #a5a5a5;
+    }
+  }
+}

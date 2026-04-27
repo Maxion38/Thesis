@@ -1,13 +1,8 @@
 <div class="modules">
-  <app-tabbar [items]="tabbarItems" />
-  <div class="modules__section">
-    <div class="grid">
-      <app-card *ngFor="let module of modules$ | async" [type]="'Formulaire'" [id]="module.id">
-        {{ module.name }}
-      </app-card>
-      <app-add-card [routerLink]="['/training-courses/modules/editor']" />
-    </div>
-  </div>
+  <span>Page "modules"</span>
+  <app-module-card
+    *ngFor="let moduleInfos of modulesInfos"
+    [card]="moduleInfos"
+  >
+  </app-module-card>
 </div>
-
-<router-outlet></router-outlet>

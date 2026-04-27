@@ -1,3 +1,13 @@
-<div class="layout">
-  <span>Page "training-course-layout"</span>
+<div class="training-course">
+  <div class="training-course__tabbar">
+    <div class="training-course__tabbar__left">
+      <div class="training-course__tabbar__left__back" (click)="goBack()"><span class="material-symbols-outlined back_icon">arrow_back_ios</span></div>
+      <span class="training-course__tabbar__left__title">Nom du parcours</span>
+    </div>
+    <app-tabbar [items]="tabbarItems" />
+    <div class="training-course__tabbar__right"></div>
+  </div>
+  <div class="training-course__content">
+    <router-outlet></router-outlet>
+  </div>
 </div>

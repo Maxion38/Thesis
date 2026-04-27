@@ -4,4 +4,5 @@ export interface TrainingCourseCard {
   endDate?: Date;
   usersNumber: number;
   teachersNumber?: number;
+  id: number;
 }

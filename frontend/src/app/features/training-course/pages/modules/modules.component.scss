@@ -1,31 +1,4 @@
-:host {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
 .modules {
+    margin: 20px;
     text-align: center;
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    overflow-y: hidden;
-
-    &__section {
-        flex: 1;
-        background-color: #F4F4F4;
-        border-radius: 12px;
-        margin-left: 50px;
-        margin-right: 50px;
-        margin-bottom: 40px;
-        padding: 50px 50px 25px 50px;
-        overflow-y: auto;
-        overflow-x: hidden;
-    }
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-  gap: 16px;
 }

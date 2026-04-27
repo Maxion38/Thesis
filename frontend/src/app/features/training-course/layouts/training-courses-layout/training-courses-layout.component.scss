@@ -16,13 +16,12 @@
 
         display: flex;
         justify-content: center;
-        align-items: center;
+        align-items: start;
     }
 
     &__content {
         flex: 1;
         min-height: 0;
-        margin: 0 40px 40px 40px;
 
         display: flex;
         flex-direction: column;
