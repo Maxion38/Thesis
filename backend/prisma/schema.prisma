@@ -46,7 +46,7 @@ model TrainingCourse {
   startDate   DateTime
   endDate     DateTime
 
-  courseModules       CourseModule[]
+  modules             Module[] @relation("ModuleTrainingCourse")
   userTrainingCourses UserTrainingCourse[]
   groups              Group[]
   notifications       Notification[]
@@ -57,29 +57,20 @@ model TrainingCourse {
 }
 
 model Module {
-  id          Int      @id @default(autoincrement())
-  name        String
-  description String?
+  id                Int       @id @default(autoincrement())
+  name              String
+  description       String?   @db.Text
+  trainingCourseId  Int
 
-  courseModules CourseModule[]
-  moduleTools   ModuleTool[]
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+  trainingCourse    TrainingCourse  @relation("ModuleTrainingCourse", fields: [trainingCourseId], references: [id])
 
-model CourseModule {
-  id               Int @id @default(autoincrement())
-  order            Int
-  trainingCourseId Int
-  moduleId         Int
+  tools             Tool[] @relation("ToolModule")
+  conditions        Condition[] @relation("ConditionModule")
 
-  trainingCourse   TrainingCourse @relation(fields: [trainingCourseId], references: [id])
-  module           Module         @relation(fields: [moduleId], references: [id])
-  conditions       Condition[]
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([trainingCourseId])
 }
 
 model Condition {
@@ -88,24 +79,27 @@ model Condition {
   method          ConditionMethod
   operator        ConditionOperator?
   date            DateTime?
-  validationBySupervisor Boolean
-  courseModuleId  Int
+  validationBySupervisor Boolean  @default(false)
+  moduleId        Int
   validatorId     Int?
   toolId          Int?
 
-  courseModule    CourseModule  @relation(fields: [courseModuleId], references: [id])
-  validator       User?         @relation("ConditionValidator", fields: [validatorId], references: [id])
-  tool            Tool?         @relation("ConditionTool", fields: [toolId], references: [id])
+  module          Module          @relation("ConditionModule", fields: [moduleId], references: [id])
+  validator       User?           @relation("ConditionValidator", fields: [validatorId], references: [id])
+  tool            Tool?           @relation("ConditionTool", fields: [toolId], references: [id])
   userValidations UserValidation[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([moduleId])
+  @@index([toolId])
+  @@index([validatorId])
 }
 
 model UserValidation {
   userId      Int
   conditionId Int
-  date       DateTime
 
   user      User      @relation(fields: [userId], references: [id])
   condition Condition @relation(fields: [conditionId], references: [id])
@@ -113,25 +107,17 @@ model UserValidation {
   @@id([userId, conditionId])
   
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model ModuleTool {
-  moduleId Int
-  toolId   Int
-
-  module Module @relation(fields: [moduleId], references: [id])
-  tool   Tool   @relation(fields: [toolId], references: [id])
-
-  @@id([moduleId, toolId])
 }
 
 model Tool {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   name        String
-  description String
+  description String    @db.Text
+  type        ToolType
+  moduleId    Int
 
-  moduleTools     ModuleTool[]
+  module          Module        @relation("ToolModule", fields: [moduleId], references: [id])
+
   forms           Form[]
   activities      Activity[]
   works           Work[]
@@ -140,6 +126,8 @@ model Tool {
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([moduleId])
 }
 
 model Form {
@@ -158,7 +146,7 @@ model Form {
 model Question {
   id         Int    @id @default(autoincrement())
   name       String
-  type       String
+  type       QuestionType
   isRequired Boolean
   formId Int
 
@@ -173,8 +161,7 @@ model Question {
 model QuestionOption {
   id         Int    @id @default(autoincrement())
   name       String
-  type       String
-  isRequired Boolean
+  order      Int
   questionId Int
 
   question   Question @relation(fields: [questionId], references: [id])
@@ -184,11 +171,11 @@ model QuestionOption {
 }
 
 model FormSubmission {
-  id     Int      @id @default(autoincrement())
-  date   DateTime
-  status String
-  formId Int 
-  userId Int
+  id          Int         @id @default(autoincrement())
+  submittedAt DateTime    @default(now())
+  status SubmissionStatus
+  formId      Int 
+  userId      Int
 
   form Form @relation(fields: [formId], references: [id])
   user User @relation(fields: [userId], references: [id])
@@ -205,7 +192,7 @@ model Response {
   submissionId Int
 
   question        Question       @relation(fields: [questionId], references: [id])
-  FormSubmission  FormSubmission @relation(fields: [submissionId], references: [id])
+  submission  FormSubmission @relation(fields: [submissionId], references: [id])
     
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -237,12 +224,12 @@ model Work {
 }
 
 model UserWorkSubmission {
-  id       Int    @id @default(autoincrement())
-  date     DateTime
-  fileName String
-  filePath String
-  workId Int
-  userId Int
+  id          Int       @id @default(autoincrement())
+  submittedAt DateTime  @default(now())
+  fileName    String
+  filePath    String
+  workId      Int
+  userId      Int
 
   work Work @relation(fields: [workId], references: [id])
   user User @relation(fields: [userId], references: [id])
@@ -277,10 +264,10 @@ model GridVersion {
 }
 
 model Assessment {
-  id            Int      @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   date          DateTime
-  comment       String?
-  grade         Int?
+  comment       String?   @db.Text
+  grade         Float?
   gridVersionId Int?
   criteriaId    Int?
   studentId     Int
@@ -293,6 +280,10 @@ model Assessment {
     
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([teacherId])
+  @@index([gridVersionId])
 }
 
 model Criteria {
@@ -312,15 +303,15 @@ model Criteria {
 }
 
 model Cell {
-  id          Int    @id @default(autoincrement())
-  description String
+  id          Int     @id @default(autoincrement())
+  description String  @db.Text
   order       Int
   criteriaId  Int
 
   criteria   Criteria @relation(fields: [criteriaId], references: [id])
     
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Weighting {
@@ -334,7 +325,6 @@ model Weighting {
   @@id([criteriaId, userId])
     
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model UserTrainingCourse {
@@ -347,7 +337,6 @@ model UserTrainingCourse {
   @@id([userId, trainingCourseId])
     
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model Group {
@@ -377,11 +366,11 @@ model UserGroup {
 }
 
 model Notification {
-  id                Int      @id @default(autoincrement())
+  id                Int         @id @default(autoincrement())
   name              String
-  description       String
+  description       String      @db.Text
   importance        Importance
-  dateTime          DateTime
+  dateTime          DateTime    @default(now())
   userId            Int
   trainingCourseId  Int
 
@@ -390,14 +379,17 @@ model Notification {
     
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([trainingCourseId])
 }
 
 model Notebook {
   trainingCourseId  Int
   studentId         Int
   teacherId         Int
-  content           String?
-  lastModified      DateTime
+  content           String? @db.Text
+  lastModified      DateTime @default(now())
 
   student User @relation("NotebookStudent", fields: [studentId], references: [id])
   teacher User @relation("NotebookTeacher", fields: [teacherId], references: [id])
@@ -428,13 +420,33 @@ enum ConditionType {
 }
 
 enum ConditionMethod {
-  USERVALIDATION
-  SUPERVISORVALIDATION
-  TOOLSUBMISSION
+  USER_VALIDATION
+  SUPERVISOR_VALIDATION
+  TOOL_SUBMISSION
   DATE
 }
 
 enum ConditionOperator {
   AND
   OR
+}
+
+enum ToolType {
+  FORM
+  ACTIVITY
+  WORK
+  ASSESSMENT
+}
+
+enum QuestionType {
+  TEXT
+  NUMBER
+  RADIO
+  CHECKBOX
+}
+
+enum SubmissionStatus {
+  NOT_SUBMITED
+  SUBMITTED
+  APPROVED
 }
