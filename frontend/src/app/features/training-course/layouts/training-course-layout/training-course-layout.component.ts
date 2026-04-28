@@ -24,7 +24,7 @@ export class TrainingCourseLayoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
-      const id = params.get('id');
+      const id = params.get('trainingCourseId');
 
       if (id) {
         this.trainingCourseId = id;
@@ -40,11 +40,11 @@ export class TrainingCourseLayoutComponent implements OnInit {
         route: `/training-courses/${this.trainingCourseId}/modules`
       },
       {
-        titre: 'Assignments',
+        titre: 'Assignations',
         route: `/training-courses/${this.trainingCourseId}/assignments`
       },
       {
-        titre: 'Planning',
+        titre: 'Planification',
         route: `/training-courses/${this.trainingCourseId}/planning`
       }
     ];

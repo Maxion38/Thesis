@@ -1,63 +1,102 @@
 .card {
-  background: white;
-  border-radius: 12px;
-  padding: 16px;
   box-sizing: border-box;
   box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
 
   display: grid;
-  height: 100%; // ou 150px
-  grid-template-rows: 4fr 2fr 1fr;
+  min-height: 150px;
+  grid-template-columns: 2fr 1fr 1fr;
+  border-collapse: collapse;
 
-  &__top {
-    display: grid;
-    grid-template-columns: 6fr 1fr;
-    gap: 8px;
+  &__left, &__middle, &__right {
+    padding: 15px;
+    cursor: pointer;
   }
 
-  &__top-left {
-    text-align: left;
-    font-family: 'joan';
-    font-size: 1.2rem;
-    padding-left: 10px;
-    padding-top: 10px;
-  }
+  &__left {
+    background-color: #EBEBEB;
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
 
-  &__top-right {
     display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    position: relative;
+    transition: all ease 0.1s;
+
+    &:hover {
+      z-index: 9999;
+      transform: scale(1.025);
+    }
+
+    &__module-title {
+      font-size: 1.2rem;
+      font-family: 'joan';
+    }
+
+    &__module-id {
+      font-size: 0.9rem;
+      font-weight: 300;
+    }
+
+    &__edit-icon {
+      position: absolute;
+      right: 30px;
+      color: #707070;
+    }
+  }
+
+  &__middle, &__right {
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
     align-items: start;
-    justify-content: center;
+    gap: 5px;
+    background-color: #D7D7D7;
+    position: relative;
+    transition: all ease 0.1s;
+
+    &:hover {
+      border-color: #D7D7D7;
+    }
+
+    &__label {
+      font-size: 1rem;
+      font-family: 'joan';
+    }
+
+    &__conditions-list {
+      overflow-y: auto;
+      font-size: 0.9rem;
+      font-weight: 300;
+      text-align: left;
+    }
   }
 
   &__middle {
-    font-size: 1rem;
-    font-weight: 300;
+    border: #FFFFFF solid;
+    border-width: 5px 0 5px 5px;
+
   }
 
-  &__bottom {
-    display: flex;
-    justify-content: end;
-    align-items: end;
-
-    font-size: 1rem;
-    font-weight: 300;
+  &__right {
+    border: #FFFFFF solid;
+    border-width: 5px;
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
   }
 
-  &__edit {
-    width: 40px;
-    height: 40px;
-    border-radius: 40px;
-    background-color: #d9d9d9;
-    cursor: pointer;
+  &__empty {
+    align-self: center;
+    justify-self: center;
+    font-size: 3rem;
+    color: #707070;
+  }
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    transition: all 0.1s ease;
-
-    &:hover {
-      background-color: #a5a5a5;
-    }
+  &__edit-icon {
+    position: absolute;
+    right: 15px;
+    color: #707070;
   }
 }

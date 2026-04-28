@@ -1,8 +1,10 @@
 <div class="modules">
-  <span>Page "modules"</span>
-  <app-module-card
-    *ngFor="let moduleInfos of modulesInfos"
-    [card]="moduleInfos"
-  >
-  </app-module-card>
+  <div class="modules__element" *ngFor="let moduleInfos of modulesInfos">
+    <div></div>
+    <app-module-card
+      [card]="moduleInfos"
+    >
+    </app-module-card>
+    <div></div>
+  </div>
 </div>

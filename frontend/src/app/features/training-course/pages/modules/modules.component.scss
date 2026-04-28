@@ -1,4 +1,13 @@
 .modules {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+
     margin: 20px;
     text-align: center;
+
+    &__element {
+        display: grid;
+        grid-template-columns: 1fr 3fr 1fr;
+    }
 }

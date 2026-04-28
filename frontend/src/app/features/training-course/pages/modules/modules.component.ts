@@ -14,24 +14,22 @@ export class ModulesComponent {
     {
       id: 1,
       title: 'Choix sujet',
-      conditions: [
+      accessConditions: [
         {
-          type: 'access',
           method: 'date',
           value: new Date('2026-05-01')
         },
         {
-          type: 'access',
           method: 'uservalidation',
           value: 'Vroman Marie-Noël'
         },
+      ],
+      successConditions: [
         {
-          type: 'success',
           method: 'toolsubmission',
           value: 'Form 3'
         },
         {
-          type: 'success',
           method: 'supervisorvalidation',
           value: 'Supervisor'
         }
@@ -40,18 +38,38 @@ export class ModulesComponent {
     {
       id: 2,
       title: 'Cahier des charges',
-      conditions: [
+      accessConditions: [
         {
-          type: 'access',
           method: 'date',
           value: new Date('2026-05-01')
         },
+      ],
+      successConditions: [
         {
-          type: 'success',
           method: 'toolsubmission',
           value: 'Work 1'
         }
       ]
+    },
+    {
+      id: 3,
+      title: 'Module de test',
+    },
+    {
+      id: 3,
+      title: 'Module de test',
+    },
+    {
+      id: 3,
+      title: 'Module de test',
+    },
+    {
+      id: 3,
+      title: 'Module de test',
+    },
+    {
+      id: 3,
+      title: 'Module de test',
     },
   ]
 }

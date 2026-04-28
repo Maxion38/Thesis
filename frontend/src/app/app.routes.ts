@@ -28,7 +28,7 @@ export const routes: Routes = [
     ]
   }, 
   {
-    path: 'training-courses/:id', component: TrainingCourseLayoutComponent,
+    path: 'training-courses/:trainingCourseId', component: TrainingCourseLayoutComponent,
     children: [
       {path: '', redirectTo: 'modules', pathMatch: 'full'},
       {path: 'modules', component: ModulesComponent},
@@ -36,8 +36,8 @@ export const routes: Routes = [
       {path: 'planning', component: PlanningComponent},
     ]
   },
-  { path: 'training-courses/:id/modules/editor', component: ModuleEditorComponent},
-  { path: 'training-courses/:id/modules/conditions', component: ModuleConditionsComponent},
+  { path: 'training-courses/:trainingCourseId/modules/:moduleId/editor', component: ModuleEditorComponent},
+  { path: 'training-courses/:trainingCourseId/modules/:moduleId/conditions', component: ModuleConditionsComponent},
 
   { path: 'users', component: UsersComponent}, 
   { path: 'supervisors', component: SupervisorsComponent},  
