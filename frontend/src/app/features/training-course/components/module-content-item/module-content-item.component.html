@@ -1,0 +1,10 @@
+<div class="content">
+    <span class="content__title"> {{ title }} </span>
+    <span *ngIf="subtitle" class="content__subtitle"> {{ subtitle }} </span>
+    <div class="content__edit-container"><span class="material-symbols-outlined content__edit-icon">edit</span></div>
+    
+    <div class="content__actions">
+        <span *ngIf="isRemovable" class="material-symbols-outlined content__actions__close-icon">close</span>
+        <span class="material-symbols-outlined content__actions__drag-icon">drag_handle</span>
+    </div>
+</div>

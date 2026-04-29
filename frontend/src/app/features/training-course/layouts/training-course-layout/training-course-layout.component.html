@@ -1,6 +1,6 @@
 <div class="training-course">
   <div class="training-course__tabbar">
-    <app-tabbar [items]="tabbarItems" title="Nom attendu" [backButton]="true" [backRoute]="['/training-courses', 'creation']"></app-tabbar>
+    <app-tabbar [items]="tabbarItems" [title]="trainingCourseState.title()" [backButton]="true" [backRoute]="['/training-courses', 'creation']"></app-tabbar>
   </div>
   <div class="training-course__content">
     <router-outlet></router-outlet>
