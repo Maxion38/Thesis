@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Location } from '@angular/common';
-import { Router, RouterOutlet, ActivatedRoute } from '@angular/router';
+import { RouterOutlet, ActivatedRoute } from '@angular/router';
 import { TabbarComponent, TabbarItem } from '../../../components/tabbar/tabbar.component';
 
 @Component({
@@ -17,9 +16,7 @@ export class TrainingCourseLayoutComponent implements OnInit {
   tabbarItems: TabbarItem[] = [];
 
   constructor(
-    private router: Router,
     private route: ActivatedRoute,
-    private location: Location 
   ) {}
 
   ngOnInit(): void {
@@ -36,21 +33,17 @@ export class TrainingCourseLayoutComponent implements OnInit {
   buildTabs() {
     this.tabbarItems = [
       {
-        titre: 'Modules',
+        title: 'Modules',
         route: `/training-courses/${this.trainingCourseId}/modules`
       },
       {
-        titre: 'Assignations',
+        title: 'Assignations',
         route: `/training-courses/${this.trainingCourseId}/assignments`
       },
       {
-        titre: 'Planification',
+        title: 'Planification',
         route: `/training-courses/${this.trainingCourseId}/planning`
       }
     ];
-  }
-
-  goBack() {
-    this.router.navigate(['/training-courses', 'creation']);
   }
 }

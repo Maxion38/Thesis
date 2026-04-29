@@ -10,15 +10,6 @@
     flex: 1;
     min-height: 0;
 
-    &__tabbar {
-        height: 90px;
-        flex-shrink: 0;
-
-        display: flex;
-        justify-content: center;
-        align-items: start;
-    }
-
     &__content {
         flex: 1;
         min-height: 0;

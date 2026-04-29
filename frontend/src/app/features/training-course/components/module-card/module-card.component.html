@@ -1,30 +1,72 @@
 <div class="card">
+
   <div class="card__left" [routerLink]="[card.id, 'editor']">
     <span class="card__left__module-title">{{ card.title }}</span>
     <span class="card__left__module-id">Module {{ card.id }}</span>
     <span class="material-symbols-outlined card__left__edit-icon">edit</span>  
   </div>
+
+  <!-- ACCESS -->
   <div class="card__middle" [routerLink]="[card.id, 'conditions']">
-    <span class="card__middle__label">Condition d'accès ({{ accessConditions.length }})</span>
-    <div class="card__middle__conditions-list" *ngIf="accessConditions.length > 0; else noConditions">
-      <ul>
-        <li *ngFor="let accessCondition of accessConditions">{{ formatConditionValue(accessCondition.value) }}</li>
-      </ul>
+
+    <div class="card__middle__left">
+      <span class="card__middle__left__label">
+        Condition d'accès ({{ accessConditions.length }})
+      </span>
+
+      <div class="card__middle__left__conditions-list"
+           *ngIf="accessConditions.length > 0; else noAccess">
+        <ul>
+          <li *ngFor="let accessCondition of accessConditions">
+            {{ formatConditionValue(accessCondition.value) }}
+          </li>
+        </ul>
+      </div>
     </div>
-    <span class="material-symbols-outlined card__edit-icon" *ngIf="accessConditions.length > 0;">edit</span>  
+
+    <div class="card__middle__right">
+      <span class="material-symbols-outlined card__edit-icon"
+            *ngIf="accessConditions.length > 0">
+        edit
+      </span>  
+    </div>
+
   </div>
-  <ng-template #noConditions>
-    <div class="card__empty">
-      +
-    </div>
+
+  <ng-template #noAccess>
+    <div class="card__empty">+</div>
   </ng-template>
+
+
+  <!-- SUCCESS -->
   <div class="card__right" [routerLink]="[card.id, 'conditions']">
-    <span class="card__right__label">Condition de succès ({{ successConditions.length }})</span>
-    <div class="card__middle__conditions-list" *ngIf="accessConditions.length > 0; else noConditions">
-      <ul>
-        <li *ngFor="let successCondition of card.successConditions">{{ formatConditionValue(successCondition.value) }}</li>
-      </ul>
+
+    <div class="card__right__left">
+      <span class="card__right__left__label">
+        Condition de succès ({{ successConditions.length }})
+      </span>
+
+      <div class="card__right__left__conditions-list"
+           *ngIf="successConditions.length > 0; else noSuccess">
+        <ul>
+          <li *ngFor="let successCondition of successConditions">
+            {{ formatConditionValue(successCondition.value) }}
+          </li>
+        </ul>
+      </div>
     </div>
-    <span class="material-symbols-outlined card__edit-icon" *ngIf="accessConditions.length > 0;">edit</span>  
+
+    <div class="card__right__right">
+      <span class="material-symbols-outlined card__edit-icon"
+            *ngIf="successConditions.length > 0">
+        edit
+      </span>  
+    </div>
+
   </div>
+
+  <ng-template #noSuccess>
+    <div class="card__empty">+</div>
+  </ng-template>
+
 </div>

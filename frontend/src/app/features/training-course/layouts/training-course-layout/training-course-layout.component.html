@@ -1,11 +1,6 @@
 <div class="training-course">
   <div class="training-course__tabbar">
-    <div class="training-course__tabbar__back" (click)="goBack()"><span class="material-symbols-outlined back_icon">arrow_back_ios</span></div>
-    <div class="training-course__tabbar__middle">
-      <span class="title">Nom du parcours</span>
-      <app-tabbar [items]="tabbarItems" />
-    </div>
-    <div class="training-course__tabbar__right"></div>
+    <app-tabbar [items]="tabbarItems" title="Nom attendu" [backButton]="true" [backRoute]="['/training-courses', 'creation']"></app-tabbar>
   </div>
   <div class="training-course__content">
     <router-outlet></router-outlet>

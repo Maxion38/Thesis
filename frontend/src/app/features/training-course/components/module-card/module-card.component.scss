@@ -43,13 +43,12 @@
     &__edit-icon {
       position: absolute;
       right: 30px;
-      color: #707070;
+      color: #818181;
     }
   }
 
   &__middle, &__right {
     display: flex;
-    flex-direction: column;
     justify-content: start;
     align-items: start;
     gap: 5px;
@@ -61,16 +60,32 @@
       border-color: #D7D7D7;
     }
 
-    &__label {
-      font-size: 1rem;
-      font-family: 'joan';
+    &__left {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: start;
+      align-items: start;
+
+      &__label {
+        font-size: 1rem;
+        font-family: 'joan';
+      }
+
+      &__conditions-list {
+        overflow-y: auto;
+        font-size: 0.8rem;
+        font-weight: 300;
+        text-align: left;
+      }
     }
 
-    &__conditions-list {
-      overflow-y: auto;
-      font-size: 0.9rem;
-      font-weight: 300;
-      text-align: left;
+    &__right {
+      height: 100%;
+      display: flex;
+      align-items: center;
+
     }
   }
 
@@ -82,21 +97,22 @@
 
   &__right {
     border: #FFFFFF solid;
-    border-width: 5px;
+    border-width: 5px 5px 5px 3px;
     border-top-right-radius: 12px;
     border-bottom-right-radius: 12px;
   }
 
   &__empty {
-    align-self: center;
-    justify-self: center;
-    font-size: 3rem;
-    color: #707070;
+    height: 100%;
+    width: 100%;
+    display: flex;    
+    justify-content: center;
+    align-items: center;
+    font-size: 2.5rem;
+    color: #818181;
   }
 
   &__edit-icon {
-    position: absolute;
-    right: 15px;
-    color: #707070;
+    color: #818181;
   }
 }

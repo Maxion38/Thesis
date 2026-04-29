@@ -1,7 +1,16 @@
-$hauteur: 80px;
+:host {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
 
 .tabbar {
-    height: $hauteur;
+  width: 100%;
+  margin-bottom: 10px;
+  position: relative;
+
+  &__tabs {
+    height: 50px;
     font-family: 'Joan';
     font-size: 1.1rem;
     color: black;
@@ -10,13 +19,17 @@ $hauteur: 80px;
     justify-content: center;
     gap: 9rem;
 
+    &__without-title {
+      height: 100px;
+    }
+
     &__element {
       cursor: pointer;
       padding: 8px;
       transition: all ease 0.2s;
       border-radius: 6px;
 
-      &:hover:not(.tabbar__element--active) {
+      &:hover:not(.tabbar__tabs__element--active) {
         border-radius: 12px;
         background-color: #E2E2E2;
       }
@@ -25,10 +38,21 @@ $hauteur: 80px;
         border-bottom: 6px solid #E2E2E2;
       }
     }
-}
+  }
 
-.tabbar > div {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+  &__title {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 1.2rem;
+    font-family: 'joan';
+  }
+
+  &__back-button {
+    position: absolute;
+    top: 30px;
+    left: 0;
+  }
 }

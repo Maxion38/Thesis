@@ -1,0 +1,17 @@
+.back-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 70px;
+  width: 35px;
+  border-top-right-radius: 35px;
+  border-bottom-right-radius: 35px;
+  background-color: #d9d9d9;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  color: #505050;
+
+  &:hover {
+      background-color: #a5a5a5;
+  }
+}

@@ -10,38 +10,6 @@
     flex: 1;
     min-height: 0;
 
-    &__tabbar {
-        height: 120px;
-        flex-shrink: 0;
-
-        display: grid;
-        grid-template-columns: 2fr 3fr 2fr;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        padding: 10px 0 0 0;
-
-        &__middle {
-        }
-
-        &__back {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 70px;
-            width: 35px;
-            border-top-right-radius: 35px;
-            border-bottom-right-radius: 35px;
-            background-color: #d9d9d9;
-            cursor: pointer;
-            transition: all 0.1s ease;
-
-            &:hover {
-                background-color: #a5a5a5;
-            }
-        }
-    }
-
     &__content {
         flex: 1;
         min-height: 0;
@@ -50,9 +18,4 @@
         flex-direction: column;
         overflow-y: auto;
     }
-}
-
-.title {
-    font-size: 1.2rem;
-    font-family: 'joan';
 }

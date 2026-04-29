@@ -1,9 +1,19 @@
 <div class="tabbar">
-  <div 
-    *ngFor="let item of items"
-    class="tabbar__element"
-    [routerLink]="item.route"
-    routerLinkActive="tabbar__element--active">
-    <span>{{ item.titre }}</span>
+  <div *ngIf="title" class="tabbar__title">
+    <span> {{ title }} </span>
   </div>
+  <div 
+    class="tabbar__tabs"      
+    [class.tabbar__tabs__without-title]="!title"
+  >
+    <div 
+      *ngFor="let item of items"
+      class="tabbar__tabs__element"
+      [routerLink]="item.route"
+      routerLinkActive="tabbar__tabs__element--active"
+    >
+      <span>{{ item.title }}</span>
+    </div>
+  </div>
+  <app-back-button *ngIf="backButton" class="tabbar__back-button" [route]="backRoute"></app-back-button>
 </div>
