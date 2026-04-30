@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { TabbarComponent, TabbarItem } from '../../../components/tabbar/tabbar.component';
+import { TabbarComponent, Tabs } from '../../../components/tabbar/tabbar.component';
 
 @Component({
   selector: 'app-training-courses-layout',
@@ -10,7 +10,7 @@ import { TabbarComponent, TabbarItem } from '../../../components/tabbar/tabbar.c
 })
 
 export class TrainingCoursesLayoutComponent {
-  tabbarItems: TabbarItem[] = [
+  tabbarItems: Tabs[] = [
     { title: 'Création', route: '/training-courses/creation'},
     { title: 'Planification', route: '/training-courses/planning'},
   ];

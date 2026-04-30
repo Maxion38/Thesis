@@ -1,25 +1,22 @@
 <div class="module-editor">
-  <div class="module-editor__top-bar">
-    <div class="module-editor__top-bar__title">
-      <span>This is the modules title</span>
-      <div class="module-editor__top-bar__edit"><span class="material-symbols-outlined arrow-icon">edit</span></div>
-    </div>
-    <div>
-      <span class="module-editor__top-bar__id">Module 01</span>
-    </div>
 
-    <app-back-button class="back-button"></app-back-button>
-  </div>
+  <app-tabbar 
+    title="This is the modules title" 
+    [isTitleEditable]="true"
+    subtitle="Module 1 - Contenu" 
+    [backButton]="true">
+  </app-tabbar>
 
   <div class="module-editor__cards-list-container">
     <div></div>
-    <div class="module-editor__cards-list">
-      <app-module-content-item title="Description" [isRemovable]="false"></app-module-content-item>
-      <app-module-content-item title="Formulaire" subtitle="Informations génrales sur le sujet"></app-module-content-item>
+    <div class="module-editor__cards-list" cdkDropList (cdkDropListDropped)="drop($event)">
+      <app-module-content-item 
+        *ngFor="let card of cards" 
+        [card]="card"
+        cdkDrag
+        cdkDragLockAxis="y">
+      </app-module-content-item>
     </div>
     <div></div>
   </div>
 </div>
-
-
-<!-- A FAIRE : ngFor pour baser la création des cards sur un objet en .ts puis demander à ia de rendre les cards draggables verticalement permettant de changer l'ordre de celles-ci -->

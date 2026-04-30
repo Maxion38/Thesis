@@ -26,8 +26,7 @@
     transition: all ease 0.1s;
 
     &:hover {
-      z-index: 9999;
-      transform: scale(1.025);
+      background-color: #d1d1d1;
     }
 
     &__module-title {
@@ -57,7 +56,7 @@
     transition: all ease 0.1s;
 
     &:hover {
-      border-color: #D7D7D7;
+      background-color: #bebebe;
     }
 
     &__left {

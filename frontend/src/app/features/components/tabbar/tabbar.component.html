@@ -1,19 +1,28 @@
 <div class="tabbar">
+
   <div *ngIf="title" class="tabbar__title">
     <span> {{ title }} </span>
+    <div *ngIf="isTitleEditable" class="tabbar__edit"><span class="material-symbols-outlined">edit</span></div>
   </div>
+
+  <div *ngIf="subtitle" class="tabbar__subtitle">
+    <span> {{ subtitle }} </span>
+  </div>
+
   <div 
+    *ngIf="tabs"
     class="tabbar__tabs"      
-    [class.tabbar__tabs__without-title]="!title"
+    [class.tabbar__tabs__only-tabs]="!title && !subtitle"
   >
     <div 
-      *ngFor="let item of items"
+      *ngFor="let tab of tabs"
       class="tabbar__tabs__element"
-      [routerLink]="item.route"
+      [routerLink]="tab.route"
       routerLinkActive="tabbar__tabs__element--active"
     >
-      <span>{{ item.title }}</span>
+      <span>{{ tab.title }}</span>
     </div>
   </div>
+
   <app-back-button *ngIf="backButton" class="tabbar__back-button" [route]="backRoute"></app-back-button>
 </div>

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterOutlet, ActivatedRoute } from '@angular/router';
-import { TabbarComponent, TabbarItem } from '../../../components/tabbar/tabbar.component';
+import { TabbarComponent, Tabs } from '../../../components/tabbar/tabbar.component';
 import { TrainingCourseStateService } from '../../services/training-courses.service';
 
 @Component({
@@ -14,7 +14,7 @@ export class TrainingCourseLayoutComponent implements OnInit {
 
   trainingCourseId!: string;
 
-  tabbarItems: TabbarItem[] = [];
+  tabbarItems: Tabs[] = [];
 
   constructor(
     private route: ActivatedRoute,

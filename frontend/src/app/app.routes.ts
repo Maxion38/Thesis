@@ -15,6 +15,7 @@ import { UsersComponent } from './features/pages/users/users.component';
 import { SupervisorsComponent } from './features/pages/supervisors/supervisors.component';
 import { JuriesComponent } from './features/pages/juries/juries.component';
 import { NotificationsComponent } from './features/pages/notifications/notifications.component';
+import { ModuleDescriptionComponent } from './features/training-course/pages/modules/editor/module-description/module-description.component';
 
 export const routes: Routes = [
   { path: '', component: DashboardComponent},
@@ -37,6 +38,7 @@ export const routes: Routes = [
     ]
   },
   { path: 'training-courses/:trainingCourseId/modules/:moduleId/editor', component: ModuleEditorComponent},
+  { path: 'training-courses/:trainingCourseId/modules/:moduleId/editor/description', component: ModuleDescriptionComponent},
   { path: 'training-courses/:trainingCourseId/modules/:moduleId/conditions', component: ModuleConditionsComponent},
 
   { path: 'users', component: UsersComponent}, 

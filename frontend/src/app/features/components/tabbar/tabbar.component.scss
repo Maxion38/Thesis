@@ -10,17 +10,18 @@
   position: relative;
 
   &__tabs {
-    height: 50px;
+    height: 60px;
     font-family: 'Joan';
     font-size: 1.1rem;
     color: black;
     display: flex;
-    align-items: center;
+    align-items: start;
     justify-content: center;
     gap: 9rem;
 
-    &__without-title {
-      height: 110px;
+    &__only-tabs {
+      height: 120px;
+      align-items: center;
     }
 
     &__element {
@@ -41,13 +42,40 @@
   }
 
   &__title {
-    height: 60px;
+    height: 70px;
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 10px;
 
     font-size: 1.4rem;
     font-family: 'joan';
+  }
+
+  &__subtitle {
+    height: 30px;
+    display: flex;
+    align-items: start;
+    justify-content: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    font-weight: 300;
+  }
+
+
+  &__edit {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 40px;
+      cursor: pointer;
+      transition: all 0.1s ease;
+      
+      &:hover {
+          background-color: #d9d9d9;
+      }
   }
 
   &__back-button {

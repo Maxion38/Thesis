@@ -3,7 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { BackButtonComponent } from '../back-button/back-button.component';
 
-export interface TabbarItem {
+export interface Tabs {
   title: string;
   route: string;
   exact?: boolean;
@@ -18,8 +18,10 @@ export interface TabbarItem {
 })
 
 export class TabbarComponent {
-  @Input() items: TabbarItem[] = [];
+  @Input() tabs?: Tabs[];
   @Input() title?: string;
+  @Input() isTitleEditable?: boolean = false;
+  @Input() subtitle?: string;
   @Input() backButton?: boolean = false;
   @Input() backRoute?: (string | number)[];
 }
