@@ -1,7 +1,7 @@
 <div class="card">
   <div class="card__header">
     <div class="card__header__left">
-      {{ card.title }}
+      {{ card.name }}
     </div>
     <div class="card__header__right">
       <div class="card__header__edit" [routerLink]="['/training-courses/' + card.id + '/modules']" (click)="onEditClick()">
@@ -22,9 +22,9 @@
       </ng-template>
     </div>
 
-    <div class="card__infos__bottom">
-      <div><span class="card__label">Utilisateurs</span> {{ card.usersNumber }} </div>
-      <div><span class="card__label">Enseignants</span> {{ card.teachersNumber }} </div>
-    </div>
+  <div class="card__infos__bottom">
+    <div><span class="card__label">Utilisateurs</span> N.A </div>
+    <div><span class="card__label">Enseignants</span> N.A </div>
+  </div>
   </div>
 </div>

@@ -5,7 +5,7 @@
   </div>
   <div class="training-courses__cards-div">
     <app-training-course-card
-      *ngFor="let course of courses"
+      *ngFor="let course of courses$ | async"
       [card]="course">
     </app-training-course-card>
   </div>

@@ -2,7 +2,8 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { TrainingCourseCard } from './training-course-card.model';
-import { TrainingCourseStateService } from '../../services/training-courses.service';
+import { TrainingCourseModel } from './../../models/training-course.model';
+// import { TrainingCourseStateService } from '../../services/training-courses.service';
 
 @Component({
   selector: 'app-training-course-card',
@@ -12,11 +13,11 @@ import { TrainingCourseStateService } from '../../services/training-courses.serv
   styleUrls: ['./training-course-card.component.scss']
 })
 export class TrainingCourseCardComponent {
-  @Input({ required: true }) card!: TrainingCourseCard;
+  @Input({ required: true }) card!: TrainingCourseModel;
 
-  constructor(private trainingCourseState: TrainingCourseStateService) {}
+  // constructor(private trainingCourseState: TrainingCourseStateService) {}
 
   onEditClick() {
-    this.trainingCourseState.title.set(this.card.title);
+    // this.trainingCourseState.title.set(this.card.title);
   }
 }

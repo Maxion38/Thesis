@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterOutlet, ActivatedRoute } from '@angular/router';
 import { TabbarComponent, Tabs } from '../../../components/tabbar/tabbar.component';
-import { TrainingCourseStateService } from '../../services/training-courses.service';
+// import { TrainingCourseStateService } from '../../services/training-courses.service';
 
 @Component({
   selector: 'app-training-course-layout',
@@ -18,7 +18,7 @@ export class TrainingCourseLayoutComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    public trainingCourseState: TrainingCourseStateService,
+    // public trainingCourseState: TrainingCourseStateService,
   ) {}
 
   ngOnInit(): void {
