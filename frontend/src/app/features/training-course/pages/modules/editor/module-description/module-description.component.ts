@@ -4,6 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { marked } from 'marked';
 import { TabbarComponent } from '../../../../../components/tabbar/tabbar.component';
+import { Observable } from 'rxjs';
+import { ModuleModel } from '../../../../models/module.model';
+import { ActivatedRoute } from '@angular/router';
+import { ModulesService } from '../../../../services/modules.service';
 
 @Component({
   selector: 'app-training-courses',
@@ -30,8 +34,20 @@ Start writing your module description using markdown.
 Write your text here and switch to preview mode.`;
   previewHtml!: SafeHtml;
 
-  constructor(private sanitizer: DomSanitizer) {
+  moduleData$!: Observable<ModuleModel>;
+
+  constructor(
+    private sanitizer: DomSanitizer,
+    private route: ActivatedRoute,
+    private moduleService: ModulesService
+  ) {
     this.previewHtml = this.sanitize(marked.parse(this.markdown) as string);
+  }
+
+  ngOnInit(): void {
+    const id = Number(this.route.snapshot.paramMap.get('moduleId'));
+
+    this.moduleData$ = this.moduleService.getModulesById(id);
   }
 
   toggleEditMode(): void {

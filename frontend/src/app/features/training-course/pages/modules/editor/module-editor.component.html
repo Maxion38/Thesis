@@ -1,7 +1,7 @@
 <div class="module-editor">
 
   <app-tabbar 
-    title="This is the modules title" 
+    [title]="(moduleData$ | async)?.name ?? '...'" 
     [isTitleEditable]="true"
     subtitle="Module 1 - Contenu" 
     [backButton]="true">

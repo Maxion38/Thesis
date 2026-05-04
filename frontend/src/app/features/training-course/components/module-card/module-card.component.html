@@ -1,13 +1,13 @@
 <div class="card">
 
-  <div class="card__left" [routerLink]="[card.id, 'editor']">
-    <span class="card__left__module-title">{{ card.title }}</span>
-    <span class="card__left__module-id">Module {{ card.id }}</span>
+  <div class="card__left" [routerLink]="[moduleData.id, 'editor']">
+    <span class="card__left__module-title">{{ moduleData.name }}</span>
+    <span class="card__left__module-id">Module {{ moduleData.id }}</span>
     <span class="material-symbols-outlined card__left__edit-icon">edit</span>  
   </div>
 
   <!-- ACCESS -->
-  <div class="card__middle" [routerLink]="[card.id, 'conditions']">
+  <div class="card__middle" [routerLink]="[moduleData.id, 'conditions']">
 
     <div class="card__middle__left">
       <span class="card__middle__left__label">
@@ -18,7 +18,7 @@
            *ngIf="accessConditions.length > 0; else noAccess">
         <ul>
           <li *ngFor="let accessCondition of accessConditions">
-            {{ formatConditionValue(accessCondition.value) }}
+            {{ formatConditionValue(accessCondition.method) }}
           </li>
         </ul>
       </div>
@@ -39,7 +39,7 @@
 
 
   <!-- SUCCESS -->
-  <div class="card__right" [routerLink]="[card.id, 'conditions']">
+  <div class="card__right" [routerLink]="[moduleData.id, 'conditions']">
 
     <div class="card__right__left">
       <span class="card__right__left__label">
@@ -50,7 +50,7 @@
            *ngIf="successConditions.length > 0; else noSuccess">
         <ul>
           <li *ngFor="let successCondition of successConditions">
-            {{ formatConditionValue(successCondition.value) }}
+            {{ formatConditionValue(successCondition.method) }}
           </li>
         </ul>
       </div>

@@ -1,8 +1,13 @@
 <div class="tabbar">
 
   <div *ngIf="title" class="tabbar__title">
-    <span> {{ title }} </span>
-    <div *ngIf="isTitleEditable" class="tabbar__edit"><span class="material-symbols-outlined">edit</span></div>
+    <span *ngIf="!isEditing"> {{ title }} </span>
+    <input *ngIf="isEditing" #inputElement [(ngModel)]="editedTitle" type="text" class="tabbar__input" (keydown.enter)="saveEdit()" />
+    <div *ngIf="isTitleEditable && !isEditing" class="tabbar__edit" (click)="startEdit()"><span class="material-symbols-outlined">edit</span></div>
+    <div *ngIf="isEditing" class="tabbar__actions">
+      <span class="material-symbols-outlined" (click)="saveEdit()">check</span>
+      <span class="material-symbols-outlined" (click)="cancelEdit()">close</span>
+    </div>
   </div>
 
   <div *ngIf="subtitle" class="tabbar__subtitle">

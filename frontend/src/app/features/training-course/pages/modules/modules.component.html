@@ -1,8 +1,8 @@
 <div class="modules">
-  <div class="modules__element" *ngFor="let moduleInfos of modulesInfos">
+  <div class="modules__element" *ngFor="let module of modulesForTrainingCourse$ | async">
     <div></div>
     <app-module-card
-      [card]="moduleInfos"
+      [moduleData]="module"
     >
     </app-module-card>
     <div></div>

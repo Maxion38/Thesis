@@ -1,7 +1,7 @@
 <div class="module">
   <app-tabbar 
-    title="Module title here" 
-    subtitle="Module 1 - Description"
+    [title]="(moduleData$ | async)?.name ?? '...'" 
+    [subtitle]="'Module ' + ((moduleData$ | async)?.id ?? '...') + ' - Description'"
     [backButton]="true"
   >
   </app-tabbar>

@@ -1,6 +1,7 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ViewChild, ElementRef } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { BackButtonComponent } from '../back-button/back-button.component';
 
 export interface Tabs {
@@ -12,7 +13,7 @@ export interface Tabs {
 @Component({
   selector: 'app-tabbar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, CommonModule, BackButtonComponent],
+  imports: [RouterLink, RouterLinkActive, CommonModule, FormsModule, BackButtonComponent],
   templateUrl: './tabbar.component.html',
   styleUrls: ['./tabbar.component.scss']
 })
@@ -24,5 +25,31 @@ export class TabbarComponent {
   @Input() subtitle?: string;
   @Input() backButton?: boolean = false;
   @Input() backRoute?: (string | number)[];
+
+  @Output() titleChange = new EventEmitter<string>();
+
+  @ViewChild('inputElement', { static: false }) inputElement!: ElementRef;
+
+  isEditing = false;
+  editedTitle = '';
+
+  startEdit() {
+    this.isEditing = true;
+    this.editedTitle = this.title || '';
+    setTimeout(() => {
+      if (this.inputElement) {
+        this.inputElement.nativeElement.focus();
+      }
+    }, 0);
+  }
+
+  saveEdit() {
+    this.titleChange.emit(this.editedTitle);
+    this.isEditing = false;
+  }
+
+  cancelEdit() {
+    this.isEditing = false;
+  }
 }
 

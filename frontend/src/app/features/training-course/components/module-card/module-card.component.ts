@@ -1,7 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
-import { ModuleCard } from './module-card.model';
+import { ModuleModel, ConditionsModel } from '../../models/module.model';
 
 @Component({
   selector: 'app-module-card',
@@ -20,7 +20,7 @@ export class ModuleCardComponent implements OnInit {
     private route: ActivatedRoute,
   ) {}
 
-  @Input({ required: true }) card!: ModuleCard;  
+  @Input({ required: true }) moduleData!: ModuleModel;  
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
@@ -32,12 +32,28 @@ export class ModuleCardComponent implements OnInit {
     });
   }
 
-  get accessConditions() {
-    return this.card.accessConditions ?? [];
+  get accessConditions(): ConditionsModel[] {
+    const accessConditions: ConditionsModel[] = [];
+
+    for (const condition of this.moduleData.conditions ?? []) {
+      if (condition.type === "ACCESS") {
+        accessConditions.push(condition);
+      }
+    }
+
+    return accessConditions;
   }
 
-  get successConditions() {
-    return this.card.successConditions ?? [];
+  get successConditions(): ConditionsModel[] {
+    const successConditions: ConditionsModel[] = [];
+
+    for (const condition of this.moduleData.conditions ?? []) {
+      if (condition.type === "ACCESS") {
+        successConditions.push(condition);
+      }
+    }
+
+    return successConditions;
   }
 
   formatConditionValue(value: string | Date): string {

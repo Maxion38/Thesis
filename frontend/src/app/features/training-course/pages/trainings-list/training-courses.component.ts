@@ -18,7 +18,6 @@ export class TrainingCoursesComponent implements OnInit {
   constructor(private trainingCoursesService: TrainingCoursesService) {}
 
   ngOnInit(): void {
-    console.log('TrainingCoursesComponent ngOnInit called');
     this.courses$ = this.trainingCoursesService.getAll();
   }
 }

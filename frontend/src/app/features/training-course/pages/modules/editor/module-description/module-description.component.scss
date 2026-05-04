@@ -17,9 +17,14 @@
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.module__button.active,
-.module__button:hover {
-    background: #979797;
+
+.module__button.active {
+    background: #1F4541;
+    color: #ffffff;
+}
+
+.module__button:hover:not(.active) {
+    background: #818181;
     color: #ffffff;
 }
 
@@ -31,7 +36,7 @@
 .module__content {
     background-color: #F4F4F4;
     margin-top: 20px;
-    padding: 20px 20px 50px 20px;
+    padding: 20px 50px 50px 50px;
     border-radius: 12px;
 }
 

@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs';
 import { TrainingCourseModel } from './../models/training-course.model'
+import { ModuleModel } from '../models/module.model';
 
 
 @Injectable({
@@ -17,6 +18,10 @@ export class TrainingCoursesService {
 
   getAll(): Observable<TrainingCourseModel[]> {
     return this.http.get<TrainingCourseModel[]>(this.apiUrl);
+  }
+
+  getModulesForTrainingCourse(trainingCourseId: number): Observable<ModuleModel[]> {
+    return this.http.get<ModuleModel[]>(`${this.apiUrl}/${trainingCourseId}/modules`);
   }
 
   getById(id: number): Observable<TrainingCourseModel> {
