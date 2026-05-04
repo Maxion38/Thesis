@@ -3,7 +3,9 @@ import { ModulesService } from './modules.service';
 import { ModulesController } from './modules.controller';
 
 @Module({
+  controllers: [ModulesController],
   providers: [ModulesService],
-  controllers: [ModulesController]
+  exports: [ModulesService],
 })
+
 export class ModulesModule {}
