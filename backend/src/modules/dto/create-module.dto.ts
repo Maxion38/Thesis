@@ -1,1 +1,5 @@
-export class CreateModuleDto {}
+export class CreateModuleDto {
+    name!: string;
+    description?: string;
+    trainingCourseId!: number;
+}

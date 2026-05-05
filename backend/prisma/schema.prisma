@@ -43,8 +43,8 @@ model User {
 model TrainingCourse {
   id          Int      @id @default(autoincrement())
   name        String
-  startDate   DateTime
-  endDate     DateTime
+  startDate   DateTime?
+  endDate     DateTime?
 
   modules             Module[] @relation("ModuleTrainingCourse")
   userTrainingCourses UserTrainingCourse[]

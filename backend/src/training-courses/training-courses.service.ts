@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTrainingCourseDto } from './dto/create-training-course.dto';
 import { UpdateTrainingCourseDto } from './dto/update-training-course.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,17 +8,25 @@ export class TrainingCoursesService {
   constructor(private prisma: PrismaService) {}
 
   create(createTrainingCourseDto: CreateTrainingCourseDto) {
-    return 'This action adds a new trainingCourse';
+    return this.prisma.trainingCourse.create({
+      data: createTrainingCourseDto
+    });
   }
 
   findAll() {
     return this.prisma.trainingCourse.findMany();
   }
 
-  findOne(id: number) {
-    return this.prisma.trainingCourse.findUnique({
-      where: {id} 
+  async findOne(id: number) {
+    const course = await this.prisma.trainingCourse.findUnique({
+      where: { id },
     });
+
+    if (!course) {
+      throw new NotFoundException(`TrainingCourse ${id} not found`);
+    }
+
+    return course;
   }
 
   update(id: number, updateTrainingCourseDto: UpdateTrainingCourseDto) {
@@ -28,7 +36,13 @@ export class TrainingCoursesService {
     });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} trainingCourse`;
+  async remove(id: number) {
+    try {
+      return await this.prisma.trainingCourse.delete({
+        where: { id }
+      });
+    } catch {
+      throw new NotFoundException(`TrainingCourse ${id} not found`);
+    }
   }
 }

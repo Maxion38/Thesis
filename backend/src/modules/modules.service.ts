@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateModuleDto } from './dto/create-module.dto';
 import { UpdateModuleDto } from './dto/update-module.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,7 +8,9 @@ export class ModulesService {
   constructor(private prisma: PrismaService) {}
   
   create(createModuleDto: CreateModuleDto) {
-    return 'This action adds a new module';
+    return this.prisma.module.create({
+      data: createModuleDto
+    });
   }
 
   findAll() {
@@ -32,10 +34,19 @@ export class ModulesService {
   }
 
   update(id: number, updateModuleDto: UpdateModuleDto) {
-    return `This action updates a #${id} module`;
+    return this.prisma.module.update({
+      where: {id},
+      data: updateModuleDto,
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} module`;
+  async remove(id: number) {
+    try {
+      return await this.prisma.module.delete({
+        where: { id }
+      });
+    } catch {
+      throw new NotFoundException(`Module ${id} not found`);
+    }
   }
 }

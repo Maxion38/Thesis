@@ -1,5 +1,5 @@
 export class CreateTrainingCourseDto {
     name!: string;
-    startDate!: Date;
-    endDate!: Date;
+    startDate?: Date;
+    endDate?: Date;
 }
