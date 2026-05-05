@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule, Router } from '@angular/router';
 import { TrainingCourseCardComponent } from '../../components/training-course-card/training-course-card.component'
 import { TrainingCoursesService } from '../../services/training-courses.service';
 import { TrainingCourseModel } from './../../models/training-course.model';
@@ -9,23 +10,39 @@ import { Observable } from 'rxjs';
   selector: 'app-training-courses',
   templateUrl: './training-courses.component.html',
   styleUrls: ['./training-courses.component.scss'],
-  imports: [CommonModule, TrainingCourseCardComponent],
+  imports: [CommonModule, RouterModule, TrainingCourseCardComponent],
 })
 
 export class TrainingCoursesComponent implements OnInit {
   courses$!: Observable<TrainingCourseModel[]>;
+  isCreating = false;
 
-  constructor(private trainingCoursesService: TrainingCoursesService) {}
+  constructor(
+    private trainingCoursesService: TrainingCoursesService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.courses$ = this.trainingCoursesService.getAll();
   }
+
+  onAdd(): void {
+    if (this.isCreating) return;
+
+    this.isCreating = true;
+
+    this.trainingCoursesService.create({
+      name: "Nouveau parcours de formation"
+    }).subscribe({
+      next: (created) => {
+        this.router.navigate(['/training-courses', created.id]);
+      },
+      error: () => {
+        this.isCreating = false;
+      },
+      complete: () => {
+        this.isCreating = false;
+      }
+    });
+  }
 }
-
-
-  // courses: TrainingCourseCard[] = [
-  //   { title: 'Parcours de formation TFE Q1', usersNumber: 9, teachersNumber: 9, id: 1 },
-  //   { title: 'Parcours de formation TFE Q2', startDate: new Date('2026-04-27'), endDate: new Date('2026-04-27'), usersNumber: 54, teachersNumber: 10, id: 2 },
-  //   { title: "Stage technologie de l'informatique le titre est super long pour tester", startDate: new Date('2026-04-27'), endDate: new Date('2026-04-27'), usersNumber: 36, teachersNumber: 10, id: 3 },
-  //   { id: 4, title: "Hey I am currently hardcoded", usersNumber: 0, teachersNumber: 0},
-  // ];

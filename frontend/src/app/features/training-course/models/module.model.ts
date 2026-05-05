@@ -1,7 +1,8 @@
 export interface ModuleModel {
   id: number;
   name: string;
-  description: string;
+  description?: string;
+  trainingCourseId?: number;
   conditions?: ConditionsModel[];  
 }
 

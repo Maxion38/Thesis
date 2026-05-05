@@ -1,31 +1,98 @@
+.module {
+    &__button {
+        background: #d9d9d9;
+        padding: 10px 16px;
+        margin-right: 16px;
+        border-radius: 12px;
+        cursor: pointer;
+        border: 3px solid #FFFFFF;
+        box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+        transition: background-color 0.1s ease, color 0.2s ease;    
+
+        &.active {
+            background: #1F4541;
+            color: #ffffff;
+        }
+
+        &:hover:not(.active) {
+            background-color: #a5a5a5;
+        }
+    }
+
+    &__edit-container {
+        background: #d9d9d9;
+        border-radius: 12px;
+        border: 3px solid #FFFFFF;
+        box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+        transition: background-color 0.1s ease, color 0.2s ease;  
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        
+        &__item {
+            background: #d9d9d9;
+            cursor: pointer;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 16px;
+
+            &.active {
+                background: #1F4541;
+                color: #ffffff;
+            }
+
+            &:hover:not(.active) {
+                background-color: #a5a5a5;
+            }
+        }
+    }
+
+    &__actions__container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        &__item {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 40px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.1s ease;
+
+            &:hover {
+                background-color: #a5a5a5;
+            }
+        }
+    }
+}
+
+.edit {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 40px;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    user-select: none;
+    
+    &:hover {
+        background-color: #d9d9d9;
+    }
+}
+
+
 .module__controls {
     display: flex;
     align-items: center;
-    gap: 16px;
     margin-top: 30px;
     flex-wrap: wrap;
     margin-left: 15px;
-}
-
-.module__button {
-    background: #D7D7D7;
-    padding: 10px 16px;
-    border-radius: 12px;
-    cursor: pointer;
-    border: 3px solid #FFFFFF;
-    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
-    transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-
-.module__button.active {
-    background: #1F4541;
-    color: #ffffff;
-}
-
-.module__button:hover:not(.active) {
-    background: #818181;
-    color: #ffffff;
 }
 
 .module__help {

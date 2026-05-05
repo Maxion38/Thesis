@@ -25,6 +25,7 @@ export class TabbarComponent {
   @Input() subtitle?: string;
   @Input() backButton?: boolean = false;
   @Input() backRoute?: (string | number)[];
+  @Input() isLoading?: boolean = false;
 
   @Output() titleChange = new EventEmitter<string>();
 

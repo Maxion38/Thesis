@@ -1,7 +1,8 @@
 <div class="module-editor">
 
   <app-tabbar 
-    [title]="(moduleData$ | async)?.name ?? '...'" 
+    [title]="(moduleData$ | async)?.name ?? '...'"
+    (titleChange)="onTitleChange($event)"
     [isTitleEditable]="true"
     subtitle="Module 1 - Contenu" 
     [backButton]="true">
@@ -19,4 +20,11 @@
     </div>
     <div></div>
   </div>
+
+  <span 
+    class="module-editor__delete-button" 
+    (click)="onDelete()"
+  >
+    <span class="material-symbols-outlined">delete</span>
+  </span>
 </div>

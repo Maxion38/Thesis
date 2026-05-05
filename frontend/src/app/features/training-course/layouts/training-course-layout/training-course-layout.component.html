@@ -1,16 +1,31 @@
 <div class="training-course">
+
   <div class="training-course__tabbar">
-    <app-tabbar 
-      [tabs]="tabbarItems" 
-      [title]="(course$ | async)?.name ?? '...'" 
-      [isTitleEditable]='true'
-      (titleChange)="onTitleChange($event)"
-      [backButton]="true" 
-      [backRoute]="['/training-courses', 'creation']" 
-    >  
-    </app-tabbar>
+
+    <ng-container *ngIf="courseState$ | async as state">
+
+      <app-tabbar 
+        [tabs]="tabbarItems" 
+        [title]="state.data?.name ?? '...'"
+        [isLoading]="state.status === 'loading' || state.status === 'error'"
+        [isTitleEditable]="true"
+        (titleChange)="onTitleChange($event)"
+        [backButton]="true" 
+        [backRoute]="['/training-courses', 'creation']" 
+      >
+      </app-tabbar>
+
+      <!-- ERROR DISPLAY OPTIONNEL -->
+      <div *ngIf="state.status === 'error'" class="error">
+        {{ state.error }}
+      </div>
+
+    </ng-container>
+
   </div>
+
   <div class="training-course__content">
     <router-outlet></router-outlet>
   </div>
+
 </div>

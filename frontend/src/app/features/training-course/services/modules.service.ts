@@ -26,7 +26,15 @@ export class ModulesService {
     return this.http.get<ModuleModel>(`${this.apiUrl}/${id}`);
   }
 
-  createModules(data: CreateModuleDto): Observable<ModuleModel> {
+  update(id: number, data: Partial<ModuleModel>): Observable<ModuleModel> {
+    return this.http.patch<ModuleModel>(`${this.apiUrl}/${id}`, data);
+  }
+
+  create(data: CreateModuleDto): Observable<ModuleModel> {
     return this.http.post<ModuleModel>(this.apiUrl, data);
+  }
+
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 }

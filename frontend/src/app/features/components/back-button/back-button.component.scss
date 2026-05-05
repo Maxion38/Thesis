@@ -10,6 +10,7 @@
   cursor: pointer;
   transition: all 0.1s ease;
   color: #505050;
+  user-select: none;
 
   &:hover {
       background-color: #a5a5a5;

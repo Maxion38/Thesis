@@ -1,5 +1,5 @@
 export interface CreateModuleDto {
-  id: string;
   name: string;
-  description: string;
+  description?: string;
+  trainingCourseId: number;
 }

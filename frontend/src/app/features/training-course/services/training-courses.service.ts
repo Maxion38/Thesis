@@ -28,7 +28,7 @@ export class TrainingCoursesService {
     return this.http.get<TrainingCourseModel>(`${this.apiUrl}/${id}`);
   }
 
-  create(data: { title: string }): Observable<TrainingCourseModel> {
+  create(data: { name: string }): Observable<TrainingCourseModel> {
     return this.http.post<TrainingCourseModel>(this.apiUrl, data);
   }
 

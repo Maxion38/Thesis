@@ -1,4 +1,5 @@
 <div class="module">
+
   <app-tabbar 
     [title]="(moduleData$ | async)?.name ?? '...'" 
     [subtitle]="'Module ' + ((moduleData$ | async)?.id ?? '...') + ' - Description'"
@@ -7,19 +8,55 @@
   </app-tabbar>
 
   <div class="module__controls">
-    <button class="module__button" type="button" [class.active]="!isEditMode" (click)="isEditMode = false; updatePreview()">Aperçu</button>
-    <button class="module__button" type="button" [class.active]="isEditMode" (click)="isEditMode = true">Modification</button>
+    <button 
+      class="module__button"
+      [class.active]="displayMode === 'original'"
+      (click)="chooseDisplayMode('original')">
+      Original
+    </button>
+
+    <div class="module__edit-container">
+      <button 
+        class="module__edit-container__item"
+        [class.active]="displayMode === 'edit'"
+        (click)="chooseDisplayMode('edit')">
+        Modifier
+      </button>
+      <button 
+        *ngIf="isEditing"
+        class="module__edit-container__item"
+        [class.active]="displayMode === 'preview'"
+        (click)="chooseDisplayMode('preview')">
+        Aperçu
+      </button>
+    </div>
+
+    <div *ngIf="isEditing" class="module__actions__container">
+      <span class="material-symbols-outlined module__actions__container__item" (click)="saveEdit()">check</span>
+      <span class="material-symbols-outlined module__actions__container__item" (click)="cancelEdit()">delete</span>
+    </div>
   </div>
 
   <div class="module__content">
+
+    <div 
+      *ngIf="displayMode === 'original'" 
+      class="module__markdown-preview" 
+      [innerHTML]="initialHtml">
+    </div>
+
     <textarea
-      *ngIf="isEditMode"
+      *ngIf="displayMode === 'edit'"
       class="module__markdown-editor"
       [(ngModel)]="markdown"
-      (ngModelChange)="updatePreview()"
-      aria-label="Module description markdown editor"
-    ></textarea>
+      (ngModelChange)="onTextChange()">
+    </textarea>
 
-    <div *ngIf="!isEditMode" class="module__markdown-preview" [innerHTML]="previewHtml"></div>
+    <div 
+      *ngIf="displayMode === 'preview'" 
+      class="module__markdown-preview" 
+      [innerHTML]="previewHtml">
+    </div>
+
   </div>
 </div>
