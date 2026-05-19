@@ -1,18 +1,22 @@
-<div class="training-courses">
-  <div class="training-courses__top-bar">
-    <span class="training-courses__top-bar__title">Tous les parcours</span>
+<div class="page">
+  <div class="page__top-bar">
+
+    <span class="page__top-bar__title">Tous les parcours</span>
     <span 
-      class="training-courses__top-bar__add-button" 
+      class="page__top-bar__add-button" 
       (click)="onAdd()"
     >
       <span class="material-symbols-outlined">add</span>
     </span>
+
   </div>
-  <div class="training-courses__cards-div">
+
+  <div class="page__cards-div">
     <app-training-course-card
       *ngFor="let course of courses$ | async"
       [card]="course"
     >
     </app-training-course-card>
   </div>
+  
 </div>

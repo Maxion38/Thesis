@@ -1,35 +1,135 @@
+$card-width: 300px;
+
 :host {
     display: flex;
     flex: 1;
-    overflow-y: hidden;
+    min-height: 0;
 }
 
 .page {
     display: flex;
     flex-direction: column;
     flex: 1;
+    min-height: 0;
     background-color: #F4F4F4;
     border-radius: 12px;
     padding: 40px;
-    overflow-y: auto;
+    overflow: hidden;
 
     &__top-bar {
-        height: 30px;
-        margin-bottom: 40px;
+        flex-shrink: 0;
+        margin-bottom: 60px;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        
-        &__title {
-            padding-left: 40px;
-            font-size: 1.4rem;
-            font-family: 'joan';
-        }
+        gap: 30px;
     }
 
-    &__cards-div {
+    &__users-div {
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr 1fr;
+        align-items: start;
+        justify-content: start;
+        grid-template-columns: repeat(auto-fit, minmax($card-width, auto));
+        align-content: start;
         gap: 16px;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+    }
+}
+
+.input {
+    height: 50px;
+    width: 300px;
+    background-color: rgb(255, 255, 255);
+    font-size: 1rem;
+    font-family: 'joan';
+    color: rgb(39, 39, 39);
+    border-radius: 30px;
+    box-shadow: inset 2px 2px 2px rgba(0, 0, 0, 0.25);
+    border: none;
+    padding-left: 55px;
+    padding-right: 10px;
+    cursor: pointer;
+    transition: all ease 0.1s;
+}
+
+.select {
+    height: 50px;
+    background-color: rgb(255, 255, 255);
+    color: black;
+    border-radius: 12px;
+    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.25);
+    border: none;
+    padding-left: 15px;
+    padding-right: 15px;
+    cursor: pointer;
+    transition: all ease 0.1s;
+}
+
+.button:hover {
+    background-color: #ececec;
+} 
+
+.button:active {
+    box-shadow: inset 2px 2px 2px rgba(0, 0, 0, 0.25);
+}
+
+.search-wrapper {
+    position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: gray;
+  pointer-events: none;
+}
+
+.user-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+
+    width: $card-width;
+    height: 95px;
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.25);
+
+    &__profile {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        font-size: 1.3rem;
+        background-color: #d9d9d9;
+        width: 60px;
+        min-width: 60px;
+        height: 60px;
+        border-radius: 60px;
+    }
+
+    &__infos {
+        display: flex;
+        height: 100%;
+        flex-direction: column;
+        justify-content: space-around;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        &__name {
+            font-size: 1rem;
+            cursor: default;
+        }
+
+        &__role {
+            font-size: 0.9rem;
+            font-weight: 300;
+        }
     }
 }

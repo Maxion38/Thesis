@@ -4,14 +4,21 @@
     height: 100%;
 }
 
-.training-course {
+.page {
     display: flex;
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    padding: 0 50px 30px 50px; 
+
+
+    &__tabbar {
+        background-color: rgb(252, 252, 252);
+        border-bottom: 2px solid rgb(238, 238, 238);
+        padding: 0 50px 0 50px;
+    }
 
     &__content {
+        padding: 30px 50px 30px 50px; 
         flex: 1;
         min-height: 0;
 

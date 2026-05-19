@@ -1,15 +1,76 @@
 <div class="page">
+  
   <div class="page__top-bar">
 
-    <span class="page__top-bar__title">Tous les utilisateurs</span>
+    <!-- SEARCH -->
+    <div class="search-wrapper">
+      <span class="material-symbols-outlined search-icon">search</span>
+      <input 
+        class="input" 
+        type="text"
+        [(ngModel)]="searchText"
+        (input)="applyFilters()"
+      >
+    </div>
 
-  </div>
-
-  <div class="page__cards-div">
-    <!-- <app-training-course-card
-      *ngFor="let course of courses$ | async"
-      [card]="course"
+    <!-- ROLE FILTER -->
+    <select 
+      class="select"
+      [(ngModel)]="selectedRole"
+      (change)="applyFilters()"
     >
-    </app-training-course-card> -->
+      <option value="ALL">Tous</option>
+      <option value="STUDENT">Étudiant</option>
+      <option value="TEACHER">Enseignant</option>
+      <option value="COORDINATOR">Coordinateur</option>
+    </select>
+
+    <!-- COURSE FILTER -->
+    <select 
+      class="select"
+      [(ngModel)]="selectedCourseId"
+      (change)="applyFilters()"
+    >
+      <option [ngValue]="'ALL'">Tous les parcours</option>
+
+      <option 
+        *ngFor="let course of trainingCourses"
+        [ngValue]="course.id"
+      >
+        {{ course.label }}
+      </option>
+    </select>
+
   </div>
+
+  <!-- USERS GRID -->
+  <div class="page__users-div">
+
+    <div *ngFor="let user of filteredUsers" class="user-card">  
+
+      <!-- INITIALS -->
+      <div class="user-card__profile">
+        {{ user.surname.charAt(0).toUpperCase() }}{{ user.firstname?.charAt(0)?.toUpperCase() }}
+      </div>
+
+      <!-- INFOS -->
+      <div class="user-card__infos">
+
+        <span 
+          class="user-card__infos__name"
+          [title]="user.firstname + ' ' + user.surname"
+        >
+          {{ user.firstname }} {{ user.surname }}
+        </span>
+
+        <span class="user-card__infos__role">
+          {{ getRoleLabel(user.role) }}
+        </span>
+
+      </div>
+
+    </div>
+
+  </div>
+
 </div>
