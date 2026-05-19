@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 export interface MenuItem {
   titre: string;
   route: string;
+  iconName: string;
   exact?: boolean;
 }
 

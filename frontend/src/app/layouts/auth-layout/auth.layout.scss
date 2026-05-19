@@ -1,0 +1,13 @@
+.auth-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: #ffffff;
+
+}
+
+.app-content {
+    flex: 1;
+    overflow: auto;
+    margin: 0 50px 30px 50px;
+}

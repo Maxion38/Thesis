@@ -5,3 +5,7 @@ body {
     font-family: 'Inter';
     word-spacing: 0.15rem;
 }
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}

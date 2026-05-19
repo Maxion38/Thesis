@@ -1,0 +1,33 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    --page-padding: 0;
+}
+
+.layout {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+
+    &__tabbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: white;
+    }
+
+    &__content-wrapper {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: clip;
+    }
+
+    &__content {
+        display: flex;
+        flex-direction: column;
+        padding: 0 50px 30px 50px; 
+    }
+}

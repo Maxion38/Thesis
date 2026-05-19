@@ -10,6 +10,8 @@
         [isLoading]="state.status === 'loading' || state.status === 'error'"
         [isTitleEditable]="true"
         (titleChange)="onTitleChange($event)"
+        [isElementDeletable]="true"
+        (delete)="onDelete()"
         [backButton]="true" 
         [backRoute]="['/training-courses', 'creation']" 
       >

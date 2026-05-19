@@ -1,0 +1,25 @@
+<div class="module-editor">
+
+  <app-tabbar 
+    [title]="(moduleData$ | async)?.name ?? '...'"
+    (titleChange)="onTitleChange($event)"
+    [isTitleEditable]="true"
+    [isElementDeletable]="true"
+    (delete)="onDelete()"
+    subtitle="Module 1 - Contenu" 
+    [backButton]="true">
+  </app-tabbar>
+
+  <div class="module-editor__cards-list-container">
+    <div></div>
+    <div class="module-editor__cards-list" cdkDropList (cdkDropListDropped)="drop($event)">
+      <app-module-content-item 
+        *ngFor="let card of cards" 
+        [card]="card"
+        cdkDrag
+        cdkDragLockAxis="y">
+      </app-module-content-item>
+    </div>
+    <div></div>
+  </div>
+</div>

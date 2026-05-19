@@ -23,11 +23,13 @@ export class TabbarComponent {
   @Input() title?: string;
   @Input() isTitleEditable?: boolean = false;
   @Input() subtitle?: string;
+  @Input() isElementDeletable?: boolean = false;
   @Input() backButton?: boolean = false;
   @Input() backRoute?: (string | number)[];
   @Input() isLoading?: boolean = false;
 
   @Output() titleChange = new EventEmitter<string>();
+  @Output() delete = new EventEmitter<void>();
 
   @ViewChild('inputElement', { static: false }) inputElement!: ElementRef;
 
@@ -51,6 +53,10 @@ export class TabbarComponent {
 
   cancelEdit() {
     this.isEditing = false;
+  }
+
+  deleteItem() {
+    this.delete.emit();
   }
 }
 

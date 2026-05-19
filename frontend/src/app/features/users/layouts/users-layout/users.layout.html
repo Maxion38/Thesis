@@ -1,0 +1,15 @@
+<div class="layout">
+
+  <div class="layout__tabbar">
+      <app-tabbar 
+        [tabs]="tabbarItems" 
+      >
+      </app-tabbar>
+  </div>
+
+  <div class="layout__content-wrapper">
+      <div class="layout__content">
+          <router-outlet></router-outlet>
+      </div>
+  </div>
+</div>

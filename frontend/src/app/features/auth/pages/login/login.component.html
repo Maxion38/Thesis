@@ -1,0 +1,29 @@
+<div class="login">
+  <div class="top-div">
+    <span class="title">Bienvenue sur Thesis</span>
+  </div>
+
+  <div class="mid-div">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+      <h2>Se connecter</h2>
+
+      <input
+        type="email"
+        placeholder="Email"
+        formControlName="email"
+      />
+
+      <input
+        type="password"
+        placeholder="Mot de passe"
+        formControlName="password"
+      />
+
+      <button type="submit">Connexion</button>
+
+    </form>
+  </div>
+
+  <div class="bottom-div"></div>
+</div>

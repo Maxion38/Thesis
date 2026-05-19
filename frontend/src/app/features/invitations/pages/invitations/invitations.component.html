@@ -1,0 +1,77 @@
+<div class="page">
+
+  <div class="invite-section">
+
+    <div class="invite-section__top-bar">
+      <span class="title">Inviter</span>
+    </div>
+
+    <div class="invite-section__actions">
+      <form [formGroup]="inviteActionsForm" (ngSubmit)="add()" class="invite-section__actions__form">
+        <textarea 
+          formControlName="text" 
+          placeholder="Veuillez introduire une liste d’emails tous séparés par une virgule et un espace. Ex : x@x.x, xx@x.x, xxx@x.x"
+          class="invite-section__actions__form__text"
+        ></textarea>
+
+        <select formControlName="role" class="select invite-section__actions__form__select">
+          <option value="STUDENT">Étudiant</option>
+          <option value="TEACHER">Enseignant</option>
+          <option value="COORDINATOR">Coordinateur</option>
+        </select>
+
+        <button 
+          type="submit" 
+          [disabled]="inviteActionsForm.invalid"
+          class="button invite-section__actions__form__button"
+        >
+          Ajouter
+        </button>
+      </form>
+    </div>
+
+    <div *ngIf="usersToInvite.length > 0" class="invite-section__recap">
+
+      <div *ngFor="let user of usersToInvite; let i = index" class="user-to-invite-card">
+        
+        <span class="user-to-invite-card__email" [title]="user.email">{{ user.email }}</span>
+
+        <select 
+          class="select user-to-invite-card__select" 
+          [(ngModel)]="user.role"
+          (change)="onRoleChange(user.id, user.role)"
+        >
+          <option value="STUDENT">Étudiant</option>
+          <option value="TEACHER">Enseignant</option>
+          <option value="COORDINATOR">Coordinateur</option>
+        </select>
+
+        <div>
+          <span class="material-symbols-outlined user-to-invite-card__close" (click)="removeUser(user.id)">close</span>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div *ngIf="usersToInvite.length > 0" class="invite-section__send">
+      <button (click)="sendInvitations()" class="button invite-section__send__button">Envoyer les invitations ({{ usersToInvite.length }})</button>
+    </div>
+
+  </div>
+
+  <div class="history-section">
+    <div class="history-section__top-bar">
+      <span class="title">Toutes les invitations</span>
+    </div>
+    <div class="history-section__content">
+
+      <!-- <app-training-course-card
+        *ngFor="let course of courses$ | async"
+        [card]="course"
+      >
+      </app-training-course-card> -->
+
+    </div>
+  </div>
+</div>

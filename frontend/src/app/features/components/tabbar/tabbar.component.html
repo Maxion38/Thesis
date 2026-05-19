@@ -30,4 +30,5 @@
   </div>
 
   <app-back-button *ngIf="backButton" class="tabbar__back-button" [route]="backRoute"></app-back-button>
+  <span *ngIf="isElementDeletable" class="material-symbols-outlined delete" (click)="deleteItem()">delete</span>
 </div>

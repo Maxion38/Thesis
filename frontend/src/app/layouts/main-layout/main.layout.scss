@@ -1,0 +1,38 @@
+// :host {
+//     display: flex;
+//     flex-direction: column;
+//     height: 100vh;
+//     background-color: red;
+// }
+
+.app-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: #ffffff;
+    overflow-y: hidden;
+}
+
+.app-navbar {
+  position: sticky;
+  top: 0;
+}
+
+.app-menu-content-layout {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    min-height: 0;
+}
+
+.app-menu {
+  position: sticky;
+  left: 0;
+}
+
+.app-content {
+    flex: 1;
+    height: 100%;
+    // min-height: 0;
+    // min-width: 0;
+}

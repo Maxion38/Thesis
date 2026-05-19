@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { AsyncPipe, CommonModule } from '@angular/common';
-import { RouterOutlet, ActivatedRoute } from '@angular/router';
+import { RouterOutlet, ActivatedRoute, Router } from '@angular/router';
 import { TabbarComponent, Tabs } from '../../../components/tabbar/tabbar.component';
 import { TrainingCoursesService } from '../../services/training-courses.service';
 import { BehaviorSubject, Subject, switchMap, map, startWith, catchError, of } from 'rxjs';
@@ -33,6 +33,7 @@ export class TrainingCourseLayoutComponent implements OnInit {
   });
 
   constructor(
+    private router: Router,
     private route: ActivatedRoute,
     private trainingCoursesService: TrainingCoursesService
   ) {}
@@ -89,6 +90,13 @@ export class TrainingCourseLayoutComponent implements OnInit {
       });
   }
 
+  onDelete() {
+    console.log(Number(this.trainingCourseId));
+    this.trainingCoursesService.delete(Number(this.trainingCourseId)).subscribe(() => {
+      this.router.navigate(['/training-courses']);
+    });
+  }
+
   reloadCourse() {
     this.refresh$.next();
   }
@@ -107,10 +115,6 @@ export class TrainingCourseLayoutComponent implements OnInit {
         title: 'Planification',
         route: `/training-courses/${this.trainingCourseId}/planning`
       },
-      {
-        title: 'Informations',
-        route: `/training-courses/${this.trainingCourseId}/infos`
-      }
     ];
   }
 }
