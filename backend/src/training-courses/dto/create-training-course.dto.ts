@@ -1,5 +1,14 @@
+import { IsString, IsOptional, IsDateString } from 'class-validator';
+
 export class CreateTrainingCourseDto {
-    name!: string;
-    startDate?: Date;
-    endDate?: Date;
+  @IsString()
+  name!: string;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: Date;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: Date;
 }

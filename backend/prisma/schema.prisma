@@ -13,12 +13,13 @@ datasource db {
 
 model User {
   id              Int      @id @default(autoincrement())
+  passwordHash    String
   surname         String
   firstname       String?
   email           String   @unique
   role            Role
   hoursQuota      Int?
-  supervisorPreferences  String?
+  supervisorPreferences  String? // cette donnée devrait avoir un table intermédiaire pour relier à de vrai utilisateurs
   supervisorId    Int?
 
   supervisor            User?                 @relation("UserSupervisor", fields: [supervisorId], references: [id])
@@ -38,6 +39,17 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Invitation {
+  id         Int      @id @default(autoincrement())
+  email      String
+  role       Role
+  token      String   @unique
+  used       Boolean
+  expiresAt  DateTime
+
+  createdAt  DateTime @default(now())
 }
 
 model TrainingCourse {
@@ -62,7 +74,7 @@ model Module {
   description       String?   @db.Text
   trainingCourseId  Int
 
-  trainingCourse    TrainingCourse  @relation("ModuleTrainingCourse", fields: [trainingCourseId], references: [id])
+  trainingCourse    TrainingCourse  @relation("ModuleTrainingCourse", fields: [trainingCourseId], references: [id], onDelete: Cascade)
 
   tools             Tool[] @relation("ToolModule")
   conditions        Condition[] @relation("ConditionModule")
