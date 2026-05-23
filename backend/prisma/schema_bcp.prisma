@@ -1,0 +1,464 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+
+model User {
+  id              Int      @id @default(autoincrement())
+  passwordHash    String
+  surname         String
+  firstname       String?
+  email           String   @unique
+  role            Role
+  hoursQuota      Int?
+  supervisorPreferences  String? // cette donnée devrait avoir un table intermédiaire pour relier à de vrai utilisateurs
+  supervisorId    Int?
+
+  supervisor            User?                 @relation("UserSupervisor", fields: [supervisorId], references: [id])
+  subordinates          User[]                @relation("UserSupervisor")
+  userTrainingCourse    UserTrainingCourse[]
+  groups                UserGroup[]
+  formSubmissions       FormSubmission[]
+  submissions           UserWorkSubmission[]
+  userValidation        UserValidation[]
+  notification          Notification[]
+  assessmentsAsStudent  Assessment[]          @relation("AssessmentStudent")
+  assessmentsAsTeacher  Assessment[]          @relation("AssessmentTeacher")
+  weightings            Weighting[]
+  notebooksAsStudent    Notebook[]            @relation("NotebookStudent")
+  notebooksAsTeacher    Notebook[]            @relation("NotebookTeacher")
+  validatedConditions   Condition[]           @relation("ConditionValidator")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Invitation {
+  id         Int      @id @default(autoincrement())
+  email      String
+  role       Role
+  token      String   @unique
+  used       Boolean
+  expiresAt  DateTime
+
+  createdAt  DateTime @default(now())
+}
+
+model TrainingCourse {
+  id          Int      @id @default(autoincrement())
+  name        String
+  startDate   DateTime?
+  endDate     DateTime?
+
+  modules             Module[] @relation("ModuleTrainingCourse")
+  userTrainingCourses UserTrainingCourse[]
+  groups              Group[]
+  notifications       Notification[]
+  notebooks           Notebook[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Module {
+  id                Int       @id @default(autoincrement())
+  name              String
+  description       String?   @db.Text
+  trainingCourseId  Int
+
+  trainingCourse    TrainingCourse  @relation("ModuleTrainingCourse", fields: [trainingCourseId], references: [id], onDelete: Cascade)
+
+  tools             Tool[] @relation("ToolModule")
+  conditions        Condition[] @relation("ConditionModule")
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([trainingCourseId])
+}
+
+model Condition {
+  id              Int     @id @default(autoincrement())
+  type            ConditionType
+  method          ConditionMethod
+  operator        ConditionOperator?
+  date            DateTime?
+  validationBySupervisor Boolean  @default(false)
+  moduleId        Int
+  validatorId     Int?
+  toolId          Int?
+
+  module          Module          @relation("ConditionModule", fields: [moduleId], references: [id])
+  validator       User?           @relation("ConditionValidator", fields: [validatorId], references: [id])
+  tool            Tool?           @relation("ConditionTool", fields: [toolId], references: [id])
+  userValidations UserValidation[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([moduleId])
+  @@index([toolId])
+  @@index([validatorId])
+}
+
+model UserValidation {
+  userId      Int
+  conditionId Int
+
+  user      User      @relation(fields: [userId], references: [id])
+  condition Condition @relation(fields: [conditionId], references: [id])
+
+  @@id([userId, conditionId])
+  
+  createdAt DateTime @default(now())
+}
+
+model Tool {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String    @db.Text
+  type        ToolType
+  moduleId    Int
+
+  module          Module        @relation("ToolModule", fields: [moduleId], references: [id])
+
+  forms           Form[]
+  activities      Activity[]
+  works           Work[]
+  assessmentGrids AssessmentGrid[]
+  conditions      Condition[]       @relation("ConditionTool")
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([moduleId])
+}
+
+model Form {
+  id          Int  @id @default(autoincrement())
+  maxAttempts Int
+  toolId      Int
+
+  tool        Tool @relation(fields: [toolId], references: [id])
+  questions   Question[]
+  submissions FormSubmission[]
+    
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Question {
+  id         Int    @id @default(autoincrement())
+  name       String
+  type       QuestionType
+  isRequired Boolean
+  formId Int
+
+  form      Form       @relation(fields: [formId], references: [id])
+  options   QuestionOption[]
+  responses Response[]
+    
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model QuestionOption {
+  id         Int    @id @default(autoincrement())
+  name       String
+  order      Int
+  questionId Int
+
+  question   Question @relation(fields: [questionId], references: [id])
+    
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FormSubmission {
+  id          Int         @id @default(autoincrement())
+  submittedAt DateTime    @default(now())
+  status SubmissionStatus
+  formId      Int 
+  userId      Int
+
+  form Form @relation(fields: [formId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+  responses Response[]
+    
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Response {
+  id           Int    @id @default(autoincrement())
+  value        String
+  questionId   Int
+  submissionId Int
+
+  question        Question       @relation(fields: [questionId], references: [id])
+  submission  FormSubmission @relation(fields: [submissionId], references: [id])
+    
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Activity {
+  id            Int       @id @default(autoincrement())
+  startDateTime DateTime?
+  endDateTime   DateTime?
+  location      String?
+
+  toolId Int
+  tool   Tool @relation(fields: [toolId], references: [id])
+    
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Work {
+  id          Int @id @default(autoincrement())
+  toolId Int
+  maxAttempts Int
+
+  tool   Tool @relation(fields: [toolId], references: [id])
+  userWorkSubmissions UserWorkSubmission[]
+    
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserWorkSubmission {
+  id          Int       @id @default(autoincrement())
+  submittedAt DateTime  @default(now())
+  fileName    String
+  filePath    String
+  workId      Int
+  userId      Int
+
+  work Work @relation(fields: [workId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+    
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AssessmentGrid {
+  id     Int @id @default(autoincrement())
+  toolId Int
+
+  tool Tool @relation(fields: [toolId], references: [id])
+  gridVersions GridVersion[]
+    
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GridVersion {
+  id        Int      @id @default(autoincrement())
+  startDate DateTime?
+  endDate   DateTime?
+  assessmentGridId Int
+
+  assessmentGrid AssessmentGrid @relation(fields: [assessmentGridId], references: [id])
+  assessments Assessment[]
+  criterias Criteria[]
+    
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Assessment {
+  id            Int       @id @default(autoincrement())
+  date          DateTime
+  comment       String?   @db.Text
+  grade         Float?
+  gridVersionId Int?
+  criteriaId    Int?
+  studentId     Int
+  teacherId     Int
+
+  gridVersion GridVersion? @relation(fields: [gridVersionId], references: [id])
+  criteria    Criteria?    @relation(fields: [criteriaId], references: [id])
+  student     User         @relation("AssessmentStudent", fields: [studentId], references: [id])
+  teacher     User         @relation("AssessmentTeacher", fields: [teacherId], references: [id])
+    
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([studentId])
+  @@index([teacherId])
+  @@index([gridVersionId])
+}
+
+model Criteria {
+  id            Int    @id @default(autoincrement())
+  name          String
+  order         Int
+  defaultWeight Int
+  gridVersionId Int
+
+  gridVersion   GridVersion @relation(fields: [gridVersionId], references: [id])
+  cells         Cell[]
+  assessment    Assessment[]
+  weightings    Weighting[]
+    
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Cell {
+  id          Int     @id @default(autoincrement())
+  description String  @db.Text
+  order       Int
+  criteriaId  Int
+
+  criteria   Criteria @relation(fields: [criteriaId], references: [id])
+    
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Weighting {
+  criteriaId Int  
+  userId     Int  
+  weight     Float
+
+  criteria Criteria @relation(fields: [criteriaId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@id([criteriaId, userId])
+    
+  createdAt DateTime @default(now())
+}
+
+model UserTrainingCourse {
+  userId           Int
+  trainingCourseId Int
+
+  user           User           @relation(fields: [userId], references: [id])
+  trainingCourse TrainingCourse @relation(fields: [trainingCourseId], references: [id])
+
+  @@id([userId, trainingCourseId])
+    
+  createdAt DateTime @default(now())
+}
+
+model Group {
+  id            Int      @id @default(autoincrement())
+  name          String
+  type          String
+  startDateTime DateTime?
+  endDateTime   DateTime?
+  location      String?
+  trainingCourseId Int
+
+  trainingCourse   TrainingCourse @relation(fields: [trainingCourseId], references: [id])
+  users UserGroup[]
+    
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserGroup {
+  userId  Int
+  groupId Int
+
+  user  User  @relation(fields: [userId], references: [id])
+  group Group @relation(fields: [groupId], references: [id])
+
+  @@id([userId, groupId])
+}
+
+model Notification {
+  id                Int         @id @default(autoincrement())
+  name              String
+  description       String      @db.Text
+  importance        Importance
+  dateTime          DateTime    @default(now())
+  userId            Int
+  trainingCourseId  Int
+
+  user           User           @relation(fields: [userId], references: [id])
+  trainingCourse TrainingCourse @relation(fields: [trainingCourseId], references: [id])
+    
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([trainingCourseId])
+}
+
+model Notebook {
+  trainingCourseId  Int
+  studentId         Int
+  teacherId         Int
+  content           String? @db.Text
+  lastModified      DateTime @default(now())
+
+  student User @relation("NotebookStudent", fields: [studentId], references: [id])
+  teacher User @relation("NotebookTeacher", fields: [teacherId], references: [id])
+  trainingCourse TrainingCourse @relation(fields: [trainingCourseId], references: [id])
+
+  @@id([studentId, teacherId, trainingCourseId])
+    
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+enum Role {
+  STUDENT
+  TEACHER
+  COORDINATOR
+}
+
+enum Importance {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ConditionType {
+  ACCESS
+  SUCCESS
+}
+
+enum ConditionMethod {
+  USER_VALIDATION
+  SUPERVISOR_VALIDATION
+  TOOL_SUBMISSION
+  DATE
+}
+
+enum ConditionOperator {
+  AND
+  OR
+}
+
+enum ToolType {
+  FORM
+  ACTIVITY
+  WORK
+  ASSESSMENT
+}
+
+enum QuestionType {
+  TEXT
+  NUMBER
+  RADIO
+  CHECKBOX
+}
+
+enum SubmissionStatus {
+  NOT_SUBMITED
+  SUBMITTED
+  APPROVED
+}

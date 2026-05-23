@@ -1,5 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// prisma docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -7,104 +6,130 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id              Int      @id @default(autoincrement())
-  passwordHash    String
-  surname         String
-  firstname       String?
-  email           String   @unique
-  role            Role
-  hoursQuota      Int?
-  supervisorPreferences  String? // cette donnée devrait avoir un table intermédiaire pour relier à de vrai utilisateurs
-  supervisorId    Int?
+  id           Int     @id @default(autoincrement())
+  passwordHash String
+  surname      String
+  firstname    String?
+  email        String  @unique
+  hoursQuota   Int?
+  supervisorId Int?
 
-  supervisor            User?                 @relation("UserSupervisor", fields: [supervisorId], references: [id])
-  subordinates          User[]                @relation("UserSupervisor")
-  userTrainingCourse    UserTrainingCourse[]
-  groups                UserGroup[]
-  formSubmissions       FormSubmission[]
-  submissions           UserWorkSubmission[]
-  userValidation        UserValidation[]
-  notification          Notification[]
-  assessmentsAsStudent  Assessment[]          @relation("AssessmentStudent")
-  assessmentsAsTeacher  Assessment[]          @relation("AssessmentTeacher")
-  weightings            Weighting[]
-  notebooksAsStudent    Notebook[]            @relation("NotebookStudent")
-  notebooksAsTeacher    Notebook[]            @relation("NotebookTeacher")
-  validatedConditions   Condition[]           @relation("ConditionValidator")
+  supervisorPreferencesAsStudent UserSupervisorPreference[] @relation("StudentPreferences")
+  supervisorPreferencesAsTeacher UserSupervisorPreference[] @relation("TeacherPreferences")
+  projectMemberships             ProjectMember[]
+  supervisedProjects             Project[]                  @relation("ProjectSupervisor")
+  supervisor                     User?                      @relation("UserSupervisor", fields: [supervisorId], references: [id])
+  subordinates                   User[]                     @relation("UserSupervisor")
+  roles                          UserRole[]
+  groups                         UserGroup[]
+  formSubmissions                FormSubmission[]
+  submissions                    UserWorkSubmission[]
+  userValidation                 UserValidation[]
+  notifications                  Notification[]
+  criteriaAssessmentsAsStudent   CriteriaAssessment[]       @relation("CriteriaAssessmentStudent")
+  criteriaAssessmentsAsTeacher   CriteriaAssessment[]       @relation("CriteriaAssessmentTeacher")
+  gridVersionFeedbacks           GridVersionFeedback[]
+  notebooks                      Notebook[]
+  validatedConditions            Condition[]                @relation("ConditionValidator")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model Invitation {
-  id         Int      @id @default(autoincrement())
-  email      String
-  role       Role
-  token      String   @unique
-  used       Boolean
-  expiresAt  DateTime
+model Role {
+  id Int @id @default(autoincrement())
 
-  createdAt  DateTime @default(now())
+  role RoleType @unique
+
+  users UserRole[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserRole {
+  userId Int
+  roleId Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+model UserSupervisorPreference {
+  userId    Int
+  teacherId Int
+  projectId Int
+
+  user    User    @relation("StudentPreferences", fields: [userId], references: [id])
+  teacher User    @relation("TeacherPreferences", fields: [teacherId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@id([userId, teacherId, projectId])
+}
+
+model Invitation {
+  id        Int      @id @default(autoincrement())
+  email     String
+  role      RoleType
+  token     String   @unique
+  used      Boolean
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
 }
 
 model TrainingCourse {
-  id          Int      @id @default(autoincrement())
-  name        String
-  startDate   DateTime?
-  endDate     DateTime?
+  id        Int       @id @default(autoincrement())
+  name      String
+  startDate DateTime?
+  endDate   DateTime?
 
-  modules             Module[] @relation("ModuleTrainingCourse")
-  userTrainingCourses UserTrainingCourse[]
-  groups              Group[]
-  notifications       Notification[]
-  notebooks           Notebook[]
-  
+  projects Project[]
+  modules  Module[]  @relation("ModuleTrainingCourse")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Module {
-  id                Int       @id @default(autoincrement())
-  name              String
-  description       String?   @db.Text
-  trainingCourseId  Int
+  id               Int     @id @default(autoincrement())
+  name             String
+  description      String? @db.Text
+  trainingCourseId Int
 
-  trainingCourse    TrainingCourse  @relation("ModuleTrainingCourse", fields: [trainingCourseId], references: [id], onDelete: Cascade)
+  trainingCourse TrainingCourse @relation("ModuleTrainingCourse", fields: [trainingCourseId], references: [id], onDelete: Cascade)
 
-  tools             Tool[] @relation("ToolModule")
-  conditions        Condition[] @relation("ConditionModule")
+  tools            Tool[]            @relation("ToolModule")
+  conditionsGroups ConditionsGroup[]
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([trainingCourseId])
 }
 
 model Condition {
-  id              Int     @id @default(autoincrement())
-  type            ConditionType
-  method          ConditionMethod
-  operator        ConditionOperator?
-  date            DateTime?
-  validationBySupervisor Boolean  @default(false)
-  moduleId        Int
-  validatorId     Int?
-  toolId          Int?
+  id                   Int             @id @default(autoincrement())
+  method               ConditionMethod
+  dateValue            DateTime?
+  validatorId          Int?
+  toolId               Int?
+  conditionsSubgroupId Int
 
-  module          Module          @relation("ConditionModule", fields: [moduleId], references: [id])
-  validator       User?           @relation("ConditionValidator", fields: [validatorId], references: [id])
-  tool            Tool?           @relation("ConditionTool", fields: [toolId], references: [id])
-  userValidations UserValidation[]
-  
+  validator          User?              @relation("ConditionValidator", fields: [validatorId], references: [id])
+  tool               Tool?              @relation("ConditionTool", fields: [toolId], references: [id])
+  userValidations    UserValidation[]
+  conditionsSubgroup ConditionsSubgroup @relation(fields: [conditionsSubgroupId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([moduleId])
   @@index([toolId])
   @@index([validatorId])
 }
@@ -116,26 +141,26 @@ model UserValidation {
   user      User      @relation(fields: [userId], references: [id])
   condition Condition @relation(fields: [conditionId], references: [id])
 
-  @@id([userId, conditionId])
-  
   createdAt DateTime @default(now())
+
+  @@id([userId, conditionId])
 }
 
 model Tool {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String
-  description String    @db.Text
+  description String   @db.Text
   type        ToolType
   moduleId    Int
 
-  module          Module        @relation("ToolModule", fields: [moduleId], references: [id])
+  module Module @relation("ToolModule", fields: [moduleId], references: [id])
 
   forms           Form[]
   activities      Activity[]
   works           Work[]
   assessmentGrids AssessmentGrid[]
-  conditions      Condition[]       @relation("ConditionTool")
-  
+  conditions      Condition[]      @relation("ConditionTool")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -143,29 +168,29 @@ model Tool {
 }
 
 model Form {
-  id          Int  @id @default(autoincrement())
+  id          Int @id @default(autoincrement())
   maxAttempts Int
   toolId      Int
 
-  tool        Tool @relation(fields: [toolId], references: [id])
+  tool        Tool             @relation(fields: [toolId], references: [id])
   questions   Question[]
   submissions FormSubmission[]
-    
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Question {
-  id         Int    @id @default(autoincrement())
+  id         Int          @id @default(autoincrement())
   name       String
   type       QuestionType
   isRequired Boolean
-  formId Int
+  formId     Int
 
-  form      Form       @relation(fields: [formId], references: [id])
+  form      Form             @relation(fields: [formId], references: [id])
   options   QuestionOption[]
   responses Response[]
-    
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -176,25 +201,30 @@ model QuestionOption {
   order      Int
   questionId Int
 
-  question   Question @relation(fields: [questionId], references: [id])
-    
+  question Question @relation(fields: [questionId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model FormSubmission {
-  id          Int         @id @default(autoincrement())
-  submittedAt DateTime    @default(now())
-  status SubmissionStatus
-  formId      Int 
+  id          Int              @id @default(autoincrement())
+  submittedAt DateTime         @default(now())
+  status      SubmissionStatus
+  formId      Int
   userId      Int
+  projectId   Int
 
-  form Form @relation(fields: [formId], references: [id])
-  user User @relation(fields: [userId], references: [id])
+  project   Project    @relation(fields: [projectId], references: [id])
+  form      Form       @relation(fields: [formId], references: [id])
+  user      User       @relation(fields: [userId], references: [id])
   responses Response[]
-    
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([userId])
 }
 
 model Response {
@@ -203,9 +233,9 @@ model Response {
   questionId   Int
   submissionId Int
 
-  question        Question       @relation(fields: [questionId], references: [id])
-  submission  FormSubmission @relation(fields: [submissionId], references: [id])
-    
+  question   Question       @relation(fields: [questionId], references: [id])
+  submission FormSubmission @relation(fields: [submissionId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -218,84 +248,91 @@ model Activity {
 
   toolId Int
   tool   Tool @relation(fields: [toolId], references: [id])
-    
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Work {
   id          Int @id @default(autoincrement())
-  toolId Int
+  toolId      Int
   maxAttempts Int
 
-  tool   Tool @relation(fields: [toolId], references: [id])
+  tool                Tool                 @relation(fields: [toolId], references: [id])
   userWorkSubmissions UserWorkSubmission[]
-    
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model UserWorkSubmission {
-  id          Int       @id @default(autoincrement())
-  submittedAt DateTime  @default(now())
+  id          Int      @id @default(autoincrement())
+  submittedAt DateTime @default(now())
   fileName    String
   filePath    String
   workId      Int
   userId      Int
+  projectId   Int
 
-  work Work @relation(fields: [workId], references: [id])
-  user User @relation(fields: [userId], references: [id])
-    
+  work    Work    @relation(fields: [workId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([userId])
 }
 
 model AssessmentGrid {
   id     Int @id @default(autoincrement())
   toolId Int
 
-  tool Tool @relation(fields: [toolId], references: [id])
+  tool         Tool          @relation(fields: [toolId], references: [id])
   gridVersions GridVersion[]
-    
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model GridVersion {
-  id        Int      @id @default(autoincrement())
-  startDate DateTime?
-  endDate   DateTime?
+  id               Int       @id @default(autoincrement())
+  startDate        DateTime?
+  endDate          DateTime?
   assessmentGridId Int
 
-  assessmentGrid AssessmentGrid @relation(fields: [assessmentGridId], references: [id])
-  assessments Assessment[]
-  criterias Criteria[]
-    
+  assessmentGrid AssessmentGrid        @relation(fields: [assessmentGridId], references: [id])
+  criterias      Criteria[]
+  feedbacks      GridVersionFeedback[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-model Assessment {
-  id            Int       @id @default(autoincrement())
-  date          DateTime
-  comment       String?   @db.Text
-  grade         Float?
-  gridVersionId Int?
-  criteriaId    Int?
-  studentId     Int
-  teacherId     Int
+model CriteriaAssessment {
+  id         Int      @id @default(autoincrement())
+  date       DateTime
+  comment    String?  @db.Text
+  cellId     Int
+  projectId  Int
+  criteriaId Int
+  studentId  Int?
+  teacherId  Int
 
-  gridVersion GridVersion? @relation(fields: [gridVersionId], references: [id])
-  criteria    Criteria?    @relation(fields: [criteriaId], references: [id])
-  student     User         @relation("AssessmentStudent", fields: [studentId], references: [id])
-  teacher     User         @relation("AssessmentTeacher", fields: [teacherId], references: [id])
-    
+  cell     Cell     @relation(fields: [cellId], references: [id])
+  project  Project  @relation(fields: [projectId], references: [id])
+  criteria Criteria @relation(fields: [criteriaId], references: [id])
+  student  User?    @relation("CriteriaAssessmentStudent", fields: [studentId], references: [id])
+  teacher  User     @relation("CriteriaAssessmentTeacher", fields: [teacherId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([projectId])
   @@index([studentId])
   @@index([teacherId])
-  @@index([gridVersionId])
+  @@index([criteriaId])
 }
 
 model Criteria {
@@ -305,64 +342,137 @@ model Criteria {
   defaultWeight Int
   gridVersionId Int
 
-  gridVersion   GridVersion @relation(fields: [gridVersionId], references: [id])
-  cells         Cell[]
-  assessment    Assessment[]
-  weightings    Weighting[]
-    
+  gridVersion         GridVersion          @relation(fields: [gridVersionId], references: [id])
+  cells               Cell[]
+  criteriaAssessments CriteriaAssessment[]
+  weightings          Weighting[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Cell {
-  id          Int     @id @default(autoincrement())
-  description String  @db.Text
+  id          Int    @id @default(autoincrement())
+  description String @db.Text
   order       Int
   criteriaId  Int
 
-  criteria   Criteria @relation(fields: [criteriaId], references: [id])
-    
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  criteria            Criteria             @relation(fields: [criteriaId], references: [id])
+  criteriaAssessments CriteriaAssessment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Weighting {
-  criteriaId Int  
-  userId     Int  
+  criteriaId Int
+  projectId  Int
   weight     Float
 
   criteria Criteria @relation(fields: [criteriaId], references: [id])
-  user     User     @relation(fields: [userId], references: [id])
+  project  Project  @relation(fields: [projectId], references: [id])
 
-  @@id([criteriaId, userId])
-    
   createdAt DateTime @default(now())
+
+  @@id([criteriaId, projectId])
 }
 
-model UserTrainingCourse {
-  userId           Int
+model GridVersionFeedback {
+  id            Int    @id @default(autoincrement())
+  comment       String @db.Text
+  userId        Int
+  projectId     Int
+  gridVersionId Int
+
+  user        User        @relation(fields: [userId], references: [id])
+  project     Project     @relation(fields: [projectId], references: [id])
+  gridVersion GridVersion @relation(fields: [gridVersionId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([gridVersionId])
+}
+
+model Project {
+  id Int @id @default(autoincrement())
+
+  title String
+
+  supervisorId     Int?
   trainingCourseId Int
 
-  user           User           @relation(fields: [userId], references: [id])
-  trainingCourse TrainingCourse @relation(fields: [trainingCourseId], references: [id])
+  supervisor          User?                 @relation("ProjectSupervisor", fields: [supervisorId], references: [id])
+  trainingCourse      TrainingCourse        @relation(fields: [trainingCourseId], references: [id])
+  members             ProjectMember[]
+  notebooks           Notebook[]
+  formSubmissions     FormSubmission[]
+  workSubmissions     UserWorkSubmission[]
+  criteriaAssessments CriteriaAssessment[]
+  weightings          Weighting[]
+  feedbacks           GridVersionFeedback[]
 
-  @@id([userId, trainingCourseId])
-    
+  supervisorPreferences UserSupervisorPreference[]
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProjectMember {
+  userId    Int
+  projectId Int
+
+  user    User    @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@id([userId, projectId])
+  @@index([projectId])
+  @@index([userId])
+}
+
+model ConditionsGroup {
+  id Int @id @default(autoincrement())
+
+  type ConditionType
+
+  operator ConditionOperator
+
+  moduleId Int
+
+  module Module @relation(fields: [moduleId], references: [id])
+
+  subgroups ConditionsSubgroup[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ConditionsSubgroup {
+  id Int @id @default(autoincrement())
+
+  operator ConditionOperator
+
+  conditionsGroupId Int
+
+  conditionsGroup ConditionsGroup @relation(fields: [conditionsGroupId], references: [id])
+
+  conditions Condition[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Group {
-  id            Int      @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   name          String
   type          String
   startDateTime DateTime?
   endDateTime   DateTime?
   location      String?
-  trainingCourseId Int
 
-  trainingCourse   TrainingCourse @relation(fields: [trainingCourseId], references: [id])
   users UserGroup[]
-    
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -378,46 +488,41 @@ model UserGroup {
 }
 
 model Notification {
-  id                Int         @id @default(autoincrement())
-  name              String
-  description       String      @db.Text
-  importance        Importance
-  dateTime          DateTime    @default(now())
-  userId            Int
-  trainingCourseId  Int
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String     @db.Text
+  importance  Importance
+  dateTime    DateTime   @default(now())
+  userId      Int
 
-  user           User           @relation(fields: [userId], references: [id])
-  trainingCourse TrainingCourse @relation(fields: [trainingCourseId], references: [id])
-    
+  user User @relation(fields: [userId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([userId])
-  @@index([trainingCourseId])
 }
 
 model Notebook {
-  trainingCourseId  Int
-  studentId         Int
-  teacherId         Int
-  content           String? @db.Text
-  lastModified      DateTime @default(now())
+  userId       Int
+  projectId    Int
+  content      String?  @db.Text
+  lastModified DateTime @default(now())
 
-  student User @relation("NotebookStudent", fields: [studentId], references: [id])
-  teacher User @relation("NotebookTeacher", fields: [teacherId], references: [id])
-  trainingCourse TrainingCourse @relation(fields: [trainingCourseId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
 
-  @@id([studentId, teacherId, trainingCourseId])
-    
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@id([userId, projectId])
 }
 
-
-enum Role {
+enum RoleType {
   STUDENT
   TEACHER
   COORDINATOR
+  GUEST
 }
 
 enum Importance {
