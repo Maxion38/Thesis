@@ -1,4 +1,11 @@
-.assignments {
-    margin: 20px;
-    text-align: center;
+:host {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+.page {
+    display: flex;
+    gap: 15px;
+    flex: 1;
 }

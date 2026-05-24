@@ -64,7 +64,6 @@ export class AllUsersComponent implements OnInit {
   ngOnInit(): void {
     this.filteredUsers = [...this.users];
 
-    console.log("yeah");
     this.usersService.getAll().subscribe ({
       next: (users) => {
         this.users = users;
@@ -75,7 +74,6 @@ export class AllUsersComponent implements OnInit {
         console.error('Error loading users', err);
       }
     })
-    console.log("yeah2");
   }
 
   applyFilters(): void {

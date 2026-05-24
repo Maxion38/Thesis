@@ -1,3 +1,17 @@
-<div class="assignments">
-  <span>Page "assignments"</span>
+<div class="page">
+
+  <app-users-pool
+    [users]="participantsUsers"
+    title="Participants au parcours"
+    actionName="Retirer"
+    (selectedUsersChange)="handleRemove($event)"
+  ></app-users-pool>
+
+  <app-users-pool
+    [users]="allOtherUsers"
+    title="Tous les utilisateurs"
+    actionName="Ajouter"
+    (selectedUsersChange)="handleAdd($event)"
+  ></app-users-pool>
+
 </div>
