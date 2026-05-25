@@ -1,11 +1,14 @@
 import { Controller, Get, Post, Body, Param } from '@nestjs/common';
 import { AssignmentsService } from './assignments.service';
 import { UserDto } from 'src/users/dto/user.dto';
+import { Auth } from 'src/auth/decorators/auth.decorator';
+import { RoleType } from '@prisma/client';
 
 @Controller('assignments')
 export class AssignmentsController {
   constructor(private readonly assignmentsService: AssignmentsService) {}
 
+  @Auth(RoleType.COORDINATOR, RoleType.TEACHER)
   @Get(':trainingCourseId/assigned')
   getAssignedUsers(
     @Param('trainingCourseId') trainingCourseId: string,
@@ -13,6 +16,7 @@ export class AssignmentsController {
     return this.assignmentsService.getAssignedUsers(Number(trainingCourseId));
   }
 
+  @Auth(RoleType.COORDINATOR)
   @Get(':trainingCourseId/assignable')
   getAssignableUsers(
     @Param('trainingCourseId') trainingCourseId: string,
@@ -20,6 +24,7 @@ export class AssignmentsController {
     return this.assignmentsService.getAssignableUsers(Number(trainingCourseId));
   }
 
+  @Auth(RoleType.COORDINATOR)
   @Post(':trainingCourseId/assign')
   assignUsers(
     @Param('trainingCourseId') trainingCourseId: string,
@@ -31,6 +36,7 @@ export class AssignmentsController {
     );
   }
 
+  @Auth(RoleType.COORDINATOR)
   @Post(':trainingCourseId/unassign')
   unassignUsers(
     @Param('trainingCourseId') trainingCourseId: string,
