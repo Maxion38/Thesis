@@ -6,9 +6,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
-import { Observable } from 'rxjs/internal/Observable';
 import { TrainingCoursesService } from '../../services/training-courses.service';
-import { TrainingCourseModel } from '../../models/training-course.model';
 
 type PlanningStatus = 'inactive' | 'planned' | 'active';
 

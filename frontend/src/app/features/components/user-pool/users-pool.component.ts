@@ -1,21 +1,19 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  OnInit,
+  OnChanges,
+  SimpleChanges
+} from '@angular/core';
+
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { Role } from '../../entities/role.entity';
 
-export interface User {
-  id: number;
-  surname: string;
-  firstname?: string;
-  role: Role;
-  trainingCourses?: TrainingCourse[];
-}
-
-export interface TrainingCourse {
-  id: number;
-  label: string;
-}
+import { UserModel } from '../../users/models/users.model';
+import { RoleType } from '../../entities/role.entity';
 
 @Component({
   selector: 'app-users-pool',
@@ -25,18 +23,16 @@ export interface TrainingCourse {
 })
 export class UsersPoolComponent implements OnInit, OnChanges {
 
-  @Input() users: User[] = [];
+  @Input() users: UserModel[] = [];
   @Input() title?: string;
   @Input() actionName!: string;
 
-  @Output() selectedUsersChange = new EventEmitter<User[]>();
+  @Output() selectedUsersChange = new EventEmitter<UserModel[]>();
 
-  filteredUsers: User[] = [];
+  filteredUsers: UserModel[] = [];
 
-  searchText: string = '';
+  searchText = '';
   selectedRole: string = 'ALL';
-  selectedCourseId: number | 'ALL' = 'ALL';
-
   selectedUsers = new Set<number>();
 
   ngOnInit(): void {
@@ -52,15 +48,20 @@ export class UsersPoolComponent implements OnInit, OnChanges {
   applyFilters(): void {
     const search = this.searchText.toLowerCase().trim();
 
-    this.filteredUsers = this.users
-      .filter(user => {
-        if (this.selectedRole !== 'ALL' && user.role !== this.selectedRole) {
-          return false;
-        }
-        return true;
-      })
+    const filtered = this.users.filter(user => {
+      const role = user.roles?.[0];
+
+      if (this.selectedRole !== 'ALL' && role !== this.selectedRole) {
+        return false;
+      }
+
+      return true;
+    });
+
+    this.filteredUsers = filtered
       .map(user => {
-        const fullName = `${user.firstname ?? ''} ${user.surname}`.toLowerCase();
+        const fullName =
+          `${user.firstname ?? ''} ${user.surname}`.toLowerCase();
 
         let score = 0;
 
@@ -79,7 +80,7 @@ export class UsersPoolComponent implements OnInit, OnChanges {
       .map(x => x.user);
   }
 
-  getRoleLabel(role: string): string {
+  getRoleLabel(role?: RoleType): string {
     switch (role) {
       case 'STUDENT':
         return 'Étudiant';
@@ -87,22 +88,26 @@ export class UsersPoolComponent implements OnInit, OnChanges {
         return 'Enseignant';
       case 'COORDINATOR':
         return 'Coordinateur';
+      case 'GUEST':
+        return 'Invité';
       default:
-        return role;
+        return role ?? '';
     }
   }
 
-  toggleUserSelection(user: User): void {
-    if (this.selectedUsers.has(user.id)) {
-      this.selectedUsers.delete(user.id);
+  toggleUserSelection(user: UserModel): void {
+    const id = user.id;
+
+    if (this.selectedUsers.has(id)) {
+      this.selectedUsers.delete(id);
     } else {
-      this.selectedUsers.add(user.id);
+      this.selectedUsers.add(id);
     }
   }
 
   emitSelectedUsers(): void {
-    const selected = this.users.filter(u =>
-      this.selectedUsers.has(u.id)
+    const selected = this.filteredUsers.filter(user =>
+      this.selectedUsers.has(user.id)
     );
 
     this.selectedUsersChange.emit(selected);

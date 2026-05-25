@@ -46,25 +46,20 @@
   <!-- USERS GRID -->
   <div class="page__users-div">
 
-    <div *ngFor="let user of filteredUsers" class="user-card">  
+    <div *ngFor="let card of filteredUsers" class="user-card">
 
-      <!-- INITIALS -->
       <div class="user-card__profile">
-        {{ user.surname.charAt(0).toUpperCase() }}{{ user.firstname?.charAt(0)?.toUpperCase() }}
+        {{ card.user.surname.charAt(0).toUpperCase() }}{{ card.user.firstname?.charAt(0)?.toUpperCase() }}
       </div>
 
-      <!-- INFOS -->
       <div class="user-card__infos">
 
-        <span 
-          class="user-card__infos__name"
-          [title]="user.firstname + ' ' + user.surname"
-        >
-          {{ user.firstname }} {{ user.surname }}
+        <span class="user-card__infos__name">
+          {{ card.user.firstname }} {{ card.user.surname }}
         </span>
 
         <span class="user-card__infos__role">
-          {{ getRoleLabel(user.role) }}
+          {{ getRoleLabel(card.role) }}
         </span>
 
       </div>

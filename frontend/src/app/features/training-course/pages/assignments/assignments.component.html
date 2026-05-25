@@ -8,8 +8,8 @@
   ></app-users-pool>
 
   <app-users-pool
-    [users]="allOtherUsers"
-    title="Tous les utilisateurs"
+    [users]="assignableUsers"
+    title="Utilisateurs assignables"
     actionName="Ajouter"
     (selectedUsersChange)="handleAdd($event)"
   ></app-users-pool>

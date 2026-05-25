@@ -58,4 +58,35 @@ export class TrainingCoursesService {
       { withCredentials: true }
     );
   }
+
+  getUsersAssignedToTrainingCourse(
+    trainingCourseId: number,
+  ) : Observable<any> {
+    return this.http.get(
+      `${this.apiUrl}/${trainingCourseId}/assigned-users`,
+      { withCredentials: true }
+    )
+  }
+
+  assignUsersToTrainingCourse(
+    trainingCourseId: number,
+    userIds: number[]
+  ): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}/${trainingCourseId}/assign-users`,
+      { userIds },
+      { withCredentials: true }
+    );
+  }
+
+  removeUsersFromTrainingCourse(
+    trainingCourseId: number,
+    userIds: number[]
+  ): Observable<any> {
+    return this.http.post(
+      `${this.apiUrl}/${trainingCourseId}/unassign-users`,
+      { userIds },
+      { withCredentials: true }
+    );
+  }
 }

@@ -23,10 +23,12 @@
       <option value="STUDENT">Étudiant</option>
       <option value="TEACHER">Enseignant</option>
       <option value="COORDINATOR">Coordinateur</option>
+      <option value="GUEST">Invité</option>
     </select>
 
     <!-- COURSE FILTER -->
-    <!-- <select 
+    <!--
+    <select 
       class="select"
       [(ngModel)]="selectedCourseId"
       (change)="applyFilters()"
@@ -39,23 +41,24 @@
       >
         {{ course.label }}
       </option>
-    </select> -->
+    </select>
+    -->
 
   </div>
 
   <div class="page__title-div">
-    <span>{{ title }} ({{ users.length }})</span>
+    <span>{{ title }} ({{ filteredUsers.length }})</span>
   </div>
 
   <!-- USERS GRID -->
   <div class="page__users-div">
 
-      <div
-        *ngFor="let user of filteredUsers"
-        class="user-card"
-        [class.selected]="selectedUsers.has(user.id)"
-        (click)="toggleUserSelection(user)"
-      >
+    <div
+      *ngFor="let user of filteredUsers"
+      class="user-card"
+      [class.selected]="selectedUsers.has(user.id)"
+      (click)="toggleUserSelection(user)"
+    >
 
       <!-- INITIALS -->
       <div class="user-card__profile">
@@ -67,13 +70,13 @@
 
         <span 
           class="user-card__infos__name"
-          [title]="user.firstname + ' ' + user.surname"
+          [title]="(user.firstname ?? '') + ' ' + user.surname"
         >
           {{ user.firstname }} {{ user.surname }}
         </span>
 
         <span class="user-card__infos__role">
-          {{ getRoleLabel(user.role) }}
+          {{ getRoleLabel(user.roles[0]) }}
         </span>
 
       </div>
@@ -83,9 +86,14 @@
   </div>
 
   <div class="page__action-div">
-    <button class="button" (click)="emitSelectedUsers()">
+    <button
+      class="button"
+      (click)="emitSelectedUsers()"
+    >
       {{ actionName }}
-      <span *ngIf="selectedUsers.size > 0">({{ selectedUsers.size }})</span>
+      <span *ngIf="selectedUsers.size > 0">
+        ({{ selectedUsers.size }})
+      </span>
     </button>
   </div>
 

@@ -2,16 +2,14 @@ import { ChangeDetectorRef , Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Role } from '../../../entities/role.entity';
+import { RoleType } from '../../../entities/role.entity';
 import { UsersService } from '../../services/users.service';
 import { UserModel } from '../../models/users.model';
 
-export interface user {
-  surname: string;
-  firstname?: string;
-  role: Role;
-  trainingCourses?: trainingCourse[];
-}
+type UserCard = {
+  user: UserModel;
+  role: RoleType;
+};
 
 export interface trainingCourse {
   id: number;
@@ -33,24 +31,10 @@ export class AllUsersComponent implements OnInit {
     { id: 2, label: "Parcours de formation TFE Q2" },
     { id: 3, label: "Parcours de formation stage Q1" },
     { id: 4, label: "Parcours de formation stage Q2" },
-  ];
+  ]; // TODO : replace this mock with real courses and link courses with user so filter can be done. Backend.
 
-  mockUsers: user[] = [
-    { surname: "Johnson", role: Role.STUDENT, trainingCourses: [this.trainingCourses[0]] },
-    { surname: "Williams", firstname: "James", role: Role.COORDINATOR, trainingCourses: [this.trainingCourses[0]] },
-    { surname: "Smith", firstname: "Daniel", role: Role.STUDENT, trainingCourses: [this.trainingCourses[1]] },
-    { surname: "Bongartz", firstname: "Maxime", role: Role.STUDENT, trainingCourses: [this.trainingCourses[1], this.trainingCourses[2]] },
-    { surname: "Thomas", firstname: "Jennifer", role: Role.TEACHER, trainingCourses: [this.trainingCourses[1], this.trainingCourses[2]] },
-    { surname: "Smith", firstname: "Miller", role: Role.STUDENT, trainingCourses: [this.trainingCourses[2]] },
-    { surname: "Davis", firstname: "Davis", role: Role.STUDENT, trainingCourses: [this.trainingCourses[2]] },
-    { surname: "Miller", firstname: "George", role: Role.STUDENT, trainingCourses: [this.trainingCourses[2]] },
-    { surname: "Martinez", firstname: "Smith", role: Role.STUDENT, trainingCourses: [this.trainingCourses[0]] },
-    { surname: "Jones", firstname: "Williams", role: Role.STUDENT, trainingCourses: [this.trainingCourses[0], this.trainingCourses[3]] },
-    { surname: "Smith", firstname: "Patricia", role: Role.TEACHER, trainingCourses: [this.trainingCourses[0], this.trainingCourses[3]] },
-    { surname: "Brown", firstname: "Linda", role: Role.STUDENT, trainingCourses: [this.trainingCourses[2]] },
-  ];
-
-  filteredUsers: UserModel[] = [];
+  userCards: UserCard[] = [];
+  filteredUsers: UserCard[] = [];
 
   searchText: string = '';
   selectedRole: string = 'ALL';
@@ -62,11 +46,11 @@ export class AllUsersComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.filteredUsers = [...this.users];
-
     this.usersService.getAll().subscribe ({
       next: (users) => {
         this.users = users;
+        this.userCards = this.buildUserCards(users);
+        this.filteredUsers = this.userCards;
         this.applyFilters();
         this.changeDetectorRef.detectChanges();
       },
@@ -76,18 +60,30 @@ export class AllUsersComponent implements OnInit {
     })
   }
 
+  private buildUserCards(users: UserModel[]): UserCard[] {
+    return users.flatMap(user =>
+      user.roles.map(role => ({
+        user,
+        role,
+      }))
+    );
+  }
+
   applyFilters(): void {
     const search = this.searchText.toLowerCase().trim();
 
-    const result = this.users
+    const filteredUsers = this.users
       .filter(user => {
 
         // ROLE FILTER
-        if (this.selectedRole !== 'ALL' && user.role !== this.selectedRole) {
+        if (
+          this.selectedRole !== 'ALL' &&
+          !user.roles.includes(this.selectedRole as RoleType)
+        ) {
           return false;
         }
 
-        // COURSE FILTER
+         // COURSE FILTER
         // if (this.selectedCourseId !== 'ALL') {
         //   const hasCourse = user.trainingCourses?.some(
         //     c => c.id === this.selectedCourseId
@@ -96,9 +92,14 @@ export class AllUsersComponent implements OnInit {
         // }
 
         return true;
-      })
-      .map(user => {
-        const fullName = `${user.firstname ?? ''} ${user.surname}`.toLowerCase();
+      });
+
+    const cards = this.buildUserCards(filteredUsers);
+
+    const result = cards
+      .map(card => {
+        const fullName =
+          `${card.user.firstname ?? ''} ${card.user.surname}`.toLowerCase();
 
         let score = 0;
 
@@ -107,19 +108,19 @@ export class AllUsersComponent implements OnInit {
           else if (fullName.startsWith(search)) score += 50;
           else if (fullName.includes(search)) score += 10;
 
-          if (user.surname.toLowerCase().includes(search)) score += 5;
-          if (user.firstname?.toLowerCase().includes(search)) score += 5;
+          if (card.user.surname.toLowerCase().includes(search)) score += 5;
+          if (card.user.firstname?.toLowerCase().includes(search)) score += 5;
         }
 
-        return { user, score };
+        return { card, score };
       })
       .sort((a, b) => b.score - a.score)
-      .map(x => x.user);
+      .map(x => x.card);
 
     this.filteredUsers = result;
   }
 
-  getRoleLabel(role: string): string {
+  getRoleLabel(role: RoleType): string {
     switch (role) {
       case 'STUDENT':
         return 'Étudiant';
