@@ -52,8 +52,6 @@ export class InvitationController {
     @Body() dto: ActivateAccountDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    console.log('DTO reçu:', dto);
-
     const user = await this.invitationService.activateAccount(
       dto.token,
       dto.surname,

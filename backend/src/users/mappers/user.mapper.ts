@@ -6,6 +6,6 @@ export function toDtoUser(user: any): UserDto {
     email: user.email,
     surname: user.surname,
     firstname: user.firstname,
-    roles: user.roles.map((r: any) => r.role.role),
+    roles: user.roles?.map((r: any) => r.role.role) ?? [],
   };
 }

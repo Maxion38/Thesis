@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTrainingCourseDto } from './dto/create-training-course.dto';
 import { UpdateTrainingCourseDto } from './dto/update-training-course.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { USER_WITH_ROLES } from 'src/users/includes/users.include';
+import { toDtoUser } from 'src/users/mappers/user.mapper';
 
 @Injectable()
 export class TrainingCoursesService {
@@ -49,6 +51,43 @@ export class TrainingCoursesService {
       where: { id }
     });
   }
+
+
+  async getAssignedUsers(trainingCourseId: number) {
+    const course = await this.prisma.trainingCourse.findUnique({
+      where: { id: trainingCourseId },
+      include: {
+        projects: {
+          include: {
+            members: {
+              include: {
+                user: {
+                  include: USER_WITH_ROLES,
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!course) {
+      throw new NotFoundException('Training course not found');
+    }
+
+    const users = course.projects.flatMap(project =>
+      project.members.map(member => member.user)
+    );
+
+    // remove duplicates
+    const uniqueUsers = Array.from(
+      new Map(users.map(u => [u.id, u])).values()
+    );
+
+    // DTO mapping (IMPORTANT)
+    return uniqueUsers.map(toDtoUser);
+  }
+
 
   async assignUsersToTrainingCourse(trainingCourseId: number, userIds: number[]) {
     return this.prisma.$transaction(async (tx) => {
@@ -147,38 +186,5 @@ export class TrainingCoursesService {
 
       return { removedUserIds: userIds };
     });
-  }
-
-
-  async getAssignedUsers(trainingCourseId: number) {
-    const course = await this.prisma.trainingCourse.findUnique({
-      where: { id: trainingCourseId },
-      include: {
-        projects: {
-          include: {
-            members: {
-              include: {
-                user: true
-              }
-            }
-          }
-        }
-      }
-    });
-
-    if (!course) {
-      throw new NotFoundException('Training course not found');
-    }
-
-    const users = course.projects.flatMap(project =>
-      project.members.map(member => member.user)
-    );
-
-    // remove duplicates (safe guard)
-    const uniqueUsers = Array.from(
-      new Map(users.map(u => [u.id, u])).values()
-    );
-
-    return uniqueUsers;
   }
 }
