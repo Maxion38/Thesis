@@ -8,7 +8,7 @@ import { TrainingCourseLayoutComponent } from './features/training-course/layout
 import { TrainingCoursesLayoutComponent } from './features/training-course/layouts/training-courses-layout/training-courses-layout.component'
 import { TrainingCoursesComponent } from './features/training-course/pages/trainings-list/training-courses.component'
 import { TrainingCoursesPlanningComponent } from './features/training-course/pages/trainings-planning/training-courses-planning.component'
-import { AssignmentsComponent } from './features/training-course/pages/assignments/assignments.component'
+import { AssignmentsComponent } from './features/assignments/pages/assignments/assignments.component'
 import { PlanningComponent } from './features/training-course/pages/planning/planning.component'
 import { ModulesComponent } from './features/modules/pages/modules.component'
 import { ModuleEditorComponent } from './features/modules/pages/editor/module-editor.component'

@@ -49,7 +49,7 @@ export class AssignmentsComponent implements OnInit {
     this.assignmentsService
       .getAssignableUsers(this.trainingCourseId)
       .subscribe((users: any[]) => {
-        this.assignableUsers = users.map(u => toUserModel(u.user));
+        this.assignableUsers = users.map(toUserModel);
         this.cdr.detectChanges();
       });
   }
