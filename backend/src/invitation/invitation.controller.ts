@@ -11,7 +11,7 @@ import { AuthService } from '../auth/auth.service';
 import type { Response } from 'express';
 import { UserToInviteDto } from './dto/user-to-invite.dto';
 import { ActivateAccountDto } from './dto/activateAccount.dto';
-import { Role } from './entities/role.entity';
+import { RoleType } from '@prisma/client';
 import { Auth } from '../auth/decorators/auth.decorator';
 
 
@@ -22,7 +22,7 @@ export class InvitationController {
     private readonly authSerivce: AuthService,
   ) {}
 
-  @Auth(Role.COORDINATOR)
+  @Auth(RoleType.COORDINATOR)
   @Post('inviteUsers')
   async inviteUsers(
     @Body() dto: UserToInviteDto[],

@@ -2,9 +2,9 @@ import { applyDecorators, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from './roles.decorator';
-import { Role } from '../entities/role.entity';
+import { RoleType } from '@prisma/client';
 
-export function Auth(...roles: Role[]) {
+export function Auth(...roles: RoleType[]) {
   const decorators = [
     UseGuards(JwtAuthGuard, RolesGuard),
   ];

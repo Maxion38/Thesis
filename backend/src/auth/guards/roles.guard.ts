@@ -5,14 +5,14 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
-import { Role } from '../entities/role.entity';
+import { RoleType } from '@prisma/client';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(
+    const requiredRoles = this.reflector.getAllAndOverride<RoleType[]>(
       ROLES_KEY,
       [
         context.getHandler(),
@@ -20,11 +20,17 @@ export class RolesGuard implements CanActivate {
       ],
     );
 
-    if (!requiredRoles) return true; // pas de rôle requis = accessible
+    if (!requiredRoles || requiredRoles.length === 0) {
+      return true;
+    }
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
-    return requiredRoles.includes(user.role);
+    const userRoles: RoleType[] = user.roles ?? [];
+
+    return requiredRoles.some(role =>
+      userRoles.includes(role),
+    );
   }
 }

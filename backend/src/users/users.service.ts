@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { toDtoUser } from './mappers/user.mapper';
+import { USER_WITH_ROLES } from './includes/users.include'
 
 @Injectable()
 export class UsersService {
@@ -11,8 +13,12 @@ export class UsersService {
     return 'This action adds a new user';
   }
 
-  findAll() {
-    return this.prisma.user.findMany();
+  async findAll() {
+    const users = await this.prisma.user.findMany({
+      include: USER_WITH_ROLES,
+    });
+
+    return users.map(user => toDtoUser(user));    
   }
 
   findOne(id: number) {

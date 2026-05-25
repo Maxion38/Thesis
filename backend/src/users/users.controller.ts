@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Role } from '../auth/entities/role.entity';
+import { RoleType } from '@prisma/client';
 import { Auth } from '../auth/decorators/auth.decorator';
 
 @Controller('users')
@@ -14,7 +14,7 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
-  @Auth(Role.COORDINATOR)
+  @Auth(RoleType.COORDINATOR)
   @Get()
   findAll() {
     return this.usersService.findAll();

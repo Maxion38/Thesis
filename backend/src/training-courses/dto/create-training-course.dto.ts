@@ -6,9 +6,9 @@ export class CreateTrainingCourseDto {
 
   @IsOptional()
   @IsDateString()
-  startDate?: Date;
+  startDate?: string | null;
 
   @IsOptional()
   @IsDateString()
-  endDate?: Date;
+  endDate?: string | null;
 }

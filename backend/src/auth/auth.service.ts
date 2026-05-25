@@ -2,8 +2,10 @@ import { Injectable, ConflictException, ForbiddenException, NotFoundException, G
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
-import { Role } from './entities/role.entity';
-
+import { RoleType } from '@prisma/client';
+import { toDtoUser } from 'src/users/mappers/user.mapper';
+import { UserDto } from 'src/users/dto/user.dto';
+import { USER_WITH_ROLES } from 'src/users/includes/users.include';
 
 @Injectable()
 export class AuthService {
@@ -14,7 +16,15 @@ export class AuthService {
 
   async isBootstrapEnabled() {
     const coordinatorsNumber = await this.prisma.user.count({
-      where : { role: Role.COORDINATOR },
+      where: {
+        roles: {
+          some: {
+            role: {
+              role: RoleType.COORDINATOR,
+            }
+          },
+        },
+      },
     });
 
     return coordinatorsNumber === 0;
@@ -31,12 +41,12 @@ export class AuthService {
       email,
       password,
       surname,
-      Role.COORDINATOR,
+      RoleType.COORDINATOR,
       firstname,
     )
   }
 
-  async register(email: string, password: string, surname: string, role, firstname?: string) {
+  async register(email: string, password: string, surname: string, role: RoleType, firstname?: string) {
     // 1. is user allready in DB
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
@@ -56,22 +66,28 @@ export class AuthService {
         passwordHash,
         surname,
         firstname,
-        role,
+
+        roles: {
+          create: {
+            role: {
+              connect: {
+                role: role,
+              },
+            },
+          },
+        },
       },
+      include: USER_WITH_ROLES,
     });
 
     // 4. return user
-    return {
-      id: user.id,
-      email: user.email,
-      surname: user.surname,
-      role: user.role,
-    };
+    return toDtoUser(user);
   }
 
   async validateUser(email: string, password: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
+      include: USER_WITH_ROLES,
     });
 
     if (!user) return null;
@@ -80,14 +96,14 @@ export class AuthService {
 
     if (!isValid) return null;
 
-    return user;
+    return toDtoUser(user);
   }
 
-  generateToken(user: any) {
+  generateToken(user: UserDto) {
     const payload = {
       sub: user.id,
       email: user.email,
-      role: user.role,
+      roles: user.roles,
     };
 
     return this.jwtService.sign(payload);

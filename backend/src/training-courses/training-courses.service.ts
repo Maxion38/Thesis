@@ -37,12 +37,148 @@ export class TrainingCoursesService {
   }
 
   async remove(id: number) {
-    try {
-      return await this.prisma.trainingCourse.delete({
-        where: { id }
-      });
-    } catch {
+    const course = await this.prisma.trainingCourse.findUnique({
+      where: { id }
+    });
+
+    if (!course) {
       throw new NotFoundException(`TrainingCourse ${id} not found`);
     }
+
+    return this.prisma.trainingCourse.delete({
+      where: { id }
+    });
+  }
+
+  async assignUsersToTrainingCourse(trainingCourseId: number, userIds: number[]) {
+    return this.prisma.$transaction(async (tx) => {
+
+      const course = await tx.trainingCourse.findUnique({
+        where: { id: trainingCourseId }
+      });
+
+      if (!course) {
+        throw new NotFoundException('Training course not found');
+      }
+
+      const users = await tx.user.findMany({
+        where: {
+          id: { in: userIds }
+        }
+      });
+
+      if (users.length !== userIds.length) {
+        throw new NotFoundException('One or more users not found');
+      }
+
+      const createdProjects = await Promise.all(
+        users.map((user) =>
+          tx.project.create({
+            data: {
+              title: `${user.firstname ?? user.surname} project`,
+              trainingCourseId,
+              members: {
+                create: {
+                  userId: user.id
+                }
+              }
+            }
+          })
+        )
+      );
+
+      return createdProjects;
+    });
+  }
+
+
+  async unassignUsersFromTrainingCourse(
+    trainingCourseId: number,
+    userIds: number[]
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+
+      const course = await tx.trainingCourse.findUnique({
+        where: { id: trainingCourseId }
+      });
+
+      if (!course) {
+        throw new NotFoundException('Training course not found');
+      }
+
+      const projects = await tx.project.findMany({
+        where: {
+          trainingCourseId,
+          members: {
+            some: {
+              userId: { in: userIds }
+            }
+          }
+        },
+        include: {
+          members: true
+        }
+      });
+
+      // delete memberships
+      await tx.projectMember.deleteMany({
+        where: {
+          userId: { in: userIds },
+          project: {
+            trainingCourseId
+          }
+        }
+      });
+
+      // delete empty projects
+      const projectIds = projects.map(p => p.id);
+
+      for (const project of projects) {
+        const remainingMembers = await tx.projectMember.count({
+          where: { projectId: project.id }
+        });
+
+        if (remainingMembers === 0) {
+          await tx.project.delete({
+            where: { id: project.id }
+          });
+        }
+      }
+
+      return { removedUserIds: userIds };
+    });
+  }
+
+
+  async getAssignedUsers(trainingCourseId: number) {
+    const course = await this.prisma.trainingCourse.findUnique({
+      where: { id: trainingCourseId },
+      include: {
+        projects: {
+          include: {
+            members: {
+              include: {
+                user: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!course) {
+      throw new NotFoundException('Training course not found');
+    }
+
+    const users = course.projects.flatMap(project =>
+      project.members.map(member => member.user)
+    );
+
+    // remove duplicates (safe guard)
+    const uniqueUsers = Array.from(
+      new Map(users.map(u => [u.id, u])).values()
+    );
+
+    return uniqueUsers;
   }
 }

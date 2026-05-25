@@ -3,7 +3,7 @@ import { TrainingCoursesService } from './training-courses.service';
 import { CreateTrainingCourseDto } from './dto/create-training-course.dto';
 import { UpdateTrainingCourseDto } from './dto/update-training-course.dto';
 import { ModulesService } from '../modules/modules.service';
-import { Role } from '../auth/entities/role.entity';
+import { RoleType } from '@prisma/client';
 import { Auth } from '../auth/decorators/auth.decorator';
 
 @Controller('training-courses')
@@ -13,7 +13,7 @@ export class TrainingCoursesController {
     private readonly modulesService: ModulesService
   ) {}
 
-  @Auth(Role.COORDINATOR)
+  @Auth(RoleType.COORDINATOR)
   @Post()
   create(@Body() createTrainingCourseDto: CreateTrainingCourseDto) {
     return this.trainingCoursesService.create(createTrainingCourseDto);
@@ -37,15 +37,49 @@ export class TrainingCoursesController {
     return this.trainingCoursesService.findOne(+id);
   }
 
-  @Auth(Role.COORDINATOR)
+  @Auth(RoleType.COORDINATOR)
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateTrainingCourseDto: UpdateTrainingCourseDto) {
     return this.trainingCoursesService.update(+id, updateTrainingCourseDto);
   }
 
-  @Auth(Role.COORDINATOR)
+  @Auth(RoleType.COORDINATOR)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.trainingCoursesService.remove(+id);
+  }
+
+  @Auth(RoleType.COORDINATOR)
+  @Get(':id/assigned-users')
+  findAssignedUsers(
+    @Param('id') trainingCourseId: number,
+  ) {
+    return this.trainingCoursesService.getAssignedUsers(
+      Number(trainingCourseId)
+    );
+  }
+  
+  @Auth(RoleType.COORDINATOR)
+  @Post(':id/assign-users')
+  assignUsers(
+    @Param('id') trainingCourseId: number,
+    @Body() body: { userIds: number[] }
+  ) {
+    return this.trainingCoursesService.assignUsersToTrainingCourse(
+      Number(trainingCourseId),
+      body.userIds
+    );
+  }
+
+  @Auth(RoleType.COORDINATOR)
+  @Post(':id/unassign-users')
+  unAssignUsers(
+    @Param('id') trainingCourseId: number,
+    @Body() body: { userIds: number[] }
+  ) {
+    return this.trainingCoursesService.unassignUsersFromTrainingCourse(
+      Number(trainingCourseId),
+      body.userIds
+    );
   }
 }

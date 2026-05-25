@@ -1,11 +1,5 @@
 import { IsEmail, IsString, MinLength, MaxLength, IsOptional, IsEnum } from 'class-validator';
 
-export enum Role {
-  STUDENT = 'STUDENT',
-  TEACHER = 'TEACHER',
-  COORDINATOR = 'COORDINATOR',
-}
-
 export class ActivateAccountDto {
   @IsString()
   token!: string
