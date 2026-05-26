@@ -13,8 +13,9 @@
 
   <div class="page__cards-div">
     <app-training-course-card
+      class="course-card"
       *ngFor="let course of courses$ | async"
-      [card]="course"
+      [course]="course"
     >
     </app-training-course-card>
   </div>

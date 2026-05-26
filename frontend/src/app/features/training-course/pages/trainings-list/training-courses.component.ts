@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { TrainingCourseCardComponent } from '../../components/training-course-card/training-course-card.component'
 import { TrainingCoursesService } from '../../services/training-courses.service';
-import { TrainingCourseModel } from './../../models/training-course.model';
+import { TrainingCourseModel, TrainingCourseWithStats } from './../../models/training-course.model';
 import { Observable } from 'rxjs';
 
 @Component({
@@ -14,7 +14,7 @@ import { Observable } from 'rxjs';
 })
 
 export class TrainingCoursesComponent implements OnInit {
-  courses$!: Observable<TrainingCourseModel[]>;
+  courses$!: Observable<TrainingCourseWithStats[]>;
   isCreating = false;
 
   constructor(
@@ -23,7 +23,7 @@ export class TrainingCoursesComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.courses$ = this.trainingCoursesService.getAll();
+    this.courses$  = this.trainingCoursesService.getAllWithDetails();
   }
 
   onAdd(): void {

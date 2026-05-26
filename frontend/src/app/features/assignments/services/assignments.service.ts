@@ -14,13 +14,15 @@ export class AssignmentsService {
 
   getAssignedUsers(trainingCourseId: number): Observable<UserDto[]> {
     return this.http.get<UserDto[]>(
-      `${this.apiUrl}/${trainingCourseId}/assigned`
+      `${this.apiUrl}/${trainingCourseId}/assigned`,
+      { withCredentials: true }
     );
   }
 
   getAssignableUsers(trainingCourseId: number): Observable<UserDto[]> {
     return this.http.get<UserDto[]>(
-      `${this.apiUrl}/${trainingCourseId}/assignable`
+      `${this.apiUrl}/${trainingCourseId}/assignable`,
+      { withCredentials: true }
     );
   }
 
@@ -30,7 +32,8 @@ export class AssignmentsService {
   ): Observable<any> {
     return this.http.post(
       `${this.apiUrl}/${trainingCourseId}/assign`,
-      { userIds }
+      { userIds },
+      { withCredentials: true }
     );
   }
 
@@ -40,7 +43,8 @@ export class AssignmentsService {
   ): Observable<any> {
     return this.http.post(
       `${this.apiUrl}/${trainingCourseId}/unassign`,
-      { userIds }
+      { userIds },
+      { withCredentials: true }
     );
   }
 }

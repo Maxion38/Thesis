@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { TrainingCourseModel } from './../models/training-course.model'
+import { TrainingCourseModel, TrainingCourseWithStats } from './../models/training-course.model'
 import { ModuleModel } from '../../modules/models/module.model';
 
 
@@ -18,6 +18,13 @@ export class TrainingCoursesService {
   getAll(): Observable<TrainingCourseModel[]> {
     return this.http.get<TrainingCourseModel[]>(
       this.apiUrl,
+      { withCredentials: true }
+    );
+  }
+
+  getAllWithDetails(): Observable<TrainingCourseWithStats[]> {
+    return this.http.get<TrainingCourseWithStats[]>(
+      `${this.apiUrl}/details`,
       { withCredentials: true }
     );
   }

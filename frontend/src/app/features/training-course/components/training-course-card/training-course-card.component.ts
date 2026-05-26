@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { TrainingCourseModel } from './../../models/training-course.model';
+import { TrainingCourseWithStats } from './../../models/training-course.model';
 
 @Component({
   selector: 'app-training-course-card',
@@ -12,5 +12,5 @@ import { TrainingCourseModel } from './../../models/training-course.model';
 })
 
 export class TrainingCourseCardComponent {
-  @Input({ required: true }) card!: TrainingCourseModel;
+  @Input({ required: true }) course!: TrainingCourseWithStats;
 }

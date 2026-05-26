@@ -1,10 +1,10 @@
 <div class="card">
   <div class="card__header">
     <div class="card__header__left">
-      {{ card.name }}
+      {{ course.name }}
     </div>
     <div class="card__header__right">
-      <div class="card__header__edit" [routerLink]="['/training-courses/' + card.id + '/modules']">
+      <div class="card__header__edit" [routerLink]="['/training-courses/' + course.id + '/modules']">
         <span class="material-symbols-outlined card__icon">edit</span>  
       </div>
     </div>
@@ -12,9 +12,9 @@
 
   <div class="card__infos">
     <div class="card__infos__top">
-      <ng-container *ngIf="card.startDate; else notPlanned">
-        <div><span class="card__label">Début</span> {{ card.startDate | date:'dd-MM-yy' }} </div>
-        <div><span class="card__label">Fin</span> {{ card.endDate | date:'dd-MM-yy' }} </div>
+      <ng-container *ngIf="course.startDate; else notPlanned">
+        <div><span class="card__label">Début</span> {{ course.startDate | date:'dd-MM-yy' }} </div>
+        <div><span class="card__label">Fin</span> {{ course.endDate | date:'dd-MM-yy' }} </div>
       </ng-container>
 
       <ng-template #notPlanned>
@@ -23,8 +23,8 @@
     </div>
 
   <div class="card__infos__bottom">
-    <div><span class="card__label">Utilisateurs</span> N.A </div>
-    <div><span class="card__label">Enseignants</span> N.A </div>
+    <div><span class="card__label">Utilisateurs</span> {{ course.studentsCount }} </div>
+    <div><span class="card__label">Enseignants</span> {{ course.teachersCount }}  </div>
   </div>
   </div>
 </div>
