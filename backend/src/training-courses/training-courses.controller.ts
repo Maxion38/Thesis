@@ -25,6 +25,12 @@ export class TrainingCoursesController {
     return this.trainingCoursesService.findAll();
   }
 
+  @Auth(RoleType.COORDINATOR)
+  @Get('details')
+  findAllWithDetails() {
+    return this.trainingCoursesService.findAllWithRelatedInfos();
+  }
+
   @Auth()
   @Get(':trainingCourseId/modules')
   findModules(@Param('trainingCourseId') trainingCourseId: string) {
@@ -47,39 +53,5 @@ export class TrainingCoursesController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.trainingCoursesService.remove(+id);
-  }
-
-  @Auth(RoleType.COORDINATOR)
-  @Get(':id/assigned-users')
-  findAssignedUsers(
-    @Param('id') trainingCourseId: number,
-  ) {
-    return this.trainingCoursesService.getAssignedUsers(
-      Number(trainingCourseId)
-    );
-  }
-  
-  @Auth(RoleType.COORDINATOR)
-  @Post(':id/assign-users')
-  assignUsers(
-    @Param('id') trainingCourseId: number,
-    @Body() body: { userIds: number[] }
-  ) {
-    return this.trainingCoursesService.assignUsersToTrainingCourse(
-      Number(trainingCourseId),
-      body.userIds
-    );
-  }
-
-  @Auth(RoleType.COORDINATOR)
-  @Post(':id/unassign-users')
-  unAssignUsers(
-    @Param('id') trainingCourseId: number,
-    @Body() body: { userIds: number[] }
-  ) {
-    return this.trainingCoursesService.unassignUsersFromTrainingCourse(
-      Number(trainingCourseId),
-      body.userIds
-    );
   }
 }

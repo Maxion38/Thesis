@@ -18,4 +18,23 @@ export class UsersService {
   findOne(id: number) {
     return `This action returns a #${id} user`;
   }
+
+  findFirstProject(userId: number) {
+    return this.prisma.project.findFirst({
+      where: {
+        members: {
+          some: {
+            userId,
+          },
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+  }
 }
