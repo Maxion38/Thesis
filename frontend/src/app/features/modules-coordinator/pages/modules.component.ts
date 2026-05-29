@@ -43,7 +43,7 @@ export class ModulesComponent {
     }).subscribe({
       next: (created) => {
         this.router.navigate([
-          '/training-courses',
+          '/coordinator/training-courses',
           this.trainingCourseId,
           'modules',
           created.id,

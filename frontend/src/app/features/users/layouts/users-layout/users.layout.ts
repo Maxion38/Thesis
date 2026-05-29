@@ -25,11 +25,11 @@ export class UsersLayoutComponent implements OnInit {
     this.tabbarItems = [
       {
         title: 'Tous les utilisateurs',
-        route: `/users/all`
+        route: `/coordinator/users/all`
       },
       {
         title: 'Invitations',
-        route: `/users/invitations`
+        route: `/coordinator/users/invitations`
       },
     ];
   }

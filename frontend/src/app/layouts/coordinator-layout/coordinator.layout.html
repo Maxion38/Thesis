@@ -1,0 +1,23 @@
+<div class="app-layout">
+    <app-navbar 
+        class="app-navbar"
+        [open]="menuOpen" 
+        [menuName]="currentMenuName" 
+        (menuToggle)="toggleMenu()" 
+    >
+    </app-navbar>
+    
+    <div class="app-menu-content-layout">
+        <app-menu 
+            class="app-menu"
+            [open]="menuOpen" 
+            [items]="menuItems" 
+            (closeMenu)="closeMenu()"
+        >
+        </app-menu>
+        
+        <div class="app-content">
+            <router-outlet />
+        </div>
+    </div>
+</div>

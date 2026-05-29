@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { AuthLayoutComponent } from './layouts/auth-layout/auth.layout'
-import { MainLayoutComponent } from './layouts/main-layout/main.layout';
 
 import { DashboardComponent } from './features/pages/dashboard/dashboard.component';
 
@@ -10,12 +9,11 @@ import { TrainingCoursesComponent } from './features/training-course/pages/train
 import { TrainingCoursesPlanningComponent } from './features/training-course/pages/trainings-planning/training-courses-planning.component'
 import { AssignmentsComponent } from './features/assignments/pages/assignments/assignments.component'
 import { PlanningComponent } from './features/training-course/pages/planning/planning.component'
-import { ModulesComponent } from './features/modules/pages/modules.component'
-import { ModuleEditorComponent } from './features/modules/pages/editor/module-editor.component'
-import { ModuleConditionsComponent } from './features/modules/pages/conditions/module-conditions.component'
-import { ModuleDescriptionComponent } from './features/modules/pages/editor/module-description/module-description.component';
+import { ModulesComponent } from './features/modules-coordinator/pages/modules.component'
+import { ModuleEditorComponent } from './features/modules-coordinator/pages/editor/module-editor.component'
+import { ModuleConditionsComponent } from './features/modules-coordinator/pages/conditions/module-conditions.component'
+import { ModuleDescriptionComponent } from './features/modules-coordinator/pages/editor/module-description/module-description.component';
 
-// import { UsersComponent } from './features/pages/users/users.component';
 import { UsersLayoutComponent } from './features/users/layouts/users-layout/users.layout';
 import { AllUsersComponent } from './features/users/pages/all-users/all-users.component';
 import { InvitationsComponent } from './features/invitations/pages/invitations/invitations.component';
@@ -27,23 +25,42 @@ import { NotificationsComponent } from './features/pages/notifications/notificat
 import { RegisterBootstrapComponent } from './features/auth/pages/register-bootstrap/register.component';
 import { RegisterActivateAccountComponent } from './features/invitations/pages/register-activate-account/activate-account.component';
 import { LoginComponent } from './features/auth/pages/login/login.component';
-import { AuthGuard } from './features/auth/guards/auth.guard';
+import { AuthGuard } from './guards/auth.guard';
+import { RoleGuard } from './guards/role.guard';
+import { CoordinatorLayoutComponent } from './layouts/coordinator-layout/coordinator.layout';
+import { StudentLayoutComponent } from './layouts/student-layout/student.layout';
+import { EmptyComponent } from './empty.component';
+import { RootRedirectGuard } from './guards/root-redirect.guard';
+import { NoAuthGuard } from './guards/no-auth.guard';
+import { BootstrapGuard } from './guards/bootstrap.guard';
+import { StudentModulesLayoutComponent } from './features/modules-student/layouts/users-layout/modules.layout';
+import { StudentModulesComponent } from './features/modules-student/pages/modules/modules.component';
 
 export const routes: Routes = [
   {
     path: 'auth',
     component: AuthLayoutComponent,
+    canActivate: [NoAuthGuard],
     children: [
-      { path: 'login', component: LoginComponent},
-      { path: 'register', component: RegisterBootstrapComponent},
+      { 
+        path: 'login', 
+        component: LoginComponent,
+        canActivate: [BootstrapGuard],
+      },
+      { 
+        path: 'register', 
+        component: RegisterBootstrapComponent,
+        canActivate: [BootstrapGuard],
+      },
       { path: 'activateAccount', component: RegisterActivateAccountComponent},
       { path: '**', redirectTo: 'login'},
     ]
   },
   {
-    path: '',
-    component: MainLayoutComponent,
-    canActivate: [AuthGuard],
+    path: 'coordinator',
+    component: CoordinatorLayoutComponent,
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['COORDINATOR'] },
     children: [
       { path: '', component: DashboardComponent},
 
@@ -79,7 +96,42 @@ export const routes: Routes = [
       { path: 'supervisors', component: SupervisorsComponent},  
       { path: 'juries', component: JuriesComponent},  
       { path: 'notifications', component: NotificationsComponent},
-      { path: '**', redirectTo: ''},
     ]
+  },
+  /*
+  {
+    path: 'teacher',
+    component: TeacherLayoutComponent,
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['TEACHER'] },
+    children: [...]
+  }*/
+  {
+    path: 'student',
+    component: StudentLayoutComponent,
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['STUDENT'] },
+    children: [
+      { path: '', component: DashboardComponent},
+      { 
+        path: 'modules', component: StudentModulesLayoutComponent,
+        children: [
+          {path: '', redirectTo: 'all', pathMatch: 'full'},
+          { path: 'all', component: StudentModulesComponent},  
+        ]
+      },  
+      { path: 'supervisors', component: SupervisorsComponent},  
+      { path: 'juries', component: JuriesComponent},  
+      { path: 'notifications', component: NotificationsComponent},
+    ]
+  },
+  {
+    path: '',
+    component: EmptyComponent,
+    canActivate: [RootRedirectGuard]
+  },
+  {
+    path: '**',
+    redirectTo: ''
   }
 ];

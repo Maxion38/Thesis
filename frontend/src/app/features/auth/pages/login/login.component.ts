@@ -48,13 +48,21 @@ export class LoginComponent implements OnInit {
 
     this.authService.login(data).subscribe({
       next: () => {
-        this.router.navigate(['']);
+        this.authService.checkAuth().subscribe(user => {
+          this.authService.setUser(user);
+
+          const role = this.authService.getFirstRole();
+
+          if (role === 'COORDINATOR') {
+            this.router.navigate(['/coordinator']);
+          } else {
+            this.router.navigate(['/student']);
+          }
+        });
       },
       error: (err) => {
         console.error('Login failed', err);
       }
     });
-
-    console.log("HEYYYY");
   }
 }

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { TrainingCourseCardComponent } from '../../components/training-course-card/training-course-card.component'
 import { TrainingCoursesService } from '../../services/training-courses.service';
-import { TrainingCourseModel, TrainingCourseWithStats } from './../../models/training-course.model';
+import { TrainingCourseWithStats } from './../../models/training-course.model';
 import { Observable } from 'rxjs';
 
 @Component({
@@ -35,7 +35,7 @@ export class TrainingCoursesComponent implements OnInit {
       name: "Nouveau parcours de formation"
     }).subscribe({
       next: (created) => {
-        this.router.navigate(['/training-courses', created.id]);
+        this.router.navigate(['/coordinator/training-courses', created.id]);
       },
       error: () => {
         this.isCreating = false;

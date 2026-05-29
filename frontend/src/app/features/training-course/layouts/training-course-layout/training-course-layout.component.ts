@@ -93,7 +93,7 @@ export class TrainingCourseLayoutComponent implements OnInit {
   onDelete() {
     console.log(Number(this.trainingCourseId));
     this.trainingCoursesService.delete(Number(this.trainingCourseId)).subscribe(() => {
-      this.router.navigate(['/training-courses']);
+      this.router.navigate(['/coordinator/training-courses']);
     });
   }
 
@@ -105,15 +105,15 @@ export class TrainingCourseLayoutComponent implements OnInit {
     this.tabbarItems = [
       {
         title: 'Modules',
-        route: `/training-courses/${this.trainingCourseId}/modules`
+        route: `/coordinator/training-courses/${this.trainingCourseId}/modules`
       },
       {
         title: 'Assignations',
-        route: `/training-courses/${this.trainingCourseId}/assignments`
+        route: `/coordinator/training-courses/${this.trainingCourseId}/assignments`
       },
       {
         title: 'Planification',
-        route: `/training-courses/${this.trainingCourseId}/planning`
+        route: `/coordinator/training-courses/${this.trainingCourseId}/planning`
       },
     ];
   }

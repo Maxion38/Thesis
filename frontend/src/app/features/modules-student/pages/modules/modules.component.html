@@ -1,0 +1,66 @@
+<div class="page">
+
+  <div>
+    <div class="title">
+
+      <span class="material-symbols-outlined dropdown-icon">stat_minus_1</span>
+      <select class="title__select" [(ngModel)]="selectedTaskFilter">
+        <option value="TODO">Tâches à faire</option>
+
+        <option value="ASSESSMENTS">
+          Évaluations disponibles
+        </option>
+
+        <option *ngIf="noDateModules.length > 0" value="NO_DATE">
+          Tâches sans dates
+        </option>
+
+        <option value="ALL">Tous les modules</option>
+      </select>
+
+    </div>
+
+    <div class="tasks-wrapper">
+      <!-- <button class="scroll-arrow scroll-arrow--right" *ngIf="canScrollRight" (click)="scrollRight()">›</button> -->
+      <div class="tasks-section vartical-scroll-div" #tasksSection (scroll)="onScroll()">
+
+        <app-student-module-card
+          *ngFor="let module of filteredModules"
+          class="module-card"
+          [module]="module"
+        >
+        </app-student-module-card>
+
+      </div>
+    </div>
+
+  </div>
+
+  <div>
+    <div class="title">
+
+      <span class="material-symbols-outlined dropdown-icon">stat_minus_1</span>
+      <select class="title__select" [(ngModel)]="selectedOtherFilter">
+        <option value="OTHER">Autre</option>
+        <option value="FINISHED">Tâches terminées</option>
+        <option value="LOCKED">À venir</option>
+      </select>
+
+    </div>
+
+    <div class="other-wrapper">
+      <div class="other-section">
+
+        <app-student-module-card
+          *ngFor="let module of filteredOtherModules"
+          class="module-card"
+          [module]="module"
+        >
+        </app-student-module-card>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>

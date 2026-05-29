@@ -1,9 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 
 import { ModuleModel } from '../models/module.model';
 import { CreateModuleDto } from '../models/create-module.dto';
+import { ModuleOverviewModel } from '../../modules-student/model/module-overview.model';
+import { mapModuleOverview } from '../../modules-student/mappers/module-overview.mapper';
 
 @Injectable({
   providedIn: 'root'
@@ -25,6 +27,15 @@ export class ModulesService {
     return this.http.get<ModuleModel[]>(
       this.apiUrl,
       { withCredentials: true }
+    );
+  }
+
+  getProjectModulesOverview(projectId: number): Observable<ModuleOverviewModel[]> {
+    return this.http.get<ModuleOverviewModel[]>(
+      `${this.apiUrl}/${projectId}/overview`,
+      { withCredentials: true }
+    ).pipe(
+      map(dtos => dtos.map(mapModuleOverview))
     );
   }
 

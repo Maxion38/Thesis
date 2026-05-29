@@ -1,0 +1,109 @@
+<div 
+  class="card" 
+  [class.card--centered]="!hasSubmitables && !module.status.locked"
+  [class.card--locked]="module.status.locked"  
+>
+
+  <!-- MODULE NORMAL -->
+  <ng-container *ngIf="!module.status.locked; else lockedCard">
+
+    <div class="title">
+      <span class="title__text">{{ module.name }}</span>
+      <!-- <div 
+        *ngIf="submissionStats.submittableCount - submissionStats.submittedCount > 0"
+        class="title__notifications"
+      >
+        {{ submissionStats.submittableCount - submissionStats.submittedCount }}
+      </div> -->
+      <!-- change needed : notifications should occurs only when a new thing is here eg: an evaluation was just corrected -->
+    </div>
+
+    <div class="tools">
+      <span>{{ toolsSummary }}</span>
+    </div>
+
+    <div class="state">
+      
+      <div *ngIf="hasSubmitables" class="state__element">
+        <div
+          class="state__indicator"
+          [class.state__finished-indicator]="submissionStats.submittedCount >= submissionStats.submittableCount"
+        ></div>
+        <span class="state__label">Rendu</span>
+        <span class="state__value">{{ submissionStats.submittedCount }} / {{ submissionStats.submittableCount }}</span>
+      </div>
+
+      <div *ngIf="hasAssessment" class="state__element">
+        <div
+          class="state__indicator"
+          [class.state__finished-indicator]="hasOnlyCorrectedAssessments"
+        ></div>
+        <span class="state__label">Évaluation</span>
+        <span class="state__value">{{ assessmentStateLabel }}</span>
+      </div>
+
+    </div>
+
+    <div class="progress-bar" *ngIf="hasSubmitables">
+      <div
+        class="progress-bar__fill"
+        [style.width.%]="progressPercentage"
+      ></div>
+    </div>
+
+    <div class="actions">
+
+      <div class="action" *ngFor="let action of actionLabelAndDates">
+        <button>{{ action.label }}</button>
+
+        <ng-container *ngIf="getDateLabel(action.dateLimit) as dateInfo">
+          <div
+            class="actions__date-limit"
+            [class.actions__date-limit--overdue]="dateInfo.isOverdue"
+            [title]="dateInfo.label"
+          >
+            {{ dateInfo.label }}
+          </div>
+        </ng-container>
+
+      </div>
+
+    </div>
+
+  </ng-container>
+
+
+  <!-- MODULE LOCKED -->
+  <ng-template #lockedCard>
+
+    <div class="locked-card">
+
+      <div class="title">
+        <span class="title__text">
+          {{ module.name }}
+        </span>
+        <span class="material-symbols-outlined title__locked-icon">
+          lock
+        </span>
+      </div>
+          
+
+      <div class="locked-by-div" *ngIf="module.status.lockedBy?.length">
+        <div class="locked-by-div__title">
+          Ce module sera disponible quand
+        </div>
+
+          <div
+            class="locked-by-div__condition"
+            *ngFor="let condition of getConditionsLabels()"
+          >
+            • {{ condition }}
+          </div>
+
+      </div>
+
+    </div>
+
+  </ng-template>
+
+</div>

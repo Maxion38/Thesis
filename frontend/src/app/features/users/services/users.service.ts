@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { UserModel } from '../models/users.model';
+import { ProjectModel } from '../models/project.model';
 
 @Injectable({
   providedIn: 'root'
@@ -18,5 +19,12 @@ export class UsersService {
       this.apiUrl,
       { withCredentials: true }
     );
+  }
+
+  getMyFirstProject(): Observable<ProjectModel> {
+    return this.http.get<ProjectModel>(
+      `${this.apiUrl}/my-first-project`,
+      { withCredentials: true }
+    )
   }
 }

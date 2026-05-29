@@ -11,7 +11,7 @@ import { TabbarComponent, Tabs } from '../../../components/tabbar/tabbar.compone
 
 export class TrainingCoursesLayoutComponent {
   tabbarItems: Tabs[] = [
-    { title: 'Création', route: '/training-courses/creation'},
-    { title: 'Planification', route: '/training-courses/planning'},
+    { title: 'Création', route: '/coordinator/training-courses/creation'},
+    { title: 'Planification', route: '/coordinator/training-courses/planning'},
   ];
 }

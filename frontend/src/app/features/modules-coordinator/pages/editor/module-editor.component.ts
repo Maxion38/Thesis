@@ -75,8 +75,7 @@ export class ModuleEditorComponent {
 
   onDelete(): void {
     this.moduleService.delete(this.moduleId).subscribe(() => {
-      console.log('/training-courses/', this.trainingCourseId, '/modules');
-      this.router.navigate([`/training-courses/${this.trainingCourseId}/modules`]);
+      this.router.navigate([`/coordinator/training-courses/${this.trainingCourseId}/modules`]);
     });
   }
 }
