@@ -8,9 +8,11 @@ import { AuthModule } from './auth/auth.module';
 import { InvitationModule } from './invitation/invitation.module';
 import { UsersModule } from './users/users.module';
 import { AssignmentsModule } from './assignments/assignments.module';
+import { WorkSubmissionToolModule } from './work-submission-tool/work.module';
+import { ToolsModule } from './tools/tools.module';
 
 @Module({
-  imports: [PrismaModule, TrainingCoursesModule, ModulesModule, AuthModule, InvitationModule, UsersModule, AssignmentsModule],
+  imports: [PrismaModule, TrainingCoursesModule, ModulesModule, AuthModule, InvitationModule, UsersModule, AssignmentsModule, WorkSubmissionToolModule, ToolsModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -17,6 +17,7 @@ model User {
   email        String  @unique
   hoursQuota   Int?
   supervisorId Int?
+  // todo : add username (matricule)
 
   supervisorPreferencesAsStudent UserSupervisorPreference[] @relation("StudentPreferences")
   supervisorPreferencesAsTeacher UserSupervisorPreference[] @relation("TeacherPreferences")
