@@ -1,0 +1,19 @@
+<div class="page">
+
+  <div class="page__tabbar">
+
+    <app-tabbar 
+      [tabs]="tabbarItems" 
+      [title]="moduleTitle"
+      [backButton]="true" 
+      [backRoute]="['/student', 'modules', 'all']"  
+    >
+    </app-tabbar>
+
+  </div>
+
+  <div class="page__content">
+    <router-outlet></router-outlet>
+  </div>
+
+</div>

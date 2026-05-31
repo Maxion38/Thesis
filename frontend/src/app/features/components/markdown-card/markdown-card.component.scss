@@ -1,0 +1,54 @@
+.markdown-card {
+  background-color: #F4F4F4;
+  border-radius: 12px;
+  padding: 20px 50px;
+  width: 100%;
+
+  &__content {
+    width: 100%;
+  }
+}
+
+/* ===== Markdown styling (customisable via parent override) ===== */
+
+:host ::ng-deep .markdown-card__content h1,
+:host ::ng-deep .markdown-card__content h2,
+:host ::ng-deep .markdown-card__content h3,
+:host ::ng-deep .markdown-card__content h4 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-family: 'joan';
+  font-weight: normal;
+}
+
+:host ::ng-deep .markdown-card__content p {
+  margin: 0 0 1rem;
+}
+
+:host ::ng-deep .markdown-card__content ul,
+:host ::ng-deep .markdown-card__content ol {
+  margin: 0 0 1rem 1.25rem;
+}
+
+:host ::ng-deep .markdown-card__content code {
+  background: rgba(0,0,0,0.05);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+:host ::ng-deep .markdown-card__content pre {
+  background: #1e1e1e;
+  color: #f5f5f5;
+  padding: 16px;
+  border-radius: 12px;
+  overflow: auto;
+}
+
+:host ::ng-deep .markdown-card__content a {
+  color: #1a73e8;
+  text-decoration: none;
+}
+
+:host ::ng-deep .markdown-card__content a:hover {
+  text-decoration: underline;
+}

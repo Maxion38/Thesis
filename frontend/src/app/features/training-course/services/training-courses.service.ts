@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { TrainingCourseModel, TrainingCourseWithStats } from './../models/training-course.model'
-import { ModuleModel } from '../../modules-coordinator/models/module.model';
+import { ModuleModel } from '../../modules/modules-coordinator/models/module.model';
 
 
 @Injectable({

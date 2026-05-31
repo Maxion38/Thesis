@@ -1,0 +1,61 @@
+<div class="module">
+
+  <app-tabbar 
+    title="Description" 
+    [subtitle]="((moduleData$ | async)?.name ?? '...') + ' - Description'"
+    [backButton]="true">
+  </app-tabbar>
+
+  <div class="module__controls">
+    <button 
+      class="module__button"
+      [class.active]="displayMode === 'original'"
+      (click)="chooseDisplayMode('original')">
+      Original
+    </button>
+
+    <div class="module__edit-container">
+      <button 
+        class="module__edit-container__item"
+        [class.active]="displayMode === 'edit'"
+        (click)="chooseDisplayMode('edit')">
+        Modifier
+      </button>
+
+      <button 
+        *ngIf="isEditing"
+        class="module__edit-container__item"
+        [class.active]="displayMode === 'preview'"
+        (click)="chooseDisplayMode('preview')">
+        Aperçu duduudud
+      </button>
+    </div>
+
+    <div *ngIf="isEditing" class="module__actions__container">
+      <span class="material-symbols-outlined module__actions__container__item" (click)="saveEdit()">check</span>
+      <span class="material-symbols-outlined module__actions__container__item" (click)="cancelEdit()">undo</span>
+    </div>
+  </div>
+
+  <div class="module__content" [class.edit-mode]="displayMode === 'edit'">
+
+    <app-markdown-card
+      *ngIf="displayMode === 'original'"
+      [markdown]="initialMarkdown">
+    </app-markdown-card>
+
+    <textarea
+      *ngIf="displayMode === 'edit'"
+      class="module__markdown-editor"
+      [(ngModel)]="markdown"
+      (ngModelChange)="onTextChange()">
+    </textarea>
+
+    <app-markdown-card
+      *ngIf="displayMode === 'preview'"
+      [markdown]="markdown">
+    </app-markdown-card>
+
+  </div>
+
+</div>

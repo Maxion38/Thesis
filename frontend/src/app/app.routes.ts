@@ -9,10 +9,10 @@ import { TrainingCoursesComponent } from './features/training-course/pages/train
 import { TrainingCoursesPlanningComponent } from './features/training-course/pages/trainings-planning/training-courses-planning.component'
 import { AssignmentsComponent } from './features/assignments/pages/assignments/assignments.component'
 import { PlanningComponent } from './features/training-course/pages/planning/planning.component'
-import { ModulesComponent } from './features/modules-coordinator/pages/modules.component'
-import { ModuleEditorComponent } from './features/modules-coordinator/pages/editor/module-editor.component'
-import { ModuleConditionsComponent } from './features/modules-coordinator/pages/conditions/module-conditions.component'
-import { ModuleDescriptionComponent } from './features/modules-coordinator/pages/editor/module-description/module-description.component';
+import { ModulesComponent } from './features/modules/modules-coordinator/pages/modules.component'
+import { ModuleEditorComponent } from './features/modules/modules-coordinator/pages/editor/module-editor.component'
+import { ModuleConditionsComponent } from './features/modules/modules-coordinator/pages/conditions/module-conditions.component'
+import { ModuleDescriptionComponent } from './features/modules/modules-coordinator/pages/editor/module-description/module-description.component';
 
 import { UsersLayoutComponent } from './features/users/layouts/users-layout/users.layout';
 import { AllUsersComponent } from './features/users/pages/all-users/all-users.component';
@@ -33,8 +33,11 @@ import { EmptyComponent } from './empty.component';
 import { RootRedirectGuard } from './guards/root-redirect.guard';
 import { NoAuthGuard } from './guards/no-auth.guard';
 import { BootstrapGuard } from './guards/bootstrap.guard';
-import { StudentModulesLayoutComponent } from './features/modules-student/layouts/users-layout/modules.layout';
-import { StudentModulesComponent } from './features/modules-student/pages/modules/modules.component';
+import { StudentModulesLayoutComponent } from './features/modules/modules-student/layouts/modules-layout/modules.layout';
+import { StudentModuleLayoutComponent } from './features/modules/modules-student/layouts/module-layout/module.layout';
+import { StudentModulesComponent } from './features/modules/modules-student/pages/modules/modules.component';
+import { StudentModuleDescriptionComponent } from './features/modules/modules-student/pages/module/description/description.component';
+import { ModuleWorkComponent } from './features/modules/modules-coordinator/pages/editor/module-work/module-work.component';
 
 export const routes: Routes = [
   {
@@ -83,6 +86,7 @@ export const routes: Routes = [
       },
       { path: 'training-courses/:trainingCourseId/modules/:moduleId/editor', component: ModuleEditorComponent},
       { path: 'training-courses/:trainingCourseId/modules/:moduleId/editor/description', component: ModuleDescriptionComponent},
+      // { path: 'training-courses/:trainingCourseId/modules/:moduleId/editor/description', component: ModuleWorkComponent},
       { path: 'training-courses/:trainingCourseId/modules/:moduleId/conditions', component: ModuleConditionsComponent},
 
       { 
@@ -118,6 +122,13 @@ export const routes: Routes = [
         children: [
           {path: '', redirectTo: 'all', pathMatch: 'full'},
           { path: 'all', component: StudentModulesComponent},  
+        ]
+      },  
+      { 
+        path: 'modules/:moduleId', component: StudentModuleLayoutComponent,
+        children: [
+          {path: '', redirectTo: 'description', pathMatch: 'full'},
+          {path: 'description', component: StudentModuleDescriptionComponent},  
         ]
       },  
       { path: 'supervisors', component: SupervisorsComponent},  
