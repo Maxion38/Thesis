@@ -1,50 +1,216 @@
 # Thesis
 
-A full-stack TypeScript application featuring a Angular frontend with SCSS styling and a NestJS backend with PostgreSQL database.
+Application web de gestion et de suivi de parcours pédagogiques développée dans le cadre d'un Travail de Fin d'Études (TFE).
 
-## 📋 Table of Contents
+L'application permet aux étudiants de suivre des modules de formation, réaliser des activités, remettre des travaux et suivre leur progression. Les enseignants peuvent gérer le contenu pédagogique, valider les activités et suivre l'avancement des étudiants.
 
-- [Project Overview](#project-overview)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Running the Project](#running-the-project)
-- [Email System](#email-system)
-- [Database](#database)
-- [Contributing](#contributing)
+---
 
-## 🎯 Project Overview
+# 🚀 Technologies utilisées
 
-This project is a thesis application that combines frontend and backend services into a cohesive full-stack application. The system uses Prisma as an ORM for database management and includes an email invitation system.
+## Frontend
 
-## 🛠 Tech Stack
+- Angular
+- TypeScript
+- SCSS
 
-- **Frontend**: Angular, TypeScript, SCSS
-- **Backend**: NestJS, TypeScript
-- **Database**: PostgreSQL
-- **ORM**: Prisma
-- **Package Manager**: npm
+## Backend
 
-## 📦 Prerequisites
+- NestJS
+- TypeScript
 
-Before you begin, ensure you have the following installed:
+## Base de données
 
-- **Node.js** (v14 or higher)
-- **npm** (v6 or higher)
-- **PostgreSQL** (running and accessible)
-- **Git**
+- PostgreSQL
+- Prisma ORM
 
-## 🚀 Installation
+## Services externes
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Maxion38/Thesis.git
-   ```
+- Brevo (emails transactionnels)
+- Gmail SMTP (développement)
 
-2. **Install dependencies**
-   ```bash
-  npm install
-   ```
+---
 
+# 📂 Architecture du projet
+
+```text
+thesis/
+│
+├── frontend/          # Application Angular
+│
+├── backend/           # API NestJS
+│   ├── prisma/
+│   ├── src/
+│   └── uploads/
+│
+└── README.md
+```
+
+---
+
+
+# ⚙️ Installation
+
+## Prérequis
+
+- Node.js 20+
+- npm
+- PostgreSQL 16+
+- Git
+
+---
+
+## Clonage du projet
+
+```bash
+git clone https://github.com/Maxion38/Thesis.git
+
+cd Thesis
+```
+
+---
+
+## Installation du frontend
+
+```bash
+cd frontend
+
+npm install
+```
+
+---
+
+## Installation du backend
+
+```bash
+cd backend
+
+npm install
+```
+
+---
+
+# 🗄️ Configuration
+
+Créer un fichier `.env` dans le dossier backend.
+
+```env
+DATABASE_URL="postgresql://postgres:PASSWORD@localhost:5433/thesis"
+
+EMAIL_USER="noreply@example.com"
+EMAIL_PASS="your_password"
+
+BREVO_API_KEY="your_api_key"
+BREVO_SENDER_EMAIL="noreply@example.com"
+BREVO_SENDER_NAME="Thesis"
+```
+
+---
+
+# 🗃️ Base de données
+
+## Générer le client Prisma
+
+```bash
+npx prisma generate
+```
+
+## Appliquer les migrations
+
+```bash
+npx prisma migrate deploy
+```
+
+ou en développement :
+
+```bash
+npx prisma migrate dev
+```
+
+## Ouvrir Prisma Studio
+
+```bash
+npx prisma studio
+```
+
+---
+
+# ▶️ Lancement de l'application
+
+## Backend
+
+```bash
+cd backend
+
+npm run start:dev
+```
+
+Backend accessible sur :
+
+```text
+http://localhost:3000
+```
+
+---
+
+## Frontend
+
+```bash
+cd frontend
+
+npm start
+```
+
+Frontend accessible sur :
+
+```text
+http://localhost:4200
+```
+
+## Ou lancement de toute l'application
+
+```bash
+cd Thesis
+
+npm run dev
+```
+
+---
+
+# 📧 Système d'emails
+
+L'application utilise :
+
+- Brevo pour les emails transactionnels
+
+Les emails sont utilisés pour les invitations.
+
+---
+
+# 📄 Gestion des fichiers
+
+Les documents remis par les étudiants sont stockés sur le serveur et référencés dans la base de données.
+
+Les fichiers sont accessibles uniquement aux utilisateurs autorisés.
+
+---
+
+# 🧪 Développement
+
+## Générer une migration Prisma
+
+```bash
+npx prisma migrate dev --name migration_name
+```
+
+## Réinitialiser la base
+
+```bash
+npx prisma migrate reset
+```
+
+---
+
+# 📜 Contexte
+
+Projet réalisé dans le cadre d'un Travail de Fin d'Études.
