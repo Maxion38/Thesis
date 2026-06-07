@@ -1,98 +1,34 @@
 <div class="page">
 
   <div class="page__status-div">
-
     <div
       class="page__status-div__indicator"
       [style.backgroundColor]="indicatorColor">
     </div>
 
     <div class="page__status-div__titles-div">
-      <span class="page__status-div__title">
-        {{ title }}
-      </span>
-
-      <span class="page__status-div__subtitle">
-        {{ subtitle }}
-      </span>
+      <span class="page__status-div__title">{{ title }}</span>
+      <span class="page__status-div__subtitle">{{ subtitle }}</span>
     </div>
-
   </div>
 
   <div class="page__planning-div">
 
-    <!-- START DATE -->
-    <div class="date-div">
-      <span class="date-div__title">Date de début</span>
+    <app-date-picker
+      title="Date de début"
+      [date]="startDate.value"
+      [minDate]="addOneDay(today)"
+      [maxDate]="endDate.value ? addMinusOneDay(endDate.value) : maxFallback"
+      (chosedDate)="onStartDateChosed($event)">
+    </app-date-picker>
 
-      <div class="date-div__picker-div">
-
-        <div class="date-display">
-          <span>
-            {{ startDate.value ? (startDate.value | date:'dd/MM/yyyy') : 'Aucune' }}
-          </span>
-
-          <span
-            *ngIf="startDate.value"
-            class="material-symbols-outlined date-display__close"
-            (click)="clearStartDate()">
-            close
-          </span>
-        </div>
-
-        <button class="calendar-btn" (click)="startDatePicker.open()">
-          <mat-icon>calendar_today</mat-icon>
-        </button>
-
-        <mat-form-field class="hidden-datepicker">
-        <input
-          matInput
-          [matDatepicker]="startDatePicker"
-          [formControl]="startDate"
-          [min]="addOneDay(today)"
-          [max]="endDate.value ? addMinusOneDay(endDate.value) : null"
-        />
-          <mat-datepicker #startDatePicker></mat-datepicker>
-        </mat-form-field>
-
-      </div>
-    </div>
-
-    <!-- END DATE -->
-    <div class="date-div">
-      <span class="date-div__title">Date de fin</span>
-
-      <div class="date-div__picker-div">
-
-        <div class="date-display">
-          <span>
-            {{ endDate.value ? (endDate.value | date:'dd/MM/yyyy') : 'Aucune' }}
-          </span>
-
-          <span
-            *ngIf="endDate.value"
-            class="material-symbols-outlined date-display__close"
-            (click)="clearEndDate()">
-            close
-          </span>
-        </div>
-
-        <button class="calendar-btn" (click)="endDatePicker.open()">
-          <mat-icon>calendar_today</mat-icon>
-        </button>
-
-        <mat-form-field class="hidden-datepicker">
-        <input
-          matInput
-          [matDatepicker]="endDatePicker"
-          [formControl]="endDate"
-          [min]="startDate.value ? addOneDay(startDate.value) : null"
-        />
-          <mat-datepicker #endDatePicker></mat-datepicker>
-        </mat-form-field>
-
-      </div>
-    </div>
+    <app-date-picker
+      title="Date de fin"
+      [date]="endDate.value"
+      [minDate]="startDate.value ? addOneDay(startDate.value) : addOneDay(today)"
+      [maxDate]="maxFallback"
+      (chosedDate)="onEndDateChosed($event)">
+    </app-date-picker>
 
   </div>
 

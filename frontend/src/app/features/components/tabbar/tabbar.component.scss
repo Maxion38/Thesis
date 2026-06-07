@@ -7,7 +7,11 @@
 .tabbar {
   width: 100%;
   margin-bottom: 10px;
-  position: relative;
+  
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
 
   &__tabs {
     height: 60px;
@@ -109,11 +113,7 @@
       }
   }
 
-  &__back-button {
-    position: absolute;
-    top: 30px;
-    left: 0;
-  }
+
 }
 
 .delete {
@@ -121,10 +121,6 @@
   display: flex;
   justify-content: center;
   align-items: center;
-
-  position: absolute;
-  right: 0;
-  top: 30px;
 
   width: 50px;
   height: 50px;
@@ -135,4 +131,7 @@
   &:hover {
     background-color: #a5a5a5;
   }
+}
+
+.back-button {
 }

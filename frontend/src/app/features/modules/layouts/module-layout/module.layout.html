@@ -1,0 +1,71 @@
+@if(module$ | async; as module) {
+
+  <div class="page">
+
+    <div class="page__content-div">
+
+      <div class="header">
+        <app-tabbar 
+          [title]="module.name"
+          [isTitleEditable]="true"
+          (titleChange)="onModuleTitleChange(module, $event)"
+          [backButton]="true"
+          [backRoute]="['/coordinator', 'training-courses', trainingCourseId, 'modules']"
+        >
+        </app-tabbar>
+      </div>
+
+      <div class="content">
+        <router-outlet></router-outlet>
+      </div>
+
+      <div class="menu-button" [class.show]="isVisible" (click)="toggleNavbar()">
+        <span class="material-symbols-outlined">menu</span>
+      </div>
+
+    </div>
+
+    <div class="page__navbar-div navbar" [class.show]="isVisible">
+      <div class="navbar__inner">
+        <span class="navbar__title">Outils du module</span>
+
+        <app-navbar-item
+          [name]="'Description'"
+          [routerLink]="['description']"
+          routerLinkActive
+          #rlaDesc="routerLinkActive"
+          [active]="rlaDesc.isActive"
+        />
+
+        <app-navbar-item
+          *ngFor="let tool of tools$ | async"
+          [name]="tool.name"
+          [routerLink]="[getRouteType(tool.type), tool.id]"
+          routerLinkActive
+          #rla="routerLinkActive"
+          [active]="rla.isActive"
+          [isEditable]="rla.isActive"
+          [isDeletable]="rla.isActive"
+          (nameChange)="onToolNameChange(tool, $event)"
+          (deleted)="deleteTool(tool)"
+        />
+
+        <div class="add-button-wrapper">
+          <div class="add-button" (click)="toggleAddOptions()">
+            <span class="material-symbols-outlined">add</span>
+          </div>
+          <div *ngIf="showAddOptions" class="add-menu">
+            <button type="button" class="add-menu__item" (click)="addForm()">Formulaire</button>
+            <button type="button" class="add-menu__item" (click)="addWorkSubmission()">Remise de travail</button>
+            <button type="button" class="add-menu__item" (click)="addAssessment()">Evaluation</button>
+          </div>
+        </div>
+
+        <span class="delete-module" (click)="deleteModule()">Supprimer ce module</span>
+
+      </div>
+    </div>
+
+  </div>
+
+}

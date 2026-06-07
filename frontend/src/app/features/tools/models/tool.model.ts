@@ -4,6 +4,4 @@ export class ToolModel {
   description!: string;
   type!: string;
   moduleId!: number;
-
-  maxAttempts?: number;
 }

@@ -1,7 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { CreateWorkModel, UpdateWorkModel } from '../models/work.model';
+import { map, Observable } from 'rxjs';
+import { CreateWorkModel, UpdateWorkModel, WorkModel } from '../models/work.model';
+import { mapWork } from '../mappers/work.mapper';
 
 @Injectable({
   providedIn: 'root',
@@ -11,6 +12,12 @@ export class WorkService {
 
   private apiUrl = 'http://localhost:3000/works';
 
+
+  getWork(workId: number): Observable<WorkModel> {
+    return this.http
+      .get(`${this.apiUrl}/${workId}`, { withCredentials: true })
+      .pipe(map(mapWork));
+  }
 
   createWork(payload: CreateWorkModel): Observable<any> {
     return this.http.post(

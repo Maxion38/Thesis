@@ -188,11 +188,14 @@
 }
 
 button {
-    height: 60px;
+    height: 53px;
     width: 100%;
-    background-color: rgb(241, 241, 241);
-    color: black;
-    border: solid 1px #1F4541;
+    // background-color: rgb(241, 241, 241);
+    // color: black;
+    background-color: #1F4541;
+    color: white;
+    // border: solid 1px #ffffff;
+    border: none;
     border-radius: 12px;
     box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.25);
     cursor: pointer;
@@ -200,8 +203,10 @@ button {
 }
 
 button:hover {
-    background-color: #1F4541;
-    color: white;
+    background-color: rgb(107, 107, 107);
+    // color: black;
+    // background-color: #1F4541;
+    // color: white;
 } 
 
 button:active {

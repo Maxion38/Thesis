@@ -10,9 +10,11 @@ import { TrainingCoursesPlanningComponent } from './features/training-course/pag
 import { AssignmentsComponent } from './features/assignments/pages/assignments/assignments.component'
 import { PlanningComponent } from './features/training-course/pages/planning/planning.component'
 import { ModulesComponent } from './features/modules/modules-coordinator/pages/modules.component'
-import { ModuleEditorComponent } from './features/modules/modules-coordinator/pages/editor/module-editor.component'
-import { ModuleConditionsComponent } from './features/modules/modules-coordinator/pages/conditions/module-conditions.component'
-import { ModuleDescriptionComponent } from './features/modules/modules-coordinator/pages/editor/module-description/module-description.component';
+import { WorkComponent } from './features/work-tool/pages/work/work.component';
+// import { ModuleComponent } from './features/modules/modules-coordinator/pages/editor/module-editor.component'
+// import { ModuleConditionsComponent } from './features/modules/modules-coordinator/pages/conditions/module-conditions.component'
+// import { ModuleDescriptionComponent } from './features/modules/modules-coordinator/pages/editor/module-description/module-description.component';
+import { ModuleDescriptionComponent } from './features/modules/pages/module-description/module-description.component';
 
 import { UsersLayoutComponent } from './features/users/layouts/users-layout/users.layout';
 import { AllUsersComponent } from './features/users/pages/all-users/all-users.component';
@@ -37,7 +39,7 @@ import { StudentModulesLayoutComponent } from './features/modules/modules-studen
 import { StudentModuleLayoutComponent } from './features/modules/modules-student/layouts/module-layout/module.layout';
 import { StudentModulesComponent } from './features/modules/modules-student/pages/modules/modules.component';
 import { StudentModuleDescriptionComponent } from './features/modules/modules-student/pages/module/description/description.component';
-import { ModuleWorkComponent } from './features/modules/modules-coordinator/pages/editor/module-work/module-work.component';
+import { ModuleLayoutComponent } from './features/modules/layouts/module-layout/module.layout';
 
 export const routes: Routes = [
   {
@@ -84,11 +86,21 @@ export const routes: Routes = [
           {path: 'planning', component: PlanningComponent},
         ]
       },
-      { path: 'training-courses/:trainingCourseId/modules/:moduleId/editor', component: ModuleEditorComponent},
-      { path: 'training-courses/:trainingCourseId/modules/:moduleId/editor/description', component: ModuleDescriptionComponent},
-      // { path: 'training-courses/:trainingCourseId/modules/:moduleId/editor/description', component: ModuleWorkComponent},
-      { path: 'training-courses/:trainingCourseId/modules/:moduleId/conditions', component: ModuleConditionsComponent},
+      { path: 'training-courses/:trainingCourseId/modules/:moduleId', component: ModuleLayoutComponent /* to replace by a ModuleLayoutComponent */,
+        children: [
+          {path: '', redirectTo: 'description', pathMatch: 'full'},
+          { path: 'description', component: ModuleDescriptionComponent,},
+          { path: 'work/:workId', component: WorkComponent,},
+          // { path: 'assessment/:assessmentId', component: ModuleAssessmentComponent,},
+          // { path: 'form/:formId', component: ModuleFormComponent,},
+          // { path: 'activity/:activityId', component: ModuleActivityComponent,},
+        ]
+      },
 
+      // { path: 'training-courses/:trainingCourseId/modules/:moduleId/editor', component: ModuleEditorComponent,},
+      // { path: 'training-courses/:trainingCourseId/modules/:moduleId/editor/description', component: ModuleDescriptionComponent},
+      // { path: 'training-courses/:trainingCourseId/modules/:moduleId/editor/work/:tooId', component: WorkEditorComponent},
+      // { path: 'training-courses/:trainingCourseId/modules/:moduleId/conditions', component: ModuleConditionsComponent},
       { 
         path: 'users', component: UsersLayoutComponent,
         children: [

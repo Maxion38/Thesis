@@ -2,11 +2,8 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { BehaviorSubject, Observable } from 'rxjs';
 import { TabbarComponent } from '../../../../../components/tabbar/tabbar.component';
-import { ModuleModel } from '../../../models/module.model';
 import { ModulesService } from '../../../../services/modules.service';
-import { switchMap, tap } from 'rxjs/operators';
 import { MarkdownCardComponent } from '../../../../../components/markdown-card/markdown-card.component';
 
 type DisplayMode = 'original' | 'edit' | 'preview';
@@ -18,18 +15,15 @@ type DisplayMode = 'original' | 'edit' | 'preview';
   imports: [CommonModule, FormsModule, TabbarComponent, MarkdownCardComponent],
 })
 export class ModuleDescriptionComponent {
-
   displayMode: DisplayMode = 'original';
 
   markdown = '';
   initialMarkdown = '';
 
+  moduleTitle = '';
+
   isEditing = false;
   moduleId!: number;
-
-  private refresh$ = new BehaviorSubject<void>(undefined);
-
-  moduleData$!: Observable<ModuleModel>;
 
   constructor(
     private route: ActivatedRoute,
@@ -38,15 +32,18 @@ export class ModuleDescriptionComponent {
 
   ngOnInit(): void {
     this.moduleId = Number(this.route.snapshot.paramMap.get('moduleId'));
+    this.loadModuleDescription();
+  }
 
-    this.moduleData$ = this.refresh$.pipe(
-      switchMap(() => this.moduleService.getModulesById(this.moduleId)),
-      tap(module => {
-        this.markdown = module?.description ?? '';
+  private loadModuleDescription() {
+    this.moduleService.getModulesById(this.moduleId)
+      .subscribe(module => {
+        this.markdown = module.description ?? '';
+        this.moduleTitle = module.name ?? '';
+        console.log(this.moduleTitle);
         this.initialMarkdown = this.markdown;
         this.checkIfEditing();
-      })
-    );
+      });
   }
 
   chooseDisplayMode(mode: DisplayMode) {
@@ -65,8 +62,9 @@ export class ModuleDescriptionComponent {
     this.moduleService.update(this.moduleId, {
       description: this.markdown
     }).subscribe(() => {
-      this.refresh$.next();
+      this.initialMarkdown = this.markdown;
       this.displayMode = 'original';
+      this.checkIfEditing();
     });
   }
 

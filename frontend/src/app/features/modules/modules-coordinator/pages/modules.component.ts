@@ -47,7 +47,7 @@ export class ModulesComponent {
           this.trainingCourseId,
           'modules',
           created.id,
-          'editor'
+          'description'
         ]);
       },
       error: () => {

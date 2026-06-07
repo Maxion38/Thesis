@@ -99,7 +99,7 @@ export class ModuleEditorComponent {
         title: tool.name,
         subtitle: this.toolsTypeLabels(tool.type),
         isRemovable: true,
-        editRoute: ['tool', tool.id.toString()],
+        editRoute: ['work', tool.id.toString()],
       }));
 
       this.cards = [

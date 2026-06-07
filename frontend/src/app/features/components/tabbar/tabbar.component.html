@@ -1,34 +1,44 @@
 <div class="tabbar">
 
-  <div *ngIf="title" class="tabbar__title">
-    <span *ngIf="!isEditing"> {{ title }} </span>
-    <input *ngIf="isEditing" #inputElement [(ngModel)]="editedTitle" type="text" class="tabbar__input" (keydown.enter)="saveEdit()" />
-    <div *ngIf="isTitleEditable && !isEditing && !isLoading" class="tabbar__edit" (click)="startEdit()"><span class="material-symbols-outlined">edit</span></div>
-    <div *ngIf="isEditing" class="tabbar__actions">
-      <span class="material-symbols-outlined" (click)="saveEdit()">check</span>
-      <span class="material-symbols-outlined" (click)="cancelEdit()">close</span>
+  <div>
+    <app-back-button *ngIf="backButton" class="back-button" [route]="backRoute"></app-back-button>
+  </div>
+
+  <div>
+    
+    <div *ngIf="title" class="tabbar__title">
+      <span *ngIf="!isEditing"> {{ title }} </span>
+      <input *ngIf="isEditing" #inputElement [(ngModel)]="editedTitle" type="text" class="tabbar__input" (keydown.enter)="saveEdit()" />
+      <div *ngIf="isTitleEditable && !isEditing && !isLoading" class="tabbar__edit" (click)="startEdit()"><span class="material-symbols-outlined">edit</span></div>
+      <div *ngIf="isEditing" class="tabbar__actions">
+        <span class="material-symbols-outlined" (click)="saveEdit()">check</span>
+        <span class="material-symbols-outlined" (click)="cancelEdit()">close</span>
+      </div>
     </div>
-  </div>
 
-  <div *ngIf="subtitle" class="tabbar__subtitle">
-    <span> {{ subtitle }} </span>
-  </div>
+    <div *ngIf="subtitle" class="tabbar__subtitle">
+      <span> {{ subtitle }} </span>
+    </div>
 
-  <div 
-    *ngIf="tabs"
-    class="tabbar__tabs"      
-    [class.tabbar__tabs__only-tabs]="!title && !subtitle"
-  >
     <div 
-      *ngFor="let tab of tabs"
-      class="tabbar__tabs__element"
-      [routerLink]="tab.route"
-      routerLinkActive="tabbar__tabs__element--active"
+      *ngIf="tabs"
+      class="tabbar__tabs"      
+      [class.tabbar__tabs__only-tabs]="!title && !subtitle"
     >
-      <span>{{ tab.title }}</span>
+      <div 
+        *ngFor="let tab of tabs"
+        class="tabbar__tabs__element"
+        [routerLink]="tab.route"
+        routerLinkActive="tabbar__tabs__element--active"
+      >
+        <span>{{ tab.title }}</span>
+      </div>
     </div>
+
   </div>
 
-  <app-back-button *ngIf="backButton" class="tabbar__back-button" [route]="backRoute"></app-back-button>
-  <span *ngIf="isElementDeletable" class="material-symbols-outlined delete" (click)="deleteItem()">delete</span>
+  <div>
+    <span *ngIf="isElementDeletable" class="material-symbols-outlined delete" (click)="deleteItem()">delete</span>
+  </div>
+
 </div>

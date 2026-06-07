@@ -28,6 +28,7 @@
           *ngFor="let module of filteredModules"
           class="module-card"
           [module]="module"
+          (ctaClicked)="onModuleCardAction($event)"
         >
         </app-student-module-card>
 

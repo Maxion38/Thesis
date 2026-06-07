@@ -1,11 +1,5 @@
 <div class="module">
 
-  <app-tabbar 
-    title="Description" 
-    [subtitle]="((moduleData$ | async)?.name ?? '...') + ' - Description'"
-    [backButton]="true">
-  </app-tabbar>
-
   <div class="module__controls">
     <button 
       class="module__button"
@@ -27,7 +21,7 @@
         class="module__edit-container__item"
         [class.active]="displayMode === 'preview'"
         (click)="chooseDisplayMode('preview')">
-        Aperçu duduudud
+        Aperçu
       </button>
     </div>
 

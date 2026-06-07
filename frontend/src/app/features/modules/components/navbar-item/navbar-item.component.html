@@ -1,0 +1,31 @@
+<span *ngIf="!isEditing" class="text">{{ name }}</span>
+
+<input
+*ngIf="isEditing"
+[(ngModel)]="editedName"
+type="text"
+class="input"
+(click)="$event.stopPropagation()"
+(keydown.enter)="saveEdit()"
+(keydown.escape)="cancelEdit()"
+/>
+
+<div class="actions" *ngIf="active">
+    <ng-container *ngIf="!isEditing">
+        <div class="edit" *ngIf="isEditable" (click)="$event.stopPropagation(); startEdit()">
+        <span class="material-symbols-outlined action">edit</span>
+        </div>
+        <div class="delete" *ngIf="isDeletable" (click)="$event.stopPropagation(); deleted.emit()">
+        <span class="material-symbols-outlined action">delete</span>
+        </div>
+    </ng-container>
+
+<ng-container *ngIf="isEditing">
+    <div class="edit" (click)="$event.stopPropagation(); saveEdit()">
+    <span class="material-symbols-outlined action">check</span>
+    </div>
+    <div class="delete" (click)="$event.stopPropagation(); cancelEdit()">
+    <span class="material-symbols-outlined action">close</span>
+    </div>
+</ng-container>
+</div>

@@ -1,0 +1,35 @@
+<div class="date-div">
+  <span class="date-div__title">{{ title }}</span>
+
+  <div class="date-div__picker-div">
+
+    <div class="date-display">
+      <span>
+        {{ date ? (date | date:'dd/MM/yyyy') : 'Aucune' }}
+      </span>
+
+      <span
+        *ngIf="date"
+        class="material-symbols-outlined date-display__close"
+        (click)="onClear()">
+        close
+      </span>
+    </div>
+
+    <button class="calendar-btn" (click)="picker.open()">
+      <mat-icon>calendar_today</mat-icon>
+    </button>
+
+    <mat-form-field class="hidden-datepicker">
+      <input
+        matInput
+        [matDatepicker]="picker"
+        [formControl]="control"
+        [min]="minDate"
+        [max]="maxDate"
+      />
+      <mat-datepicker #picker></mat-datepicker>
+    </mat-form-field>
+
+  </div>
+</div>

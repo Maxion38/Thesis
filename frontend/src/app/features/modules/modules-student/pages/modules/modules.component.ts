@@ -45,9 +45,8 @@ export class StudentModulesComponent implements OnInit {
     ).subscribe({
       next: (modules) => {
         this.modules = modules;
-        // this.modules = this.mockModules; // only for testing
+        this.modules = this.mockModules; // only for testing
         this.cdr.detectChanges();
-        console.log(modules)
       },
       error: (err) => {
         console.log(err);
@@ -74,8 +73,6 @@ export class StudentModulesComponent implements OnInit {
   }
 
   onModuleCardAction(event: ModuleCardActionEvent): void {
-    console.log(event.moduleId);
-    console.log(event.toolId);
     this.router.navigate([
       '/student/modules',
       event.moduleId,
