@@ -173,7 +173,7 @@ model Form {
   maxAttempts Int
   toolId      Int
 
-  tool        Tool             @relation(fields: [toolId], references: [id])
+  tool        Tool             @relation(fields: [toolId], references: [id], onDelete: Cascade)
   questions   Question[]
   submissions FormSubmission[]
 
@@ -248,7 +248,7 @@ model Activity {
   location      String?
 
   toolId Int
-  tool   Tool @relation(fields: [toolId], references: [id])
+  tool   Tool @relation(fields: [toolId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -258,8 +258,9 @@ model Work {
   id          Int @id @default(autoincrement())
   toolId      Int
   maxAttempts Int
+  dueDate     DateTime?
 
-  tool                Tool                 @relation(fields: [toolId], references: [id])
+  tool                Tool                 @relation(fields: [toolId], references: [id], onDelete: Cascade)
   userWorkSubmissions UserWorkSubmission[]
 
   createdAt DateTime @default(now())
@@ -290,7 +291,7 @@ model AssessmentGrid {
   id     Int @id @default(autoincrement())
   toolId Int
 
-  tool         Tool          @relation(fields: [toolId], references: [id])
+  tool         Tool          @relation(fields: [toolId], references: [id], onDelete: Cascade)
   gridVersions GridVersion[]
 
   createdAt DateTime @default(now())

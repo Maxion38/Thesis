@@ -4,6 +4,4 @@ export class ToolDto {
   description!: string;
   type!: string;
   moduleId!: number;
-
-  maxAttempts?: number;
 }

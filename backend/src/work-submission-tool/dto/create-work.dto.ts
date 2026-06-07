@@ -1,4 +1,4 @@
-import { IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
+import { IsDateString, IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
 
 export class CreateWorkDto {
   // Tool fields
@@ -15,6 +15,10 @@ export class CreateWorkDto {
   moduleId!: number;
 
   // Work fields
+  @IsOptional()
+  @IsDateString()
+  dueDate?: string;
+
   @IsInt()
   @Min(1)
   maxAttempts!: number;

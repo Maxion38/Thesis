@@ -8,6 +8,19 @@ import { ToolType } from '@prisma/client';
 export class WorkService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async getWork(workId: number) {
+    const work = await this.prisma.work.findUnique({
+      where: { id: workId },
+      include: { tool: true },
+    });
+
+    if (!work) {
+      throw new NotFoundException(`Work with id ${workId} not found`);
+    }
+
+    return work;
+  }
+
   async createWork(dto: CreateWorkDto) {
     const module = await this.prisma.module.findUnique({
       where: { id: dto.moduleId },
@@ -31,6 +44,7 @@ export class WorkService {
         data: {
           maxAttempts: dto.maxAttempts,
           toolId: tool.id,
+          ...(dto.dueDate && { dueDate: new Date(dto.dueDate) }),
         },
       });
 
@@ -73,6 +87,7 @@ export class WorkService {
         where: { id: workId },
         data: {
           ...(dto.maxAttempts && { maxAttempts: dto.maxAttempts }),
+          ...(dto.dueDate !== undefined && { dueDate: dto.dueDate ? new Date(dto.dueDate) : null }),
         },
       });
 

@@ -6,28 +6,31 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  UseGuards,
 } from '@nestjs/common';
 import { WorkService } from './work.service';
 import { CreateWorkDto } from './dto/create-work.dto';
 import { UpdateWorkDto } from './dto/update-work.dto';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
 import { RoleType } from '@prisma/client';
+import { Auth } from 'src/auth/decorators/auth.decorator';
 
 @Controller('works')
 export class WorkController {
   constructor(private readonly workService: WorkService) {}
 
+  @Auth()
+  @Get(':id')
+  getWork(@Param('id', ParseIntPipe) id: number) {
+    return this.workService.getWork(id);
+  }
+
   @Post()
-  @Roles(RoleType.COORDINATOR)
+  @Auth(RoleType.COORDINATOR)
   async createWork(@Body() dto: CreateWorkDto) {
     return this.workService.createWork(dto);
   }
 
   @Patch(':id')
-  @Roles(RoleType.COORDINATOR)
+  @Auth(RoleType.COORDINATOR)
   async updateWork(
     @Param('id', ParseIntPipe) workId: number,
     @Body() dto: UpdateWorkDto,
