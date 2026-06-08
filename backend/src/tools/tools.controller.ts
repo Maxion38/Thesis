@@ -22,7 +22,7 @@ export class ToolsController {
   constructor(private readonly toolService: ToolsService) {}
 
   @Get('module/:moduleId')
-  @Auth(RoleType.COORDINATOR)
+  @Auth()
   async getToolsByModuleId(
     @Param('moduleId', ParseIntPipe) moduleId: number,
   ) {

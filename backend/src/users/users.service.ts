@@ -19,8 +19,8 @@ export class UsersService {
     return `This action returns a #${id} user`;
   }
 
-  findFirstProject(userId: number) {
-    return this.prisma.project.findFirst({
+  async findFirstProject(userId: number) {
+    return await this.prisma.project.findFirst({
       where: {
         members: {
           some: {

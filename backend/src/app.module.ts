@@ -8,11 +8,12 @@ import { AuthModule } from './auth/auth.module';
 import { InvitationModule } from './invitation/invitation.module';
 import { UsersModule } from './users/users.module';
 import { AssignmentsModule } from './assignments/assignments.module';
-import { WorkSubmissionToolModule } from './work-submission-tool/work.module';
+import { WorkSubmissionToolModule } from './work-submission/work.module';
 import { ToolsModule } from './tools/tools.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [PrismaModule, TrainingCoursesModule, ModulesModule, AuthModule, InvitationModule, UsersModule, AssignmentsModule, WorkSubmissionToolModule, ToolsModule],
+  imports: [PrismaModule, TrainingCoursesModule, ModulesModule, AuthModule, InvitationModule, UsersModule, AssignmentsModule, WorkSubmissionToolModule, ToolsModule, ConfigModule.forRoot({ isGlobal: true }),],
   controllers: [AppController],
   providers: [AppService],
 })
