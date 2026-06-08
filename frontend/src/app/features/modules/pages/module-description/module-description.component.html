@@ -1,6 +1,6 @@
 <div class="module">
 
-  <div class="module__controls">
+  <div *ngIf="userRole === 'COORDINATOR'" class="module__controls">
     <button 
       class="module__button"
       [class.active]="displayMode === 'original'"

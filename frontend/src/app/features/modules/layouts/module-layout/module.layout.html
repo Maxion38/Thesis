@@ -7,10 +7,10 @@
       <div class="header">
         <app-tabbar 
           [title]="module.name"
-          [isTitleEditable]="true"
+          [isTitleEditable]="userRole === 'COORDINATOR'"
           (titleChange)="onModuleTitleChange(module, $event)"
           [backButton]="true"
-          [backRoute]="['/coordinator', 'training-courses', trainingCourseId, 'modules']"
+          [backRoute]="backRoute"
         >
         </app-tabbar>
       </div>
@@ -44,13 +44,13 @@
           routerLinkActive
           #rla="routerLinkActive"
           [active]="rla.isActive"
-          [isEditable]="rla.isActive"
-          [isDeletable]="rla.isActive"
+          [isEditable]="rla.isActive && userRole === 'COORDINATOR'"
+          [isDeletable]="rla.isActive && userRole === 'COORDINATOR'"
           (nameChange)="onToolNameChange(tool, $event)"
           (deleted)="deleteTool(tool)"
         />
 
-        <div class="add-button-wrapper">
+        <div *ngIf="userRole === 'COORDINATOR'" class="add-button-wrapper">
           <div class="add-button" (click)="toggleAddOptions()">
             <span class="material-symbols-outlined">add</span>
           </div>
@@ -61,7 +61,7 @@
           </div>
         </div>
 
-        <span class="delete-module" (click)="deleteModule()">Supprimer ce module</span>
+        <span *ngIf="userRole === 'COORDINATOR'" class="delete-module" (click)="deleteModule()">Supprimer ce module</span>
 
       </div>
     </div>

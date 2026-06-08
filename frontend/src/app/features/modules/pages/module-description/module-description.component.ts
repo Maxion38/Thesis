@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ModulesService } from '../../services/modules.service';
 import { MarkdownCardComponent } from '../../../components/markdown-card/markdown-card.component';
+import { AuthService } from '../../../auth/services/auth.service';
+import { RoleType } from '../../../entities/role.entity';
 
 type DisplayMode = 'original' | 'edit' | 'preview';
 
@@ -15,21 +17,23 @@ type DisplayMode = 'original' | 'edit' | 'preview';
 })
 export class ModuleDescriptionComponent {
   displayMode: DisplayMode = 'original';
-
   markdown = '';
   initialMarkdown = '';
-
   moduleTitle = '';
-
   isEditing = false;
+
+  userRole!: RoleType;
   moduleId!: number;
 
   constructor(
     private route: ActivatedRoute,
-    private moduleService: ModulesService
+    private moduleService: ModulesService,
+    private authService: AuthService,
   ) {}
 
   ngOnInit(): void {
+    this.userRole = this.authService.getFirstRole();
+
     this.moduleId = Number(this.route.parent?.snapshot.paramMap.get('moduleId'));
     this.loadModuleDescription();
   }

@@ -45,7 +45,7 @@ export class StudentModulesComponent implements OnInit {
     ).subscribe({
       next: (modules) => {
         this.modules = modules;
-        this.modules = this.mockModules; // only for testing
+        // this.modules = this.mockModules; // only for testing
         this.cdr.detectChanges();
       },
       error: (err) => {

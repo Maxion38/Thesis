@@ -11,6 +11,8 @@ import { CreateWorkModel } from '../../../work-tool/models/work.model';
 import { WorkService } from '../../../work-tool/services/work.service';
 import { FormsModule } from '@angular/forms';
 import { NavbarItemComponent } from '../../components/navbar-item/navbar-item.component';
+import { AuthService } from '../../../auth/services/auth.service';
+import { RoleType } from '../../../entities/role.entity';
 
 @Component({
   selector: 'app-module-layout',
@@ -24,6 +26,7 @@ export class ModuleLayoutComponent implements OnInit {
   moduleId!: number;
   module$!: Observable<ModuleModel>;
   tools$!: Observable<ToolModel[]>;
+  userRole!: RoleType;
 
   tabbarItems: Tabs[] = [];
   isVisible: boolean = true;
@@ -35,9 +38,12 @@ export class ModuleLayoutComponent implements OnInit {
     private modulesService: ModulesService,
     private toolService: ToolService,
     private workService: WorkService,
+    private authService: AuthService,
   ) {}
 
   ngOnInit(): void {
+    this.userRole = this.authService.getFirstRole();
+
     this.trainingCourseId = Number(this.route.snapshot.paramMap.get('trainingCourseId'));
     this.moduleId = Number(this.route.snapshot.paramMap.get('moduleId'));
 
@@ -149,5 +155,18 @@ export class ModuleLayoutComponent implements OnInit {
         `/coordinator/training-courses/${this.trainingCourseId}/modules`
       ]);
     });
+  }
+
+  get backRoute(): any[] {
+    switch (this.userRole) {
+      case 'COORDINATOR':
+        return ['/', 'coordinator', 'training-courses', this.trainingCourseId, 'modules'];
+
+      case 'STUDENT':
+        return ['/', 'student', 'modules'];
+
+      default:
+        return ['/'];
+    }
   }
 }

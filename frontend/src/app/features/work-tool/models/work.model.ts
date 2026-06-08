@@ -22,3 +22,13 @@ export class UpdateWorkModel {
   dueDate?: string | null;
   maxAttempts?: number;
 }
+
+export interface WorkSubmissionModel {
+  id: number;
+  fileName: string;
+  filePath: string;
+  workId: number;
+  userId: number;
+  projectId: number;
+  submittedAt: string;
+}

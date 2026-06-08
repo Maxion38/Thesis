@@ -2,9 +2,13 @@ import { provideAppInitializer, ApplicationConfig, provideBrowserGlobalErrorList
 import { provideRouter } from '@angular/router';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { routes } from './app.routes';
-
 import { AuthService } from './features/auth/services/auth.service';
 import { firstValueFrom } from 'rxjs';
+import { registerLocaleData } from '@angular/common';
+import localeFr from '@angular/common/locales/fr';
+import { LOCALE_ID } from '@angular/core';
+
+registerLocaleData(localeFr);
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -12,7 +16,7 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     provideNativeDateAdapter(),
-
+    { provide: LOCALE_ID, useValue: 'fr' },
     provideAppInitializer(() => {
       const authService = inject(AuthService);
 

@@ -1,67 +1,101 @@
-@if(workData$ | async; as work) {
-
+@if (work) {
   <div class="page">
 
-  <div class="description">
+    <div class="description">
 
-    <div class="description__toolbar">
-      <button
-        class="toolbar__btn"
-        [class.active]="displayMode === 'original'"
-        (click)="chooseDisplayMode('original')">
-        Original
-      </button>
-
-      <div class="toolbar__edit-group">
+      <div *ngIf="userRole === 'COORDINATOR'" class="description__toolbar">
         <button
-          class="toolbar__edit-group__btn"
-          [class.active]="displayMode === 'edit'"
-          (click)="chooseDisplayMode('edit')">
-          Modifier
+          class="toolbar__btn"
+          [class.active]="displayMode === 'original'"
+          (click)="chooseDisplayMode('original')">
+          Original
         </button>
 
-        <button
-          *ngIf="isEditing"
-          class="toolbar__edit-group__btn"
-          [class.active]="displayMode === 'preview'"
-          (click)="chooseDisplayMode('preview')">
-          Aperçu
-        </button>
+        <div class="toolbar__edit-group">
+          <button
+            class="toolbar__edit-group__btn"
+            [class.active]="displayMode === 'edit'"
+            (click)="chooseDisplayMode('edit')">
+            Modifier
+          </button>
+
+          <button
+            *ngIf="isEditing"
+            class="toolbar__edit-group__btn"
+            [class.active]="displayMode === 'preview'"
+            (click)="chooseDisplayMode('preview')">
+            Aperçu
+          </button>
+        </div>
+
+        <div *ngIf="isEditing" class="toolbar__actions">
+          <span class="material-symbols-outlined toolbar__action-btn" (click)="saveEdit()">check</span>
+          <span class="material-symbols-outlined toolbar__action-btn" (click)="cancelEdit()">undo</span>
+        </div>
       </div>
 
-      <div *ngIf="isEditing" class="toolbar__actions">
-        <span class="material-symbols-outlined toolbar__action-btn" (click)="saveEdit()">check</span>
-        <span class="material-symbols-outlined toolbar__action-btn" (click)="cancelEdit()">undo</span>
+      <div class="description__body" [class.description__body--editing]="displayMode === 'edit'">
+        <app-markdown-card
+          *ngIf="displayMode === 'original'"
+          [markdown]="initialMarkdown">
+        </app-markdown-card>
+
+        <textarea
+          *ngIf="displayMode === 'edit'"
+          class="description__editor"
+          [(ngModel)]="markdown"
+          (ngModelChange)="onTextChange()">
+        </textarea>
+
+        <app-markdown-card
+          *ngIf="displayMode === 'preview'"
+          [markdown]="markdown">
+        </app-markdown-card>
       </div>
+
     </div>
 
-    <div class="description__body" [class.description__body--editing]="displayMode === 'edit'">
-      <app-markdown-card
-        *ngIf="displayMode === 'original'"
-        [markdown]="initialMarkdown">
-      </app-markdown-card>
+    <app-date-picker
+      *ngIf="userRole === 'COORDINATOR'"
+      title="Date de remise"
+      [date]="work.dueDate"
+      (chosedDate)="onDateChosed($event)">
+    </app-date-picker>
 
-      <textarea
-        *ngIf="displayMode === 'edit'"
-        class="description__editor"
-        [(ngModel)]="markdown"
-        (ngModelChange)="onTextChange()">
-      </textarea>
+    <div *ngIf="userRole === 'STUDENT'" class="submission">
+      @if (work.dueDate) {
+        <div class="submission__date">
+          <span class="submission__date__label">Date limite</span>
+          <span class="submission__date__data">{{ work.dueDate | date: 'd MMMM yyyy' : '' : 'fr' }}</span>
+        </div>
+      }
 
-      <app-markdown-card
-        *ngIf="displayMode === 'preview'"
-        [markdown]="markdown">
-      </app-markdown-card>
+      <div class="submission__upload">
+        <div
+          class="submission__upload__btn"
+          (click)="onActionClick(fileInput)">
+          <span class="material-symbols-outlined">{{ actionIcon }}</span>
+        </div>
+
+        <div>{{ actionLabel }}</div>
+
+        <input
+          #fileInput
+          type="file"
+          accept=".pdf"
+          style="display: none"
+          (change)="onFileSelected($event)"
+        >
+
+        <div
+          *ngIf="selectedFile || latestSubmission"
+          class="submission__upload__cancelBtn"
+          (click)="onCancelClick()">
+          <span class="material-symbols-outlined submission__upload__cancelBtn__icon">close</span>
+        </div>
+
+      </div>
     </div>
 
   </div>
-
-  <app-date-picker
-    title="Date de remise"
-    [date]="work.dueDate"
-    (chosedDate)="onDateChosed($event)">
-  </app-date-picker>
-
-</div>
-
 }

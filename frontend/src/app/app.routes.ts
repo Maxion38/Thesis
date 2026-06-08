@@ -86,7 +86,7 @@ export const routes: Routes = [
           {path: 'planning', component: PlanningComponent},
         ]
       },
-      { path: 'training-courses/:trainingCourseId/modules/:moduleId', component: ModuleLayoutComponent /* to replace by a ModuleLayoutComponent */,
+      { path: 'training-courses/:trainingCourseId/modules/:moduleId', component: ModuleLayoutComponent,
         children: [
           {path: '', redirectTo: 'description', pathMatch: 'full'},
           { path: 'description', component: ModuleDescriptionComponent,},
@@ -132,17 +132,26 @@ export const routes: Routes = [
       { 
         path: 'modules', component: StudentModulesLayoutComponent,
         children: [
-          {path: '', redirectTo: 'all', pathMatch: 'full'},
-          { path: 'all', component: StudentModulesComponent},  
+          { path: '', component: StudentModulesComponent},  
         ]
       },  
-      { 
-        path: 'modules/:moduleId', component: StudentModuleLayoutComponent,
+      { path: 'modules/:moduleId', component: ModuleLayoutComponent,
         children: [
           {path: '', redirectTo: 'description', pathMatch: 'full'},
-          {path: 'description', component: StudentModuleDescriptionComponent},  
+          { path: 'description', component: ModuleDescriptionComponent,},
+          { path: 'work/:workId', component: WorkComponent,},
+          // { path: 'assessment/:assessmentId', component: ModuleAssessmentComponent,},
+          // { path: 'form/:formId', component: ModuleFormComponent,},
+          // { path: 'activity/:activityId', component: ModuleActivityComponent,},
         ]
-      },  
+      },
+      // { 
+      //   path: 'modules/:moduleId', component: StudentModuleLayoutComponent,
+      //   children: [
+      //     {path: '', redirectTo: 'description', pathMatch: 'full'},
+      //     {path: 'description', component: StudentModuleDescriptionComponent},  
+      //   ]
+      // },  
       { path: 'supervisors', component: SupervisorsComponent},  
       { path: 'juries', component: JuriesComponent},  
       { path: 'notifications', component: NotificationsComponent},
