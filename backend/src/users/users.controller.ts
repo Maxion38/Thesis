@@ -7,7 +7,7 @@ import { Auth } from '../auth/decorators/auth.decorator';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Auth(RoleType.COORDINATOR)
+  @Auth(RoleType.COORDINATOR, RoleType.TEACHER)
   @Get()
   findAll() {
     return this.usersService.findAll();

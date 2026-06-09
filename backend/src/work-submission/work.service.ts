@@ -210,4 +210,25 @@ export class WorkService {
     res.setHeader('Content-Type', 'application/pdf');
     fs.createReadStream(absolutePath).pipe(res);
   }
+
+
+  async getUserSubmissions(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with id ${userId} not found`);
+    }
+
+    return this.prisma.userWorkSubmission.findMany({
+      where: { userId },
+      orderBy: { submittedAt: 'desc' },
+      include: {
+        work: {
+          include: { tool: true },
+        },
+      },
+    });
+  }
 }

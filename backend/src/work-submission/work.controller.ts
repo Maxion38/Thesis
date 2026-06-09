@@ -82,4 +82,10 @@ export class WorkController {
   ) {
     return this.workService.removeSubmission(submissionId, req.user.userId);
   }
+
+  @Get('user-submissions/:userId')
+  @Auth(RoleType.COORDINATOR, RoleType.TEACHER)
+  getUserSubmissions(@Param('userId', ParseIntPipe) userId: number) {
+    return this.workService.getUserSubmissions(userId);
+  }
 }
