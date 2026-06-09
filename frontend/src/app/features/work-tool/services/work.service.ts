@@ -66,4 +66,11 @@ export class WorkService {
       { withCredentials: true },
     );
   }
+
+  getUserSubmissions(userId: number): Observable<WorkSubmissionModel[] | null> {
+    return this.http.get<WorkSubmissionModel[] | null>(
+      `${this.apiUrl}/user-submissions/${userId}`,
+      { withCredentials: true },
+    );
+  }
 }

@@ -46,7 +46,7 @@
   <!-- USERS GRID -->
   <div class="page__users-div">
 
-    <div *ngFor="let card of filteredUsers" class="user-card">
+    <div *ngFor="let card of filteredUsers" class="user-card" (click)="onUserCardClick(card)">
 
       <div class="user-card__profile">
         {{ card.user.surname.charAt(0).toUpperCase() }}{{ card.user.firstname?.charAt(0)?.toUpperCase() }}

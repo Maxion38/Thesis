@@ -1,10 +1,12 @@
 import { ChangeDetectorRef , Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { RoleType } from '../../../entities/role.entity';
 import { UsersService } from '../../services/users.service';
 import { UserModel } from '../../models/users.model';
+
+// TODO : exclude logged user
 
 type UserCard = {
   user: UserModel;
@@ -43,6 +45,7 @@ export class AllUsersComponent implements OnInit {
   constructor (
     private changeDetectorRef: ChangeDetectorRef,
     private usersService : UsersService,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -131,5 +134,9 @@ export class AllUsersComponent implements OnInit {
       default:
         return role;
     }
+  }
+
+  onUserCardClick(card: UserCard): void {
+    this.router.navigate(['/teacher/users', card.user.id]);
   }
 }

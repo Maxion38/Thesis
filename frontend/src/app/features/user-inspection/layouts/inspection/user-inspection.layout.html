@@ -1,0 +1,32 @@
+<div class="page">
+
+  <div class="header">
+
+    <app-back-button [route]=backRoute></app-back-button>
+    
+    <div class="user-card" *ngIf="selectedUser" (click)="showAddOptions = !showAddOptions">
+      <div class="user-card__profile">{{ getInitials(selectedUser) }}</div>
+      <div class="user-card__name">{{ selectedUser.firstname || '' }} {{ selectedUser.surname }}</div>
+      <span class="material-symbols-outlined user-card__dropdown">{{ showAddOptions ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
+      
+      <div class="add-menu" *ngIf="showAddOptions" (click)="$event.stopPropagation()">
+        <button 
+          *ngFor="let user of users" 
+          class="add-menu__item"
+          (click)="selectUser(user); $event.stopPropagation()">
+          {{ user.firstname }} {{ user.surname }}
+        </button>
+      </div>
+    </div>
+
+    <div class="header__tabbar-wrapper">
+      <app-tabbar class="header__tabbar" [tabs]="tabbarItems"></app-tabbar>
+    </div>
+
+  </div>
+
+  <div class="content">
+    <router-outlet></router-outlet>
+  </div>
+
+</div>

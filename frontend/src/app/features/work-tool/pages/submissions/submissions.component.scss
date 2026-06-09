@@ -1,0 +1,62 @@
+.page {
+  padding: 0 50px 30px 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.submission-card {
+  width: 100%;
+  height: 80px;
+  border-radius: 12px;
+  padding: 10px 50px;
+
+  box-shadow: 0 5px 5px rgba(0, 0, 0, 0.2);
+  background-color: #D9D9D9;
+
+  display: flex;
+  align-items: center;
+  gap: 50px;
+
+  &__tool {
+    font-size: 1.2rem;
+    font-family: 'joan';
+  }
+
+  &__tool-name {
+    font-size: 0.9rem;
+    font-weight: 300;
+  }
+
+  &__submissions {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+  }
+}
+
+.submission-card__download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: rgb(240, 240, 240);
+  color: #555;
+  box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.2);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  margin-left: 12px;
+
+  &:hover {
+    background-color: #b4b4b4;
+  }
+
+  .material-symbols-outlined {
+    font-size: 1.4rem;
+  }
+}
+

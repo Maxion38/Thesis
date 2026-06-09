@@ -1,0 +1,20 @@
+<div class="page">
+
+  @for (submission of submissions; track submission.id) {
+    <div class="submission-card">
+      <span class="submission-card__tool">Travail</span>
+      <span class="submission-card__tool-name">{{ submission.work.tool.name }}</span>
+
+      <div class="submission-card__submissions">
+
+        <span>{{ submission.submittedAt | date: 'd MMMM yyyy' : '' : 'fr' }}</span>
+        <button class="submission-card__download" (click)="downloadSubmission(submission)">
+          <span class="material-symbols-outlined">download</span>
+        </button>
+
+      </div>
+
+    </div>
+  }
+
+</div>

@@ -40,6 +40,9 @@ import { StudentModuleLayoutComponent } from './features/modules/modules-student
 import { StudentModulesComponent } from './features/modules/modules-student/pages/modules/modules.component';
 import { StudentModuleDescriptionComponent } from './features/modules/modules-student/pages/module/description/description.component';
 import { ModuleLayoutComponent } from './features/modules/layouts/module-layout/module.layout';
+import { TeacherLayoutComponent } from './layouts/teacher-layout/teacher.layout';
+import { UserInspectionComponent } from './features/user-inspection/layouts/inspection/user-inspection.layout';
+import { SubmissionComponent } from './features/work-tool/pages/submissions/submissions.component';
 
 export const routes: Routes = [
   {
@@ -86,11 +89,11 @@ export const routes: Routes = [
           {path: 'planning', component: PlanningComponent},
         ]
       },
-      { path: 'training-courses/:trainingCourseId/modules/:moduleId', component: ModuleLayoutComponent,
+      {path: 'training-courses/:trainingCourseId/modules/:moduleId', component: ModuleLayoutComponent,
         children: [
           {path: '', redirectTo: 'description', pathMatch: 'full'},
-          { path: 'description', component: ModuleDescriptionComponent,},
-          { path: 'work/:workId', component: WorkComponent,},
+          {path: 'description', component: ModuleDescriptionComponent,},
+          {path: 'work/:workId', component: WorkComponent,},
           // { path: 'assessment/:assessmentId', component: ModuleAssessmentComponent,},
           // { path: 'form/:formId', component: ModuleFormComponent,},
           // { path: 'activity/:activityId', component: ModuleActivityComponent,},
@@ -114,14 +117,37 @@ export const routes: Routes = [
       { path: 'notifications', component: NotificationsComponent},
     ]
   },
-  /*
   {
     path: 'teacher',
     component: TeacherLayoutComponent,
     canActivate: [AuthGuard, RoleGuard],
     data: { roles: ['TEACHER'] },
-    children: [...]
-  }*/
+    children: [
+      { path: '', component: DashboardComponent},
+      { 
+        path: 'users', 
+        component: UsersLayoutComponent,
+        children: [
+          { path: '', redirectTo: 'all', pathMatch: 'full'},
+          { path: 'all', component: AllUsersComponent},
+          { path: 'my-users', component: AllUsersComponent}, //TODO my-users page
+        ]
+      },  
+      { 
+        path: 'users/:userId', 
+        component: UserInspectionComponent,
+        children: [
+          { path: '', redirectTo: 'submissions', pathMatch: 'full'},
+          { path: 'submissions', component: SubmissionComponent},
+          { path: 'training-course', component: SubmissionComponent}, //TODO training-course page
+          { path: 'profile', component: SubmissionComponent}, //TODO profile page
+        ]
+      },  
+      { path: 'supervisors', component: SupervisorsComponent},  
+      { path: 'juries', component: JuriesComponent},  
+      { path: 'notifications', component: NotificationsComponent},
+    ]
+  },
   {
     path: 'student',
     component: StudentLayoutComponent,
