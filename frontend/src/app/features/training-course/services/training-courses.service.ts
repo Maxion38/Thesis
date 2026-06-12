@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { TrainingCourseModel, TrainingCourseWithStats } from './../models/training-course.model'
 import { ModuleModel } from '../../modules/modules-coordinator/models/module.model';
+import { environment } from '../../../../environments/environment';
 
 
 @Injectable({
@@ -13,7 +14,7 @@ export class TrainingCoursesService {
 
   private http = inject(HttpClient);
 
-  private apiUrl = 'http://localhost:3000/training-courses';
+  private apiUrl = `${environment.apiUrl}/training-courses`;
 
   getAll(): Observable<TrainingCourseModel[]> {
     return this.http.get<TrainingCourseModel[]>(

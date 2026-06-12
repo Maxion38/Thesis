@@ -37,6 +37,18 @@
 
 .actions {
     display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    flex-shrink: 0;
 }
 
 .action {

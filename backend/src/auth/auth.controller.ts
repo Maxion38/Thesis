@@ -19,8 +19,8 @@ export class AuthController {
 
   @Get('me')
   @Auth()
-  getMe(@Req() req: any) {
-    return req.user;
+  async getMe(@Req() req: any) {
+    return this.authService.getCurrentUser(req.user.userId);
   }
 
 

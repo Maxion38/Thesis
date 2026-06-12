@@ -31,4 +31,5 @@ export interface WorkSubmissionModel {
   userId: number;
   projectId: number;
   submittedAt: string;
+  work: any;
 }

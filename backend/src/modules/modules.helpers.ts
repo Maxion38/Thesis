@@ -54,12 +54,13 @@ export function resolveToolGroup(tool: ToolWithRelations): ModuleToolGroupDto {
         .flatMap(w => w.userWorkSubmissions)
         .sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime());
 
+      const dueDate = tool.works[0]?.dueDate ?? null;
+
       if (submissions.length > 0) {
         state = 'SUBMITTED';
-        date = submissions[0].submittedAt;
-      } else {
-        date = tool.createdAt;
       }
+
+      date = dueDate ?? undefined;
       break;
     }
 

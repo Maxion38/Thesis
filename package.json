@@ -1,0 +1,25 @@
+{
+  "name": "thesis",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently \"cd backend && npm run start:dev\" \"cd backend && npx prisma studio\" \"cd frontend && npx ng serve --open\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Maxion38/Thesis.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Maxion38/Thesis/issues"
+  },
+  "homepage": "https://github.com/Maxion38/Thesis#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

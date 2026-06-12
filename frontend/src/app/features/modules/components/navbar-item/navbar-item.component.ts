@@ -14,6 +14,7 @@ export class NavbarItemComponent {
   @Input() active: boolean = false;
   @Input() isEditable: boolean = false;
   @Input() isDeletable: boolean = false;
+  @Input() icon?: string;
 
   @Output() deleted = new EventEmitter<void>();
   @Output() nameChange = new EventEmitter<string>();

@@ -99,6 +99,19 @@ export class AuthService {
     return toDtoUser(user);
   }
 
+  async getCurrentUser(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: USER_WITH_ROLES,
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return toDtoUser(user);
+  }
+
   generateToken(user: UserDto) {
     const payload = {
       sub: user.id,

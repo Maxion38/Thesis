@@ -8,6 +8,7 @@ import { ModuleOverviewModel } from '../modules-student/model/module-overview.mo
 import { mapModuleOverview } from '../modules-student/mappers/module-overview.mapper';
 import { ModuleDetailsModel } from '../modules-student/model/module-details.model';
 import { mapModuleDetails } from '../modules-student/mappers/module-details.mapper';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -16,7 +17,7 @@ export class ModulesService {
 
   private http = inject(HttpClient);
 
-  private apiUrl = 'http://localhost:3000/modules';
+  private apiUrl = `${environment.apiUrl}/modules`;
 
   getAll(): Observable<ModuleModel[]> {
     return this.http.get<ModuleModel[]>(

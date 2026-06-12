@@ -10,7 +10,13 @@ class="input"
 (keydown.escape)="cancelEdit()"
 />
 
-<div class="actions" *ngIf="active">
+<div class="actions" *ngIf="active || icon">
+    <ng-container *ngIf="!isEditing && icon">
+        <div class="icon">
+            <span class="material-symbols-outlined action">{{ icon }}</span>
+        </div>
+    </ng-container>
+
     <ng-container *ngIf="!isEditing">
         <div class="edit" *ngIf="isEditable" (click)="$event.stopPropagation(); startEdit()">
         <span class="material-symbols-outlined action">edit</span>

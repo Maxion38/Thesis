@@ -42,7 +42,7 @@ $card-width: 300px;
     width: 300px;
     background-color: rgb(255, 255, 255);
     font-size: 1rem;
-    font-family: 'joan';
+    font-family: 'joan', serif;
     color: rgb(39, 39, 39);
     border-radius: 30px;
     box-shadow: inset 2px 2px 2px rgba(0, 0, 0, 0.25);
@@ -99,6 +99,12 @@ $card-width: 300px;
     border-radius: 12px;
     padding: 16px;
     box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: all ease 0.1s;
+
+    &:hover {
+        background-color: #cccccc;
+    }
 
     &__profile {
         display: flex;

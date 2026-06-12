@@ -16,7 +16,7 @@
 
     &__left {
       text-align: left;
-      font-family: 'joan';
+      font-family: 'joan', serif;
       font-size: 1.3rem;
       padding-left: 10px;
       padding-top: 10px; 
@@ -63,7 +63,7 @@
   }
 
   &__label {
-    font-family: 'joan';
+    font-family: 'joan', serif;
     margin-right: 3px;
   }
 }

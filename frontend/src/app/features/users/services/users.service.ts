@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { UserModel } from '../models/users.model';
 import { ProjectModel } from '../models/project.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +13,8 @@ export class UsersService {
 
   private http = inject(HttpClient);
 
-  private apiUrl = 'http://localhost:3000/users';
+  private apiUrl = `${environment.apiUrl}/users`;
+  
 
   getAll(): Observable<UserModel[]> {
     return this.http.get<UserModel[]>(

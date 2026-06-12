@@ -4,6 +4,7 @@ import { Observable, map } from 'rxjs';
 
 import { ToolModel } from '../models/tool.model';
 import { mapTool, mapTools } from '../mappers/tool.mapper';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -11,7 +12,7 @@ import { mapTool, mapTools } from '../mappers/tool.mapper';
 export class ToolService {
   private http = inject(HttpClient);
 
-  private apiUrl = 'http://localhost:3000/tools';
+  private apiUrl = `${environment.apiUrl}/tools`;
 
   getToolsByModuleId(moduleId: number): Observable<ToolModel[]> {
     return this.http

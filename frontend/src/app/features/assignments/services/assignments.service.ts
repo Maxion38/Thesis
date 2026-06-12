@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { UserDto } from '../../users/dto/user.dto';
+import { environment } from '../../../../environments/environment';
 
 
 @Injectable({
@@ -10,7 +11,7 @@ import { UserDto } from '../../users/dto/user.dto';
 export class AssignmentsService {
   private http = inject(HttpClient);
 
-  private apiUrl = 'http://localhost:3000/assignments';
+  private apiUrl = `${environment.apiUrl}/assignments`;
 
   getAssignedUsers(trainingCourseId: number): Observable<UserDto[]> {
     return this.http.get<UserDto[]>(

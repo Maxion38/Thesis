@@ -34,14 +34,14 @@ form {
     max-width: 520px;
     background-color: #F4F4F4;
     padding: 30px 40px 20px 40px;
-    border-radius: 12px;
+    border-radius: 50px;
     box-sizing: border-box;
     margin: 0 auto;
     overflow: hidden;
 }
 
 .input-label {
-    font-family: 'joan';
+    font-family: 'joan', serif;
     display: block;
     text-align: left;
 }
@@ -103,7 +103,7 @@ button:active {
 
 .title {
     font-size: 2rem;
-    font-family: 'joan';
+    font-family: 'joan', serif;
     color: #1F4541;
     font-weight: 600;
 }

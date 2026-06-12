@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { CreateWorkModel, UpdateWorkModel, WorkModel, WorkSubmissionModel } from '../models/work.model';
 import { mapWork } from '../mappers/work.mapper';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -10,7 +11,7 @@ import { mapWork } from '../mappers/work.mapper';
 export class WorkService {
   private http = inject(HttpClient);
 
-  private apiUrl = 'http://localhost:3000/works';
+  private apiUrl = `${environment.apiUrl}/works`;
 
 
   getWork(workId: number): Observable<WorkModel> {
@@ -63,6 +64,13 @@ export class WorkService {
   removeSubmission(workId: number, submissionId: number): Observable<void> {
     return this.http.delete<void>(
       `${this.apiUrl}/${workId}/submissions/${submissionId}`,
+      { withCredentials: true },
+    );
+  }
+
+  getUserSubmissions(userId: number): Observable<WorkSubmissionModel[] | null> {
+    return this.http.get<WorkSubmissionModel[] | null>(
+      `${this.apiUrl}/user-submissions/${userId}`,
       { withCredentials: true },
     );
   }

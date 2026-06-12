@@ -56,13 +56,13 @@
       <div class="action" *ngFor="let action of actionLabelAndDates">
         <button (click)="onCtaClick(action.toolId)">{{ action.label }}</button>
 
-        <ng-container *ngIf="getDateLabel(action.dateLimit) as dateInfo">
+        @let dateInfo = getDateLabel(action.dateLimit);
+        <ng-container>
           <div
             class="actions__date-limit"
-            [class.actions__date-limit--overdue]="dateInfo.isOverdue"
-            [title]="dateInfo.label"
+            [title]="dateInfo?.label ?? '.'"
           >
-            {{ dateInfo.label }}
+            {{ dateInfo?.label ?? '' }}
           </div>
         </ng-container>
 

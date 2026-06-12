@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { UserToInviteModel } from '../model/user-to-invite.model';
 import { ActivateAccountModel } from '../model/activateAccountModel';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +13,7 @@ export class InvitationService {
 
   private http = inject(HttpClient);
 
-  private apiUrl = 'http://localhost:3000/invitation';
+  private apiUrl = `${environment.apiUrl}/invitation`;
 
   inviteUsers(data: UserToInviteModel[]): Observable<{ message: string; count: number }> {
     return this.http.post<{ message: string; count: number }>(

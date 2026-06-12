@@ -14,6 +14,7 @@ export class LoginComponent implements OnInit {
 
   form!: FormGroup;
   submitted = false;
+  errorMessage: string | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -46,6 +47,8 @@ export class LoginComponent implements OnInit {
       password: this.form.value.password,
     };
 
+    this.errorMessage = null;
+
     this.authService.login(data).subscribe({
       next: () => {
         this.authService.checkAuth().subscribe(user => {
@@ -55,12 +58,17 @@ export class LoginComponent implements OnInit {
 
           if (role === 'COORDINATOR') {
             this.router.navigate(['/coordinator']);
+          } else if (role === 'TEACHER') {
+            this.router.navigate(['/teacher']);
           } else {
             this.router.navigate(['/student']);
           }
         });
       },
       error: (err) => {
+        this.errorMessage = err?.status === 401
+          ? 'Identifiants non valides'
+          : 'Erreur de connexion. Veuillez réessayer.';
         console.error('Login failed', err);
       }
     });

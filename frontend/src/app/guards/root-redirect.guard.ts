@@ -32,6 +32,10 @@ export class RootRedirectGuard implements CanActivate {
         return this.router.parseUrl('/student');
     }
 
+    if (role === 'TEACHER') {
+        return this.router.parseUrl('/teacher');
+    }
+
     return this.router.parseUrl('/auth/login');
     }
 }

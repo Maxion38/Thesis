@@ -46,6 +46,7 @@ export class StudentModulesComponent implements OnInit {
       next: (modules) => {
         this.modules = modules;
         // this.modules = this.mockModules; // only for testing
+        console.log(modules);
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -73,10 +74,13 @@ export class StudentModulesComponent implements OnInit {
   }
 
   onModuleCardAction(event: ModuleCardActionEvent): void {
+    console.log(event)
+
     this.router.navigate([
       '/student/modules',
       event.moduleId,
-      'description'
+      'work',
+      event.toolId
     ]);
   }
 
@@ -137,13 +141,12 @@ export class StudentModulesComponent implements OnInit {
 
 
   get toDoModules(): ModuleOverviewModel[] {
-    return this.modules?.filter(module => {
+    const filtered = this.modules?.filter(module => {
 
-      if (module.status?.locked) return false; // fix bug 1
+      if (module.status?.locked) return false;
 
       const hasPendingWorkOrForm = module.groups?.some(group =>
         (group.type === 'WORK' || group.type === 'FORM') &&
-        group.date != null &&
         group.state !== 'SUBMITTED'
       );
 
@@ -155,7 +158,19 @@ export class StudentModulesComponent implements OnInit {
 
       return hasPendingWorkOrForm || hasPendingActivity;
     }) ?? [];
+
+    return filtered.sort((a, b) => {
+      const dateA = a.groups?.find(g => g.type === 'WORK' || g.type === 'FORM' || g.type === 'ACTIVITY')?.date;
+      const dateB = b.groups?.find(g => g.type === 'WORK' || g.type === 'FORM' || g.type === 'ACTIVITY')?.date;
+
+      if (dateA == null && dateB == null) return 0;
+      if (dateA == null) return 1;  // a sans date → à la fin
+      if (dateB == null) return -1; // b sans date → à la fin
+
+      return new Date(dateA).getTime() - new Date(dateB).getTime();
+    });
   }
+  
 
   // this option should appears only if noDateModules.length > 0
   get noDateModules(): ModuleOverviewModel[] {

@@ -44,6 +44,7 @@
           routerLinkActive
           #rla="routerLinkActive"
           [active]="rla.isActive"
+          icon="upload_file"
           [isEditable]="rla.isActive && userRole === 'COORDINATOR'"
           [isDeletable]="rla.isActive && userRole === 'COORDINATOR'"
           (nameChange)="onToolNameChange(tool, $event)"

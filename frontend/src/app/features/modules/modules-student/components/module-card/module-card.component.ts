@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ModuleOverviewModel, ModuleToolGroupModel, ConditionModel } from '../../model/module-overview.model';
@@ -15,9 +15,14 @@ export interface ModuleCardActionEvent {
   templateUrl: './module-card.component.html',
   styleUrls: ['./module-card.component.scss']
 })
-export class StudentModuleCardComponent {
+export class StudentModuleCardComponent implements OnInit {
   @Input({ required: true }) module!: ModuleOverviewModel;
   @Output() ctaClicked = new EventEmitter<ModuleCardActionEvent>();
+
+  ngOnInit(): void {
+    console.log(this.module)
+  }
+
 
   get toolsSummary(): string {
     const groupTypes = this.module.groups.map(group => group.type);
@@ -29,8 +34,8 @@ export class StudentModuleCardComponent {
 
     const parts = Object.entries(countMap).map(([type, count]) => {
       const label = this.formatLabel(type);
-      const finalLabel = count > 1 ? label + 's' : label;
-      return count > 1 ? `${count} ${finalLabel}` : finalLabel;
+      const finalLabel = count > 1 ? label + '' : label;
+      return count > 1 ? `${count} x ${finalLabel}` : finalLabel;
     });
 
     return parts.join(' - ');
@@ -119,7 +124,9 @@ export class StudentModuleCardComponent {
     });
   }
 
-  onCtaClick(toolId?: number): void {
+  onCtaClick(toolId: number): void {
+    console.log('------------');
+    console.log(toolId);
     this.ctaClicked.emit({
       moduleId: this.module.id,
       toolId,
