@@ -5,7 +5,14 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "concurrently \"cd backend && npm run start:dev\" \"cd backend && npx prisma studio\" \"cd frontend && npx ng serve --open\""
+    "dev:db": "docker compose -f docker-compose.dev.yml up",
+    "dev:backend": "cd backend && npm run start:dev",
+    "dev:studio": "cd backend && npx prisma studio",
+    "dev:frontend": "cd frontend && npx ng serve --open",
+    "dev": "concurrently -k -n DB,BACKEND,STUDIO,FRONTEND -c blue,green,yellow,magenta \"npm:dev:db\" \"npm:dev:backend\" \"npm:dev:studio\" \"npm:dev:frontend\"",
+    "prod": "docker compose up -d --build",
+    "prod:down": "docker compose down",
+    "prod:logs": "docker compose logs -f"
   },
   "repository": {
     "type": "git",
@@ -14,7 +21,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/Maxion38/Thesis/issues"
   },
