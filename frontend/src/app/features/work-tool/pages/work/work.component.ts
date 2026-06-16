@@ -23,6 +23,7 @@ export class WorkComponent implements OnInit {
   workId!: number;
   work!: WorkModel;
   latestSubmission: WorkSubmissionModel | null = null;
+  minDate!: Date;
 
   displayMode: DisplayMode = 'original';
   markdown = '';
@@ -37,6 +38,9 @@ export class WorkComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.minDate = new Date();
+    this.minDate.setHours(0, 0, 0, 0);
+
     this.userRole = this.authService.getFirstRole();
 
     this.route.paramMap.pipe(

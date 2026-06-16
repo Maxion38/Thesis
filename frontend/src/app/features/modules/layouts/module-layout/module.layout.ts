@@ -96,7 +96,7 @@ export class ModuleLayoutComponent implements OnInit {
 
     const workData: CreateWorkModel = {
       name: "Nouvelle remise de travail",
-      description: "Veuillez insérer une desription.",
+      description: "Veuillez insérer une description.",
       maxAttempts: 1,
       moduleId: this.moduleId,
     };
@@ -130,7 +130,7 @@ export class ModuleLayoutComponent implements OnInit {
   deleteTool(tool : ToolModel): void {
     this.toolService.deleteTool(tool.id).subscribe({
       next: () => {
-        this.router.navigate(['/coordinator', 'training-courses', '15', 'modules', '8', 'description'])
+        this.router.navigate(['/coordinator', 'training-courses', this.trainingCourseId, 'modules', this.moduleId, 'description'])
         this.loadTools();
       },
       error: (err) => console.error('Erreur suppression tool', err)

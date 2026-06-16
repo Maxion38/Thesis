@@ -1,17 +1,17 @@
 <span *ngIf="!isEditing" class="text">{{ name }}</span>
 
 <input
-*ngIf="isEditing"
-[(ngModel)]="editedName"
-type="text"
-class="input"
-(click)="$event.stopPropagation()"
-(keydown.enter)="saveEdit()"
-(keydown.escape)="cancelEdit()"
+    *ngIf="isEditing"
+    [(ngModel)]="editedName"
+    type="text"
+    class="input"
+    (click)="$event.stopPropagation()"
+    (keydown.enter)="saveEdit()"
+    (keydown.escape)="cancelEdit()"
 />
 
 <div class="actions" *ngIf="active || icon">
-    <ng-container *ngIf="!isEditing && icon">
+    <ng-container *ngIf="!isEditing && icon && !active">
         <div class="icon">
             <span class="material-symbols-outlined action">{{ icon }}</span>
         </div>

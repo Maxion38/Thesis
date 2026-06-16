@@ -8,7 +8,7 @@ export class EmailService {
   });
 
   async sendInvitation(email: string, token: string) {
-    const link = `http://localhost:4200/auth/activateAccount?token=${token}`; // TODO mettre variable pour la passation
+    const link = `${process.env.FRONTEND_URL}/auth/activateAccount?token=${token}`;
 
     await this.brevoClient.transactionalEmails.sendTransacEmail({
       sender: {

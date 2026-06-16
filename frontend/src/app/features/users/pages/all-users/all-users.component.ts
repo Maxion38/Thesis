@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { RoleType } from '../../../entities/role.entity';
 import { UsersService } from '../../services/users.service';
 import { UserModel } from '../../models/users.model';
+import { AuthService } from '../../../auth/services/auth.service';
 
 // TODO : exclude logged user
 
@@ -27,6 +28,7 @@ export interface trainingCourse {
 export class AllUsersComponent implements OnInit {
   users: UserModel[] = [];
   trainingCourses: trainingCourse[] = [];
+  role!: RoleType;
 
   mockTrainingCourses: trainingCourse[] = [
     { id: 1, label: "Parcours de formation TFE Q1" },
@@ -45,10 +47,13 @@ export class AllUsersComponent implements OnInit {
   constructor (
     private changeDetectorRef: ChangeDetectorRef,
     private usersService : UsersService,
+    private authService : AuthService,
     private router: Router,
   ) {}
 
   ngOnInit(): void {
+    this.role = this.authService.getFirstRole();
+
     this.usersService.getAll().subscribe ({
       next: (users) => {
         this.users = users;
@@ -73,10 +78,17 @@ export class AllUsersComponent implements OnInit {
   }
 
   applyFilters(): void {
+    const currentUser = this.authService.getUser();
+    const currentUserId = currentUser?.id;
+
     const search = this.searchText.toLowerCase().trim();
 
     const filteredUsers = this.users
       .filter(user => {
+        // EXCLUDE CURRENT USER
+        if (user.id === currentUserId) {
+          return false;
+        }
 
         // ROLE FILTER
         if (
@@ -134,6 +146,10 @@ export class AllUsersComponent implements OnInit {
       default:
         return role;
     }
+  }
+
+  isClickable(): boolean {
+    return this.role === RoleType.TEACHER;
   }
 
   onUserCardClick(card: UserCard): void {

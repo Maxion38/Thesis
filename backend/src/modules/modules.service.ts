@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateModuleDto } from './dto/create-module.dto';
 import { UpdateModuleDto } from './dto/update-module.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -58,11 +58,35 @@ export class ModulesService {
 
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
-      select: { trainingCourseId: true },
+      select: {
+        trainingCourseId: true,
+        trainingCourse: {
+          select: {
+            startDate: true,
+            endDate: true,
+          },
+        },
+      },
     });
 
     if (!project) {
       throw new NotFoundException(`Project ${projectId} not found`);
+    }
+
+    const course = project.trainingCourse;
+
+    if (!course?.startDate || !course?.endDate) {
+      throw new ForbiddenException(
+        `Training course is not available (missing schedule configuration)`,
+      );
+    }
+
+    const now = new Date();
+
+    if (now < course.startDate || now > course.endDate) {
+      throw new ForbiddenException(
+        `Training course is not active (accessible only between ${course.startDate} and ${course.endDate})`,
+      );
     }
 
     const modules = await this.prisma.module.findMany({

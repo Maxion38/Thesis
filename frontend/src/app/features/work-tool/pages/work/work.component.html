@@ -59,7 +59,9 @@
       *ngIf="userRole === 'COORDINATOR'"
       title="Date de remise"
       [date]="work.dueDate"
-      (chosedDate)="onDateChosed($event)">
+      [minDate]="minDate"
+      (chosedDate)="onDateChosed($event)"
+    >
     </app-date-picker>
 
     <div *ngIf="userRole === 'STUDENT'" class="submission">

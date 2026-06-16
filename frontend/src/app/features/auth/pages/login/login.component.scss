@@ -1,41 +1,46 @@
 .login {
+    min-height: 100vh;
     display: flex;
-    flex-direction: column;
-    height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0;
     position: relative;
 }
 
-div {
-    flex: 1;
+.form-wrapper {
+    position: relative;
+    width: min(95%, 550px);
+    max-width: 550px;
 }
 
-.top-div {
-    flex: 1;
-    display: flex;
-    justify-content: center;
+.title {
+    position: absolute;
+    top: -3.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: clamp(1.75rem, 3vw, 2.2rem);
+    font-family: 'joan', serif;
+    color: #1F4541;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+    margin: 0;
 }
-
-.mid-div {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-}
-
 
 form {
     display: flex;
     align-items: center;
     flex-direction: column;
     gap: 20px;
-    width: 550px;
+    width: 100%;
     background-color: #F4F4F4;
-    padding: 30px 60px 60px 50px;
+    padding: 30px 40px 40px;
     border-radius: 50px;
     box-sizing: border-box;
 }
 
 input {
-    width: 300px;
+    width: min(100%, 360px);
     background-color: white;
     padding: 10px;
     border: none;
@@ -44,7 +49,7 @@ input {
 }
 
 button {
-    width: 175px;
+    width: min(175px, 100%);
     background-color: white;
     padding: 12px;
     border: none;
@@ -70,11 +75,30 @@ button:active {
     text-align: center;
 }
 
-.title {
-    font-size: 2rem;
-    font-family: 'joan', serif;
-    color: #1F4541;
-    font-weight: 600;
-    position: absolute;
-    top: 220px;
+@media (max-width: 900px) {
+    .login {
+        padding: 12px 0;
+    }
+
+    .title {
+        margin-bottom: 1.25rem;
+        font-size: 1.8rem;
+    }
+
+    .form-wrapper {
+        padding-bottom: 12px;
+    }
+
+    form {
+        padding: 24px 24px 30px;
+        border-radius: 30px;
+    }
+
+    input {
+        width: 100%;
+    }
+
+    button {
+        width: 100%;
+    }
 }

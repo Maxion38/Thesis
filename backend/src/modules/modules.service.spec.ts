@@ -114,12 +114,65 @@ describe('ModulesService', () => {
     it('should throw NotFoundException when project does not exist', async () => {
       mockPrismaService.project.findUnique.mockResolvedValue(null);
 
-      await expect(service.findUserModulesOverview(1, 999)).rejects.toThrow(NotFoundException);
+      await expect(service.findUserModulesOverview(1, 999))
+        .rejects
+        .toThrow(NotFoundException);
     });
 
-    it('should return a mapped ModuleOverviewDto array', async () => {
-      mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
-      mockPrismaService.module.findMany.mockResolvedValue([mockModule]); // tools: []
+    it('should throw ForbiddenException when training course has no dates', async () => {
+      mockPrismaService.project.findUnique.mockResolvedValue({
+        trainingCourseId: 10,
+        trainingCourse: {
+          startDate: null,
+          endDate: null,
+        },
+      });
+
+      await expect(service.findUserModulesOverview(1, 1))
+        .rejects
+        .toThrow('Training course is not available');
+    });
+
+    it('should throw ForbiddenException when course is not yet started', async () => {
+      mockPrismaService.project.findUnique.mockResolvedValue({
+        trainingCourseId: 10,
+        trainingCourse: {
+          startDate: new Date(Date.now() + 100000), // futur
+          endDate: new Date(Date.now() + 200000),
+        },
+      });
+
+      await expect(service.findUserModulesOverview(1, 1))
+        .rejects
+        .toThrow('Training course is not active');
+    });
+
+    it('should throw ForbiddenException when course is expired', async () => {
+      mockPrismaService.project.findUnique.mockResolvedValue({
+        trainingCourseId: 10,
+        trainingCourse: {
+          startDate: new Date(Date.now() - 200000),
+          endDate: new Date(Date.now() - 100000), // passé
+        },
+      });
+
+      await expect(service.findUserModulesOverview(1, 1))
+        .rejects
+        .toThrow('Training course is not active');
+    });
+
+    it('should return modules when course is active', async () => {
+      mockPrismaService.project.findUnique.mockResolvedValue({
+        trainingCourseId: 10,
+        trainingCourse: {
+          startDate: new Date(Date.now() - 100000),
+          endDate: new Date(Date.now() + 100000),
+        },
+      });
+
+      mockPrismaService.module.findMany.mockResolvedValue([
+        mockModule,
+      ]);
 
       const result = await service.findUserModulesOverview(1, 1);
 

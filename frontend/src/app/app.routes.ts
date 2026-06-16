@@ -109,7 +109,7 @@ export const routes: Routes = [
           {path: 'all', component: AllUsersComponent},
           {path: 'invitations', component: InvitationsComponent},
         ]
-      }, 
+      },  
       { path: 'supervisors', component: SupervisorsComponent},  
       { path: 'juries', component: JuriesComponent},  
       { path: 'notifications', component: NotificationsComponent},

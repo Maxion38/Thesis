@@ -1,17 +1,15 @@
 :host {
   display: flex;
   flex-direction: column;
-  // width: 100%;
 }
 
 .tabbar {
-  // width: 100%;
   margin-bottom: 10px;
-  
   display: flex;
   justify-content: space-between;
   align-items: center;
-  
+  flex-wrap: wrap;
+  gap: 1rem;
 
   &__tabs {
     height: 60px;
@@ -19,9 +17,10 @@
     font-size: 1.1rem;
     color: black;
     display: flex;
-    align-items: start;
+    align-items: center;
     justify-content: center;
-    gap: 9rem;
+    gap: clamp(1rem, 5vw, 4rem);
+    flex-wrap: wrap;
 
     &__only-tabs {
       height: 120px;
@@ -46,23 +45,26 @@
   }
 
   &__title {
+    min-width: 0;
     height: 70px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-
-    font-size: 1.4rem;
+    font-size: clamp(1rem, 2vw, 1.4rem);
     font-family: 'joan', serif;
   }
 
   &__input {
-    font-size: 1.4rem;
+    font-size: clamp(1rem, 2vw, 1.4rem);
     font-family: 'joan', serif;
     border: 1px solid #ccc;
     border-radius: 4px;
-    padding: 4px 8px;
+    padding: 6px 10px;
     outline: none;
+    min-width: 180px;
+    max-width: 320px;
+    width: 100%;
   }
 
   &__actions {
@@ -76,7 +78,7 @@
       align-items: center;
       width: 40px;
       height: 40px;
-      border-radius: 40px;
+      border-radius: 50%;
       cursor: pointer;
       transition: all 0.1s ease;
 
@@ -87,33 +89,49 @@
   }
 
   &__subtitle {
+    min-width: 0;
     height: 30px;
     display: flex;
     align-items: start;
     justify-content: center;
     gap: 10px;
-    font-size: 0.9rem;
+    font-size: clamp(0.8rem, 1.2vw, 0.95rem);
     font-weight: 300;
   }
 
-
   &__edit {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 40px;
-      height: 40px;
-      border-radius: 40px;
-      cursor: pointer;
-      transition: all 0.1s ease;
-      user-select: none;
-      
-      &:hover {
-          background-color: #d9d9d9;
-      }
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    user-select: none;
+
+    &:hover {
+      background-color: #d9d9d9;
+    }
   }
 
+  @media (max-width: 1200px) {
+    justify-content: center;
+    &__tabs {
+      gap: 1.5rem;
+    }
 
+    &__title,
+    &__subtitle {
+      justify-content: center;
+      width: 100%;
+    }
+
+    &__actions {
+      width: 100%;
+      justify-content: center;
+    }
+  }
 }
 
 .delete {

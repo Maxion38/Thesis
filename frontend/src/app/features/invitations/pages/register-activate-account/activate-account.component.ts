@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
 import { InvitationService } from '../../services/invitations.service';
+import { passwordStrengthValidator } from '../../../../shared/validators/password-strength.validator';
 
 
 @Component({
@@ -32,7 +33,12 @@ export class RegisterActivateAccountComponent implements OnInit {
   ngOnInit(): void {
     this.form = this.fb.group({
       // email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(64)]],
+      password: ['', [
+        Validators.required,
+        Validators.minLength(8),
+        Validators.maxLength(64),
+        passwordStrengthValidator(),
+      ]],
       confirmPassword: ['', [Validators.required]],
       surname: ['', [Validators.required]],
       firstname: [''],

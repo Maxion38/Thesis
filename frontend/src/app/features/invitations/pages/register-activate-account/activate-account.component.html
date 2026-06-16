@@ -34,10 +34,12 @@
         placeholder="Mot de passe"
         formControlName="password"
       />
+      <span class="password-hint">Au moins 8 caractères, avec une majuscule, une minuscule et un chiffre.</span>
       <span class="handle" *ngIf="submitted && password?.invalid">
         <span *ngIf="password?.errors?.['required']">Mot de passe requis.</span>
         <span *ngIf="password?.errors?.['minlength']">Mot de passe trop court, minimum 8 caractères.</span>
         <span *ngIf="password?.errors?.['maxlength']">Mot de passe trop long, maximum 64 caractères.</span>
+        <span *ngIf="password?.errors?.['passwordStrength']">Le mot de passe doit contenir une majuscule, une minuscule et un chiffre.</span>
       </span>
 
       <label class="input-label">

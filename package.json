@@ -10,9 +10,10 @@
     "dev:studio": "cd backend && npx prisma studio",
     "dev:frontend": "cd frontend && npx ng serve --open",
     "dev": "concurrently -k -n DB,BACKEND,STUDIO,FRONTEND -c blue,green,yellow,magenta \"npm:dev:db\" \"npm:dev:backend\" \"npm:dev:studio\" \"npm:dev:frontend\"",
-    "prod": "docker compose up -d --build",
-    "prod:down": "docker compose down",
-    "prod:logs": "docker compose logs -f"
+    "prod": "docker compose -f docker-compose.prod.yml up -d --build",
+    "prod:down": "docker compose -f docker-compose.prod.yml down",
+    "prod:logs": "docker compose -f docker-compose.prod.yml logs -f",
+    "publish": "powershell -ExecutionPolicy Bypass -File ./publish.ps1"
   },
   "repository": {
     "type": "git",

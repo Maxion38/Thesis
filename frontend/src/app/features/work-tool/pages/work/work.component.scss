@@ -1,5 +1,7 @@
 .page {
-  padding: 0 50px 30px 50px;
+  width: min(100%, 1400px);
+  margin: 0 auto;
+  padding: 0 clamp(16px, 3vw, 50px) 30px;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -121,8 +123,8 @@ app-date-picker {
 .submission {
   display: flex;
   flex-direction: column;
-  width: 300px;
-
+  max-width: 100%;
+  width: min(100%, 300px);
   background-color: #F4F4F4;
   border-radius: 12px;
 
@@ -149,23 +151,20 @@ app-date-picker {
   &__upload {
     display: flex;
     align-items: center;
-    gap: 20px;
-
-    padding: 20px 20px;
+    gap: clamp(0.75rem, 2vw, 1.25rem);
+    padding: clamp(1rem, 2vw, 1.25rem);
 
     &__btn {
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      width: 70px;
-      height: 70px;
+      width: clamp(50px, 6vw, 70px);
+      height: clamp(50px, 6vw, 70px);
       border-radius: 50%;
-
       background-color: rgb(226, 226, 226);
       color: #555;
       box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.2);
-
       transition: background-color 0.2s, color 0.2s;
       cursor: pointer;
 
@@ -179,14 +178,11 @@ app-date-picker {
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      width: 30px;
-      height: 30px;
+      width: clamp(28px, 4vw, 30px);
+      height: clamp(28px, 4vw, 30px);
       border-radius: 50%;
-
       background-color: rgb(226, 226, 226);
       color: #760000;
-
-
       transition: background-color 0.1s, color 0.1s;
       cursor: pointer;
 
@@ -197,6 +193,59 @@ app-date-picker {
       &__icon {
         font-size: 1rem;
       }
+    }
+  }
+}
+
+@media (max-width: 1200px) {
+  .page {
+    padding: 0 18px 24px;
+  }
+
+  .description {
+    &__toolbar {
+      margin-left: 0;
+      gap: 10px;
+    }
+
+    &__body {
+      &--editing {
+        padding: 20px 24px 30px;
+      }
+    }
+  }
+
+  .submission {
+    width: 100%;
+    max-width: 100%;
+
+    &__date {
+      padding: 16px 24px;
+
+      &__label {
+        font-size: 1rem;
+      }
+    }
+
+    &__upload {
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+  }
+}
+
+@media (max-width: 900px) {
+  .page {
+    padding: 0 12px 20px;
+  }
+
+  .submission {
+    &__date {
+      padding: 14px 18px;
+    }
+
+    &__upload {
+      gap: 0.75rem;
     }
   }
 }

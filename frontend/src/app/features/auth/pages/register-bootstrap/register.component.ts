@@ -3,6 +3,9 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractContro
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
+import { passwordStrengthValidator } from '../../../../shared/validators/password-strength.validator';
+
+
 
 @Component({
   selector: 'app-register-bootstrap',
@@ -12,7 +15,6 @@ import { Router } from '@angular/router';
   styleUrls: ['./register.component.scss'],
 })
 export class RegisterBootstrapComponent implements OnInit {
-
   form!: FormGroup;
   submitted = false;
 
@@ -25,7 +27,12 @@ export class RegisterBootstrapComponent implements OnInit {
   ngOnInit(): void {
     this.form = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(64)]],
+      password: ['', [
+        Validators.required,
+        Validators.minLength(8),
+        Validators.maxLength(64),
+        passwordStrengthValidator(),
+      ]],
       confirmPassword: ['', [Validators.required]],
       surname: ['', [Validators.required]],
       firstname: [''],

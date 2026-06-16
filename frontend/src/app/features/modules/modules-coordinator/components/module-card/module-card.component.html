@@ -6,8 +6,15 @@
     <span class="material-symbols-outlined card__left__edit-icon">edit</span>  
   </div>
 
-  <!-- ACCESS -->
-  <div class="card__middle" [routerLink]="[moduleData.id, 'conditions']">
+  <div class="card__middle">
+    <div class="card__empty">À venir <br> (condition d'accès)</div>
+  </div>
+
+  <div class="card__right">
+    <div class="card__empty">À venir <br> (condition de succès)</div>
+  </div>
+
+  <!-- <div class="card__middle" [routerLink]="[moduleData.id, 'conditions']">
 
     <div class="card__middle__left">
       <span class="card__middle__left__label">
@@ -38,7 +45,6 @@
   </ng-template>
 
 
-  <!-- SUCCESS -->
   <div class="card__right" [routerLink]="[moduleData.id, 'conditions']">
 
     <div class="card__right__left">
@@ -67,6 +73,6 @@
 
   <ng-template #noSuccess>
     <div class="card__empty">+</div>
-  </ng-template>
+  </ng-template> -->
 
 </div>

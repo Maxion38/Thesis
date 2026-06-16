@@ -17,7 +17,7 @@
     <app-date-picker
       title="Date de début"
       [date]="startDate.value"
-      [minDate]="addOneDay(today)"
+      [minDate]="today"
       [maxDate]="endDate.value ? addMinusOneDay(endDate.value) : maxFallback"
       (chosedDate)="onStartDateChosed($event)">
     </app-date-picker>
