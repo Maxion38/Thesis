@@ -75,11 +75,13 @@ Se placer sur la branche de développement :
 ```bash
 git checkout dev
 ```
+`cd backend`
 ```bash
 npm install
 ```
+`cd ..`, `cd frontend`
 ```bash
-cd backend && npm install && cd ../frontend && npm install && cd ..
+npm install
 ```
 
 ### Configurer les variables d'environnement
