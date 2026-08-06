@@ -8,9 +8,24 @@
  *
  * Astuce rapport : copie/colle directement la sortie console (JSON.stringify
  * avec indentation) dans une capture d'écran ou un bloc de code annexe.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * CHANGELOG vs version précédente (adaptation au schema.prisma V2) :
+ *   - Project.supervisorId supprimé -> le "promoteur" n'est plus un champ
+ *     direct sur Project. Un projet n'a désormais aucun ProjectMember
+ *     structurellement marqué "promoteur" (étudiants et promoteur ont tous
+ *     deux subRoleId = null ; seuls les rôles de jury RAPPORTEUR/PRESIDENT/
+ *     LECTEUR sont distingués). On déduit donc le/les enseignant(s) d'un
+ *     projet via le rôle global de l'utilisateur (User.roles = TEACHER),
+ *     pas via un champ dédié.
+ *   - CriteriaAssessment.cellId / relation `cell` supprimés, ainsi que
+ *     `studentId` -> l'évaluation se fait au niveau du projet (pas par
+ *     étudiant), et la note est un `note` (Decimal) directement stocké,
+ *     plus une cellule pointée par FK.
+ * ─────────────────────────────────────────────────────────────────────────
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, RoleType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -22,18 +37,27 @@ function section(title: string) {
 
 async function main() {
   // ═════════════════════════════════════════════════════════════════════
-  // 1) JOINTURE SIMPLE — un projet avec son responsable, sa promotion et
-  //    ses membres, via `include`
+  // 1) JOINTURE SIMPLE — un projet avec sa promotion et ses membres (avec
+  //    leur rôle global), via `include`
   // ═════════════════════════════════════════════════════════════════════
-  section('1. Jointure simple : projets + superviseur + promotion + membres');
+  section('1. Jointure simple : projets + promotion + membres (avec rôles)');
 
   const projectsOverview = await prisma.project.findMany({
     take: 3,
     include: {
-      supervisor: { select: { firstname: true, surname: true, email: true } },
       trainingCourse: { select: { name: true } },
       members: {
-        include: { user: { select: { firstname: true, surname: true } } },
+        include: {
+          user: {
+            select: {
+              firstname: true,
+              surname: true,
+              email: true,
+              roles: { select: { role: { select: { role: true } } } },
+            },
+          },
+          subRole: { select: { subRole: true } },
+        },
       },
     },
   });
@@ -42,7 +66,7 @@ async function main() {
   // ═════════════════════════════════════════════════════════════════════
   // 2) JOINTURE PROFONDE IMBRIQUÉE — le détail complet d'un projet évalué :
   //    formulaire de cadrage + réponses, dépôt de mémoire, évaluations par
-  //    critère avec le libellé de la cellule attribuée
+  //    critère avec la note et l'enseignant évaluateur
   // ═════════════════════════════════════════════════════════════════════
   section('2. Jointure profonde : dossier complet d’un projet évalué');
 
@@ -60,8 +84,7 @@ async function main() {
       criteriaAssessments: {
         include: {
           criteria: { select: { name: true, defaultWeight: true } },
-          cell: { select: { description: true, order: true } },
-          student: { select: { firstname: true, surname: true } },
+          teacher: { select: { firstname: true, surname: true } },
         },
       },
     },
@@ -69,8 +92,8 @@ async function main() {
   console.log(JSON.stringify(evaluatedProject, null, 2));
 
   // ═════════════════════════════════════════════════════════════════════
-  // 3) FILTRAGE RELATIONNEL — étudiants dont le projet n'a pas encore
-  //    déposé de mémoire (filtre sur une relation "none")
+  // 3) FILTRAGE RELATIONNEL — projets dont le mémoire n'a pas encore été
+  //    déposé (filtre sur une relation "none")
   // ═════════════════════════════════════════════════════════════════════
   section('3. Filtrage relationnel : projets sans dépôt de mémoire');
 
@@ -87,48 +110,50 @@ async function main() {
   console.log(JSON.stringify(projectsWithoutSubmission.slice(0, 5), null, 2));
 
   // ═════════════════════════════════════════════════════════════════════
-  // 4) AGRÉGATION — moyenne des notes (order de la cellule, 0=Insuffisant
-  //    à 3=Excellent) par critère, tous projets évalués confondus
+  // 4) AGRÉGATION — moyenne des notes par critère, tous projets évalués
+  //    confondus (note est directement stockée en Decimal, plus besoin de
+  //    passer par une cellule)
   // ═════════════════════════════════════════════════════════════════════
-  section('4. Agrégation : moyenne par critère (via groupBy + agrégat manuel)');
+  section('4. Agrégation : moyenne par critère');
 
   const assessments = await prisma.criteriaAssessment.findMany({
-    include: { criteria: { select: { name: true } }, cell: { select: { order: true } } },
+    where: { note: { not: null } },
+    include: { criteria: { select: { name: true } } },
   });
   const byCriteria = new Map<string, number[]>();
   for (const a of assessments) {
     const list = byCriteria.get(a.criteria.name) ?? [];
-    list.push(a.cell.order);
+    list.push(Number(a.note));
     byCriteria.set(a.criteria.name, list);
   }
   for (const [name, scores] of byCriteria) {
     const avg = scores.reduce((s, v) => s + v, 0) / scores.length;
-    console.log(`   ${name} : moyenne ${avg.toFixed(2)} / 3 (n=${scores.length})`);
+    console.log(`   ${name} : moyenne ${avg.toFixed(2)} (n=${scores.length})`);
   }
 
   // ═════════════════════════════════════════════════════════════════════
-  // 5) GROUPBY — charge de travail par enseignant (nombre de projets
-  //    supervisés, par promotion)
+  // 5) GROUPBY — charge de travail par enseignant (nombre de projets où il
+  //    intervient). Plus de Project.supervisorId : on regroupe les
+  //    ProjectMember des utilisateurs ayant le rôle TEACHER.
   // ═════════════════════════════════════════════════════════════════════
-  section('5. GroupBy : nombre de projets supervisés par enseignant');
+  section('5. GroupBy : nombre de projets par enseignant intervenant');
 
-  const supervisionLoad = await prisma.project.groupBy({
-    by: ['supervisorId'],
+  const supervisionLoad = await prisma.projectMember.groupBy({
+    by: ['userId'],
+    where: {
+      user: { roles: { some: { role: { role: RoleType.TEACHER } } } },
+    },
     _count: { _all: true },
-    orderBy: { _count: { supervisorId: 'desc' } },
+    orderBy: { _count: { userId: 'desc' } },
   });
-  const teacherIds = supervisionLoad
-    .map((s) => s.supervisorId)
-    .filter((id): id is number => id !== null);
+  const teacherIds = supervisionLoad.map((s) => s.userId);
   const teacherNames = await prisma.user.findMany({
     where: { id: { in: teacherIds } },
     select: { id: true, firstname: true, surname: true },
   });
   const nameById = new Map(teacherNames.map((t) => [t.id, `${t.firstname} ${t.surname}`]));
   for (const row of supervisionLoad) {
-    console.log(
-      `   ${nameById.get(row.supervisorId!) ?? 'N/A'} : ${row._count._all} projet(s)`,
-    );
+    console.log(`   ${nameById.get(row.userId) ?? 'N/A'} : ${row._count._all} projet(s)`);
   }
 
   // ═════════════════════════════════════════════════════════════════════
@@ -144,14 +169,14 @@ async function main() {
       p.id AS project_id,
       p.title,
       ROUND(
-        SUM(cell."order" * c."defaultWeight")::numeric
+        SUM(ca."note" * c."defaultWeight")::numeric
         / NULLIF(SUM(c."defaultWeight"), 0),
         2
       ) AS weighted_avg
     FROM "CriteriaAssessment" ca
-    JOIN "Cell" cell ON cell.id = ca."cellId"
     JOIN "Criteria" c ON c.id = ca."criteriaId"
     JOIN "Project" p ON p.id = ca."projectId"
+    WHERE ca."note" IS NOT NULL
     GROUP BY p.id, p.title
     ORDER BY weighted_avg DESC
     LIMIT 5;

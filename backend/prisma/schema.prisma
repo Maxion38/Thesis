@@ -1,4 +1,53 @@
 // prisma docs: https://pris.ly/d/prisma-schema
+//
+// ============================================================================
+// Schema V2 — généré à partir du schéma draw.io (Schéma-DB-TFE-V2-2.xml)
+// et des décisions prises en review avec l'utilisateur.
+//
+// Correspondance FR (drawio) -> EN (prisma) :
+//   utilisateur -> User                    role -> Role
+//   utilisateur_role -> UserRole           sous_role -> SubRole
+//   invitation -> Invitation               parcours_formation -> TrainingCourse
+//   module -> Module                       outil -> Tool
+//   formulaire -> Form                     question -> Question
+//   option -> QuestionOption               reponse -> Response
+//   soumission_formulaire -> FormSubmission
+//   evenement -> Activity                  travail -> Work
+//   soumission_travail -> UserWorkSubmission
+//   grille_evaluation -> AssessmentGrid    critere -> Criteria
+//   cellule -> Cell                        ponderation -> Weighting
+//   evaluation_critere -> CriteriaAssessment
+//   evaluation_grille (renommée feedback_grille) -> GridFeedback
+//   projet -> Project                      groupe -> Group
+//   enseignant_groupe -> UserGroup         projet_groupe -> ProjectGroup
+//   intervenant_projet -> ProjectMember    preferences_rapporteur -> UserSupervisorPreference
+//   condition -> Condition                 groupe_conditions -> ConditionsGroup
+//   sous_groupe_conditions -> ConditionsSubgroup
+//   validation_utilisateur -> UserValidation
+//   notification -> Notification           carnet -> Notebook
+//   lien_outil -> ToolLink
+//
+// Changements majeurs vs V1 (confirmés en review) :
+//   - Suppression de la couche GridVersion.
+//   - ProjectMember enrichi avec sousRoleId (rapporteur/president/lecteur),
+//     suppression de Project.supervisorId et de User.supervisorId (hiérarchie).
+//   - CriteriaAssessment.note passe en Decimal, plus de cellId stocké
+//     (la cellule votée est déduite côté UI à partir de note + poids cumulés).
+//   - Cell.weight (poids) ajouté pour permettre le calcul de bornes cumulées.
+//   - GridFeedback.comment scindé en commentEval (interne) / commentFeedback
+//     (visible étudiant).
+//   - UserSupervisorPreference : ajout du champ order (ordre de préférence).
+//
+// Confirmations de la review V2 :
+//   - Pas de conditions de "succès" : abandonnées, un élément terminé se
+//     déduit directement (travail rendu, date passée, etc). ConditionsGroup
+//     ne gère donc plus que les conditions d'accès -> plus de champ "type"
+//     ni d'enum ConditionType.
+//   - Group : pas de champ "type", le "name" est suffisant pour distinguer
+//     jury / rdv école / etc.
+//   - FormSubmission / UserWorkSubmission : pas de champ "status" (absent du
+//     drawio V2, uniquement une date de soumission).
+// ============================================================================
 
 generator client {
   provider = "prisma-client-js"
@@ -9,41 +58,40 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id           Int     @id @default(autoincrement())
-  passwordHash String
-  surname      String
-  firstname    String?
-  email        String  @unique
-  // indentifier  String  @unique
-  hoursQuota   Int?
-  supervisorId Int?
+// ----------------------------------------------------------------------------
+// Utilisateurs & rôles
+// ----------------------------------------------------------------------------
 
+model User {
+  id             Int       @id @default(autoincrement())
+  passwordHash   String
+  surname        String
+  firstname      String?
+  email          String    @unique
+  registrationId String?   @unique // matricule
+  hoursQuota     Int?
+  expiresAt      DateTime?
+
+  roles                UserRole[]
+  groups               UserGroup[]
+  projectMemberships   ProjectMember[]
   supervisorPreferencesAsStudent UserSupervisorPreference[] @relation("StudentPreferences")
   supervisorPreferencesAsTeacher UserSupervisorPreference[] @relation("TeacherPreferences")
-  projectMemberships             ProjectMember[]
-  supervisedProjects             Project[]                  @relation("ProjectSupervisor")
-  supervisor                     User?                      @relation("UserSupervisor", fields: [supervisorId], references: [id])
-  subordinates                   User[]                     @relation("UserSupervisor")
-  roles                          UserRole[]
-  groups                         UserGroup[]
-  formSubmissions                FormSubmission[]
-  submissions                    UserWorkSubmission[]
-  userValidation                 UserValidation[]
-  notifications                  Notification[]
-  criteriaAssessmentsAsStudent   CriteriaAssessment[]       @relation("CriteriaAssessmentStudent")
-  criteriaAssessmentsAsTeacher   CriteriaAssessment[]       @relation("CriteriaAssessmentTeacher")
-  gridVersionFeedbacks           GridVersionFeedback[]
-  notebooks                      Notebook[]
-  validatedConditions            Condition[]                @relation("ConditionValidator")
+  formSubmissions      FormSubmission[]
+  workSubmissions      UserWorkSubmission[]
+  userValidations      UserValidation[]
+  notifications        Notification[]
+  notebooks            Notebook[]
+  validatedConditions  Condition[]           @relation("ConditionValidator")
+  criteriaAssessments  CriteriaAssessment[]  @relation("CriteriaAssessmentTeacher")
+  gridFeedbacks        GridFeedback[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Role {
-  id Int @id @default(autoincrement())
-
+  id   Int      @id @default(autoincrement())
   role RoleType @unique
 
   users UserRole[]
@@ -62,16 +110,14 @@ model UserRole {
   @@id([userId, roleId])
 }
 
-model UserSupervisorPreference {
-  userId    Int
-  teacherId Int
-  projectId Int
+model SubRole {
+  id      Int         @id @default(autoincrement())
+  subRole SubRoleType @unique
 
-  user    User    @relation("StudentPreferences", fields: [userId], references: [id])
-  teacher User    @relation("TeacherPreferences", fields: [teacherId], references: [id])
-  project Project @relation(fields: [projectId], references: [id])
+  projectMembers ProjectMember[]
 
-  @@id([userId, teacherId, projectId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Invitation {
@@ -85,14 +131,19 @@ model Invitation {
   createdAt DateTime @default(now())
 }
 
+// ----------------------------------------------------------------------------
+// Parcours, modules, outils
+// ----------------------------------------------------------------------------
+
 model TrainingCourse {
-  id        Int       @id @default(autoincrement())
-  name      String
-  startDate DateTime?
-  endDate   DateTime?
+  id                    Int       @id @default(autoincrement())
+  name                  String
+  startDate             DateTime?
+  endDate               DateTime?
+  supervisorAssignmentDate DateTime? // date_repartition_rapporteurs
 
   projects Project[]
-  modules  Module[]  @relation("ModuleTrainingCourse")
+  modules  Module[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -104,9 +155,9 @@ model Module {
   description      String? @db.Text
   trainingCourseId Int
 
-  trainingCourse TrainingCourse @relation("ModuleTrainingCourse", fields: [trainingCourseId], references: [id], onDelete: Cascade)
+  trainingCourse TrainingCourse @relation(fields: [trainingCourseId], references: [id], onDelete: Cascade)
 
-  tools            Tool[]            @relation("ToolModule")
+  tools            Tool[]
   conditionsGroups ConditionsGroup[]
 
   createdAt DateTime @default(now())
@@ -115,52 +166,24 @@ model Module {
   @@index([trainingCourseId])
 }
 
-model Condition {
-  id                   Int             @id @default(autoincrement())
-  method               ConditionMethod
-  dateValue            DateTime?
-  validatorId          Int?
-  toolId               Int?
-  conditionsSubgroupId Int
-
-  validator          User?              @relation("ConditionValidator", fields: [validatorId], references: [id])
-  tool               Tool?              @relation("ConditionTool", fields: [toolId], references: [id])
-  userValidations    UserValidation[]
-  conditionsSubgroup ConditionsSubgroup @relation(fields: [conditionsSubgroupId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([toolId])
-  @@index([validatorId])
-}
-
-model UserValidation {
-  userId      Int
-  conditionId Int
-
-  user      User      @relation(fields: [userId], references: [id])
-  condition Condition @relation(fields: [conditionId], references: [id])
-
-  createdAt DateTime @default(now())
-
-  @@id([userId, conditionId])
-}
-
+// outil (supertype ISA -> Form / Activity / Work / AssessmentGrid, partagent le même id)
 model Tool {
   id          Int      @id @default(autoincrement())
   name        String
-  description String   @db.Text
+  description String?  @db.Text
   type        ToolType
   moduleId    Int
 
-  module Module @relation("ToolModule", fields: [moduleId], references: [id])
+  module Module @relation(fields: [moduleId], references: [id])
 
-  forms           Form[]
-  activities      Activity[]
-  works           Work[]
-  assessmentGrids AssessmentGrid[]
-  conditions      Condition[]      @relation("ConditionTool")
+  form           Form?
+  activity       Activity?
+  work           Work?
+  assessmentGrid AssessmentGrid?
+  conditions     Condition[] @relation("ConditionTool")
+
+  linksAsSource ToolLink[] @relation("ToolLinkSource")
+  linksAsTarget ToolLink[] @relation("ToolLinkTarget")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -168,18 +191,75 @@ model Tool {
   @@index([moduleId])
 }
 
-model Form {
-  id          Int @id @default(autoincrement())
-  maxAttempts Int
-  toolId      Int
+model ToolLink {
+  sourceToolId Int
+  targetToolId Int
 
-  tool        Tool             @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  sourceTool Tool @relation("ToolLinkSource", fields: [sourceToolId], references: [id], onDelete: Cascade)
+  targetTool Tool @relation("ToolLinkTarget", fields: [targetToolId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([sourceToolId, targetToolId])
+}
+
+// ----------------------------------------------------------------------------
+// Sous-types de Tool (héritage à clé partagée : id = toolId)
+// ----------------------------------------------------------------------------
+
+model Form {
+  id          Int       @id
+  maxAttempts Int?
+  dueDate     DateTime? // date_remise
+
+  tool        Tool             @relation(fields: [id], references: [id], onDelete: Cascade)
   questions   Question[]
   submissions FormSubmission[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Activity {
+  id            Int       @id
+  startDateTime DateTime?
+  endDateTime   DateTime?
+  location      String?
+
+  tool   Tool    @relation(fields: [id], references: [id], onDelete: Cascade)
+  groups Group[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Work {
+  id          Int       @id
+  maxAttempts Int?
+  dueDate     DateTime? // date_remise
+
+  tool        Tool                 @relation(fields: [id], references: [id], onDelete: Cascade)
+  submissions UserWorkSubmission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AssessmentGrid {
+  id       Int     @id
+  editable Boolean // evolutif
+
+  tool      Tool           @relation(fields: [id], references: [id], onDelete: Cascade)
+  criterias Criteria[]
+  feedbacks GridFeedback[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ----------------------------------------------------------------------------
+// Formulaires
+// ----------------------------------------------------------------------------
 
 model Question {
   id         Int          @id @default(autoincrement())
@@ -188,12 +268,14 @@ model Question {
   isRequired Boolean
   formId     Int
 
-  form      Form             @relation(fields: [formId], references: [id])
+  form      Form             @relation(fields: [formId], references: [id], onDelete: Cascade)
   options   QuestionOption[]
   responses Response[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([formId])
 }
 
 model QuestionOption {
@@ -202,16 +284,17 @@ model QuestionOption {
   order      Int
   questionId Int
 
-  question Question @relation(fields: [questionId], references: [id])
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([questionId])
 }
 
 model FormSubmission {
-  id          Int              @id @default(autoincrement())
-  submittedAt DateTime         @default(now())
-  status      SubmissionStatus
+  id          Int      @id @default(autoincrement())
+  submittedAt DateTime @default(now())
   formId      Int
   userId      Int
   projectId   Int
@@ -226,46 +309,28 @@ model FormSubmission {
 
   @@index([projectId])
   @@index([userId])
+  @@index([formId])
 }
 
 model Response {
   id           Int    @id @default(autoincrement())
-  value        String
+  value        String @db.Text
   questionId   Int
   submissionId Int
 
   question   Question       @relation(fields: [questionId], references: [id])
-  submission FormSubmission @relation(fields: [submissionId], references: [id])
+  submission FormSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([questionId])
+  @@index([submissionId])
 }
 
-model Activity {
-  id            Int       @id @default(autoincrement())
-  startDateTime DateTime?
-  endDateTime   DateTime?
-  location      String?
-
-  toolId Int
-  tool   Tool @relation(fields: [toolId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Work {
-  id          Int @id @default(autoincrement())
-  toolId      Int
-  maxAttempts Int
-  dueDate     DateTime?
-
-  tool                Tool                 @relation(fields: [toolId], references: [id], onDelete: Cascade)
-  userWorkSubmissions UserWorkSubmission[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+// ----------------------------------------------------------------------------
+// Travaux
+// ----------------------------------------------------------------------------
 
 model UserWorkSubmission {
   id          Int      @id @default(autoincrement())
@@ -285,91 +350,51 @@ model UserWorkSubmission {
 
   @@index([projectId])
   @@index([userId])
+  @@index([workId])
 }
 
-model AssessmentGrid {
-  id     Int @id @default(autoincrement())
-  toolId Int
-
-  tool         Tool          @relation(fields: [toolId], references: [id], onDelete: Cascade)
-  gridVersions GridVersion[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model GridVersion {
-  id               Int       @id @default(autoincrement())
-  startDate        DateTime?
-  endDate          DateTime?
-  assessmentGridId Int
-
-  assessmentGrid AssessmentGrid        @relation(fields: [assessmentGridId], references: [id])
-  criterias      Criteria[]
-  feedbacks      GridVersionFeedback[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model CriteriaAssessment {
-  id         Int      @id @default(autoincrement())
-  date       DateTime
-  comment    String?  @db.Text
-  cellId     Int
-  projectId  Int
-  criteriaId Int
-  studentId  Int?
-  teacherId  Int
-
-  cell     Cell     @relation(fields: [cellId], references: [id])
-  project  Project  @relation(fields: [projectId], references: [id])
-  criteria Criteria @relation(fields: [criteriaId], references: [id])
-  student  User?    @relation("CriteriaAssessmentStudent", fields: [studentId], references: [id])
-  teacher  User     @relation("CriteriaAssessmentTeacher", fields: [teacherId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([projectId])
-  @@index([studentId])
-  @@index([teacherId])
-  @@index([criteriaId])
-}
+// ----------------------------------------------------------------------------
+// Grille d'évaluation, critères, cellules, pondérations
+// ----------------------------------------------------------------------------
 
 model Criteria {
   id            Int    @id @default(autoincrement())
   name          String
   order         Int
-  defaultWeight Int
-  gridVersionId Int
+  defaultWeight Int // ponderation_par_defaut
+  gridId        Int
 
-  gridVersion         GridVersion          @relation(fields: [gridVersionId], references: [id])
+  grid                AssessmentGrid       @relation(fields: [gridId], references: [id], onDelete: Cascade)
   cells               Cell[]
   criteriaAssessments CriteriaAssessment[]
   weightings          Weighting[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([gridId])
 }
 
 model Cell {
-  id          Int    @id @default(autoincrement())
-  description String @db.Text
+  id          Int      @id @default(autoincrement())
+  description String   @db.Text
   order       Int
+  weight      Decimal? @db.Decimal(5, 2) // poids relatif de la cellule (défaut = pas de progression, cf. logique app)
   criteriaId  Int
 
-  criteria            Criteria             @relation(fields: [criteriaId], references: [id])
-  criteriaAssessments CriteriaAssessment[]
+  criteria Criteria @relation(fields: [criteriaId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([criteriaId])
 }
 
+// projet-specific override du poids d'un critère (dans le calcul de la note finale)
 model Weighting {
   criteriaId Int
   projectId  Int
-  weight     Float
+  weight     Decimal @db.Decimal(5, 2)
 
   criteria Criteria @relation(fields: [criteriaId], references: [id])
   project  Project  @relation(fields: [projectId], references: [id])
@@ -379,106 +404,129 @@ model Weighting {
   @@id([criteriaId, projectId])
 }
 
-model GridVersionFeedback {
-  id            Int    @id @default(autoincrement())
-  comment       String @db.Text
-  userId        Int
-  projectId     Int
-  gridVersionId Int
+// note par critère : la cellule votée est déduite en front à partir de
+// `note` et des `weight` cumulés des cellules du critère (pas de FK stockée).
+model CriteriaAssessment {
+  id               Int      @id @default(autoincrement())
+  date             DateTime
+  commentEval      String?  @db.Text // commentaire visible profs uniquement
+  commentFeedback  String?  @db.Text // commentaire visible étudiants (+ profs)
+  note             Decimal? @db.Decimal(5, 2)
+  criteriaId       Int
+  teacherId        Int
+  projectId        Int
 
-  user        User        @relation(fields: [userId], references: [id])
-  project     Project     @relation(fields: [projectId], references: [id])
-  gridVersion GridVersion @relation(fields: [gridVersionId], references: [id])
+  criteria Criteria @relation(fields: [criteriaId], references: [id])
+  teacher  User     @relation("CriteriaAssessmentTeacher", fields: [teacherId], references: [id])
+  project  Project  @relation(fields: [projectId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([projectId])
-  @@index([gridVersionId])
+  @@index([teacherId])
+  @@index([criteriaId])
 }
 
+// feedback global déposé sur la grille (indépendant des CriteriaAssessment)
+model GridFeedback {
+  id              Int     @id @default(autoincrement())
+  commentEval     String? @db.Text
+  commentFeedback String? @db.Text
+  userId          Int
+  projectId       Int
+  gridId          Int
+
+  user    User           @relation(fields: [userId], references: [id])
+  project Project        @relation(fields: [projectId], references: [id])
+  grid    AssessmentGrid @relation(fields: [gridId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([gridId])
+  @@index([userId])
+}
+
+// ----------------------------------------------------------------------------
+// Projets, groupes (jurys / rdv), intervenants
+// ----------------------------------------------------------------------------
+
 model Project {
-  id Int @id @default(autoincrement())
-
-  title String
-
-  supervisorId     Int?
+  id               Int     @id @default(autoincrement())
+  title            String?
+  confidential     Boolean @default(false)
   trainingCourseId Int
 
-  supervisor          User?                 @relation("ProjectSupervisor", fields: [supervisorId], references: [id])
-  trainingCourse      TrainingCourse        @relation(fields: [trainingCourseId], references: [id])
-  members             ProjectMember[]
-  notebooks           Notebook[]
-  formSubmissions     FormSubmission[]
-  workSubmissions     UserWorkSubmission[]
-  criteriaAssessments CriteriaAssessment[]
-  weightings          Weighting[]
-  feedbacks           GridVersionFeedback[]
+  trainingCourse TrainingCourse @relation(fields: [trainingCourseId], references: [id])
 
+  members               ProjectMember[]
+  projectGroups         ProjectGroup[]
+  notebooks             Notebook[]
+  formSubmissions       FormSubmission[]
+  workSubmissions       UserWorkSubmission[]
+  criteriaAssessments   CriteriaAssessment[]
+  weightings            Weighting[]
+  gridFeedbacks         GridFeedback[]
   supervisorPreferences UserSupervisorPreference[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([trainingCourseId])
 }
 
+// intervenant_projet : membre d'un projet, avec sous-rôle optionnel (jury)
 model ProjectMember {
   userId    Int
   projectId Int
+  subRoleId Int?
 
-  user    User    @relation(fields: [userId], references: [id])
-  project Project @relation(fields: [projectId], references: [id])
+  user    User     @relation(fields: [userId], references: [id])
+  project Project  @relation(fields: [projectId], references: [id])
+  subRole SubRole? @relation(fields: [subRoleId], references: [id])
 
   @@id([userId, projectId])
   @@index([projectId])
   @@index([userId])
+  @@index([subRoleId])
 }
 
-model ConditionsGroup {
-  id Int @id @default(autoincrement())
+// preferences_rapporteur : ordre de préférence d'un étudiant pour un enseignant
+model UserSupervisorPreference {
+  userId    Int
+  teacherId Int
+  projectId Int
+  order     Int
 
-  type ConditionType
+  user    User    @relation("StudentPreferences", fields: [userId], references: [id])
+  teacher User    @relation("TeacherPreferences", fields: [teacherId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
 
-  operator ConditionOperator
-
-  moduleId Int
-
-  module Module @relation(fields: [moduleId], references: [id])
-
-  subgroups ConditionsSubgroup[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@id([userId, teacherId, projectId])
 }
 
-model ConditionsSubgroup {
-  id Int @id @default(autoincrement())
-
-  operator ConditionOperator
-
-  conditionsGroupId Int
-
-  conditionsGroup ConditionsGroup @relation(fields: [conditionsGroupId], references: [id])
-
-  conditions Condition[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
+// groupe : conteneur générique (jury, rdv ephec...) rattaché à un évènement
 model Group {
   id            Int       @id @default(autoincrement())
   name          String
-  type          String
   startDateTime DateTime?
   endDateTime   DateTime?
   location      String?
+  eventId       Int
 
-  users UserGroup[]
+  event    Activity        @relation(fields: [eventId], references: [id])
+  users    UserGroup[]
+  projects ProjectGroup[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([eventId])
 }
 
+// enseignant_groupe : enseignants assignés à un groupe
 model UserGroup {
   userId  Int
   groupId Int
@@ -489,12 +537,97 @@ model UserGroup {
   @@id([userId, groupId])
 }
 
+// projet_groupe : projets assignés à un groupe (jury)
+model ProjectGroup {
+  groupId   Int
+  projectId Int
+
+  group   Group   @relation(fields: [groupId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@id([groupId, projectId])
+}
+
+// ----------------------------------------------------------------------------
+// Conditions de validation de module
+// ----------------------------------------------------------------------------
+
+model ConditionsGroup {
+  id       Int               @id @default(autoincrement())
+  operator ConditionOperator
+  moduleId Int
+
+  module Module @relation(fields: [moduleId], references: [id])
+
+  subgroups ConditionsSubgroup[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([moduleId])
+}
+
+model ConditionsSubgroup {
+  id                Int               @id @default(autoincrement())
+  operator          ConditionOperator
+  conditionsGroupId Int
+
+  conditionsGroup ConditionsGroup @relation(fields: [conditionsGroupId], references: [id])
+  conditions      Condition[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([conditionsGroupId])
+}
+
+model Condition {
+  id                   Int             @id @default(autoincrement())
+  method               ConditionMethod
+  dateValue            DateTime?
+  validatorId          Int? // utilisateur_id (valideur)
+  toolId               Int?
+  conditionsSubgroupId Int
+
+  validator          User?              @relation("ConditionValidator", fields: [validatorId], references: [id])
+  tool               Tool?              @relation("ConditionTool", fields: [toolId], references: [id])
+  userValidations    UserValidation[]
+  conditionsSubgroup ConditionsSubgroup @relation(fields: [conditionsSubgroupId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([toolId])
+  @@index([validatorId])
+  @@index([conditionsSubgroupId])
+}
+
+model UserValidation {
+  userId      Int
+  conditionId Int
+  date        DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id])
+  condition Condition @relation(fields: [conditionId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@id([userId, conditionId])
+}
+
+// ----------------------------------------------------------------------------
+// Notifications & carnet
+// ----------------------------------------------------------------------------
+
 model Notification {
   id          Int        @id @default(autoincrement())
-  name        String
-  description String     @db.Text
+  title       String
+  description String?    @db.Text
   importance  Importance
-  dateTime    DateTime   @default(now())
+  date        DateTime   @default(now())
+  read        Boolean    @default(false)
+  sourceType  String? // type_entite_emettrice (parcours / evaluation / soumission / ...)
+  sourceId    Int? // entite_emettrice_id
   userId      Int
 
   user User @relation(fields: [userId], references: [id])
@@ -520,22 +653,27 @@ model Notebook {
   @@id([userId, projectId])
 }
 
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+
 enum RoleType {
   STUDENT
   TEACHER
   COORDINATOR
-  GUEST
+  EXTERNAL
+}
+
+enum SubRoleType {
+  SUPERVISOR
+  PRESIDENT
+  READER
 }
 
 enum Importance {
   LOW
   MEDIUM
   HIGH
-}
-
-enum ConditionType {
-  ACCESS
-  SUCCESS
 }
 
 enum ConditionMethod {
@@ -559,13 +697,6 @@ enum ToolType {
 
 enum QuestionType {
   TEXT
-  NUMBER
-  RADIO
   CHECKBOX
-}
-
-enum SubmissionStatus {
-  NOT_SUBMITED
-  SUBMITTED
-  APPROVED
+  SELECT
 }

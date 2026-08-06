@@ -48,10 +48,12 @@ export class WorkService {
         },
       });
 
+      // V2 : Work partage sa PK avec Tool (héritage à clé partagée),
+      // on ne passe donc plus toolId mais id = tool.id.
       const work = await tx.work.create({
         data: {
+          id: tool.id,
           maxAttempts: dto.maxAttempts,
-          toolId: tool.id,
           ...(dto.dueDate && { dueDate: new Date(dto.dueDate) }),
         },
       });
@@ -83,8 +85,9 @@ export class WorkService {
     }
 
     return this.prisma.$transaction(async (tx) => {
+      // work.id === work.tool.id (PK partagée) -> plus de work.toolId
       const updatedTool = await tx.tool.update({
-        where: { id: work.toolId },
+        where: { id: work.id },
         data: {
           ...(dto.name && { name: dto.name }),
           ...(dto.description && { description: dto.description }),

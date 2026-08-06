@@ -1,4 +1,4 @@
-import { PrismaClient, RoleType } from '@prisma/client';
+import { PrismaClient, RoleType, SubRoleType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -8,7 +8,16 @@ async function main() {
       { role: RoleType.STUDENT },
       { role: RoleType.TEACHER },
       { role: RoleType.COORDINATOR },
-      { role: RoleType.GUEST },
+      { role: RoleType.EXTERNAL },
+    ],
+    skipDuplicates: true,
+  });
+
+  await prisma.subRole.createMany({
+    data: [
+      { subRole: SubRoleType.SUPERVISOR },
+      { subRole: SubRoleType.PRESIDENT },
+      { subRole: SubRoleType.READER },
     ],
     skipDuplicates: true,
   });

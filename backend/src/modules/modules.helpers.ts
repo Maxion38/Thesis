@@ -5,7 +5,13 @@ export function buildToolsInclude(userId: number, projectId: number) {
   return {
     tools: {
       include: {
-        forms: {
+        // V2 : Form / Work / Activity / AssessmentGrid sont chacun en
+        // relation 1-1 avec Tool (héritage à clé partagée) — un Tool =
+        // une définition unique posée par la coordination. Les occurrences
+        // multiples (plusieurs réunions, plusieurs soutenances) sont
+        // modélisées comme autant de Tools distincts, pas comme plusieurs
+        // lignes Activity sous un même Tool.
+        form: {
           include: {
             submissions: {
               where: { userId, projectId },
@@ -13,24 +19,20 @@ export function buildToolsInclude(userId: number, projectId: number) {
             },
           },
         },
-        works: {
+        work: {
           include: {
-            userWorkSubmissions: {
+            submissions: {
               where: { userId, projectId },
               orderBy: { submittedAt: 'desc' as const },
             },
           },
         },
-        activities: true,
-        assessmentGrids: {
+        activity: true,
+        assessmentGrid: {
           include: {
-            gridVersions: {
-              include: {
-                feedbacks: {
-                  where: { userId, projectId },
-                  orderBy: { createdAt: 'desc' as const },
-                },
-              },
+            feedbacks: {
+              where: { userId, projectId },
+              orderBy: { createdAt: 'desc' as const },
             },
           },
         },
@@ -50,44 +52,42 @@ export function resolveToolGroup(tool: ToolWithRelations): ModuleToolGroupDto {
   switch (tool.type) {
 
     case 'WORK': {
-      const submissions = tool.works
-        .flatMap(w => w.userWorkSubmissions)
-        .sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime());
-
-      const dueDate = tool.works[0]?.dueDate ?? null;
-
-      if (submissions.length > 0) {
-        state = 'SUBMITTED';
-      }
-
-      date = dueDate ?? undefined;
-      break;
-    }
-
-    case 'FORM': {
-      const submissions = tool.forms
-        .flatMap(f => f.submissions)
-        .sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime());
+      const submissions = [...(tool.work?.submissions ?? [])].sort(
+        (a, b) => b.submittedAt.getTime() - a.submittedAt.getTime(),
+      );
 
       if (submissions.length > 0) {
         state = 'SUBMITTED';
         date = submissions[0].submittedAt;
       } else {
-        date = tool.createdAt;
+        date = tool.work?.dueDate ?? undefined;
+      }
+      break;
+    }
+
+    case 'FORM': {
+      const submissions = [...(tool.form?.submissions ?? [])].sort(
+        (a, b) => b.submittedAt.getTime() - a.submittedAt.getTime(),
+      );
+
+      if (submissions.length > 0) {
+        state = 'SUBMITTED';
+        date = submissions[0].submittedAt;
+      } else {
+        date = tool.form?.dueDate ?? undefined;
       }
       break;
     }
 
     case 'ACTIVITY': {
-      date = tool.activities[0]?.startDateTime ?? tool.createdAt;
+      date = tool.activity?.startDateTime ?? tool.createdAt;
       break;
     }
 
     case 'ASSESSMENT': {
-      const feedbacks = tool.assessmentGrids
-        .flatMap(g => g.gridVersions)
-        .flatMap(v => v.feedbacks)
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      const feedbacks = [...(tool.assessmentGrid?.feedbacks ?? [])].sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+      );
 
       if (feedbacks.length > 0) {
         state = 'CORRECTED';
