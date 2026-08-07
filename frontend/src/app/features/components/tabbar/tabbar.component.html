@@ -1,10 +1,10 @@
-<div class="tabbar">
+<div class="tabbar"> 
 
   <div>
     <app-back-button *ngIf="backButton" class="back-button" [route]="backRoute"></app-back-button>
   </div>
 
-  <div>
+  <div class="tabbar__content">
     
     <div *ngIf="title" class="tabbar__title">
       <span *ngIf="!isEditing"> {{ title }} </span>
@@ -24,6 +24,8 @@
       *ngIf="tabs"
       class="tabbar__tabs"      
       [class.tabbar__tabs__only-tabs]="!title && !subtitle"
+      [class.tabbar__tabs--compact]="compact"
+      [class.tabbar__tabs--left]="alignTabs === 'left'"
     >
       <div 
         *ngFor="let tab of tabs"

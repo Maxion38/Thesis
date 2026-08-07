@@ -41,6 +41,9 @@ import { ModuleLayoutComponent } from './features/modules/layouts/module-layout/
 import { TeacherLayoutComponent } from './layouts/teacher-layout/teacher.layout';
 import { UserInspectionComponent } from './features/user-inspection/layouts/inspection/user-inspection.layout';
 import { SubmissionComponent } from './features/work-tool/pages/submissions/submissions.component';
+import { AssessmentDetailComponent } from './features/assessments/pages/assessment/assessment-detail.component';
+import { AssessmentsLayoutComponent } from './features/assessments/layout/assessments-layout/assessments.layout';
+
 
 export const routes: Routes = [
   {
@@ -142,7 +145,14 @@ export const routes: Routes = [
         ]
       },  
       { path: 'supervisors', component: SupervisorsComponent},  
-      { path: 'juries', component: JuriesComponent},  
+      {
+        path: 'assessments',
+        component: AssessmentsLayoutComponent,
+        children: [
+          { path: '', component: AssessmentDetailComponent },
+          { path: ':userId/:assessmentId', component: AssessmentDetailComponent },
+        ]
+      },
       { path: 'notifications', component: NotificationsComponent},
     ]
   },

@@ -1,0 +1,40 @@
+<div class="page">
+
+  <div class="header">
+
+    <div class="user-card" *ngIf="selectedStudent" (click)="showUserOptions = !showUserOptions">
+      <div class="user-card__profile">{{ getInitials(selectedStudent) }}</div>
+      <div class="user-card__name">{{ selectedStudent.firstname || '' }} {{ selectedStudent.surname }}</div>
+      <span class="material-symbols-outlined user-card__dropdown">{{ showUserOptions ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
+
+      <div class="add-menu" *ngIf="showUserOptions" (click)="$event.stopPropagation()">
+        <button
+          *ngFor="let student of students"
+          class="add-menu__item"
+          (click)="selectStudent(student); $event.stopPropagation()">
+          {{ student.firstname }} {{ student.surname }}
+        </button>
+      </div>
+    </div>
+
+    <div class="user-card grid-name" *ngIf="selectedGrid" (click)="showGridOptions = !showGridOptions">
+      <div class="user-card__name">{{ selectedGrid.name }}</div>
+      <span class="material-symbols-outlined user-card__dropdown">{{ showGridOptions ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
+
+      <div class="add-menu" *ngIf="showGridOptions" (click)="$event.stopPropagation()">
+        <button
+          *ngFor="let grid of selectedStudent?.grids"
+          class="add-menu__item"
+          (click)="selectGrid(grid); $event.stopPropagation()">
+          {{ grid.name }}
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="content">
+    <router-outlet></router-outlet>
+  </div>
+
+</div>

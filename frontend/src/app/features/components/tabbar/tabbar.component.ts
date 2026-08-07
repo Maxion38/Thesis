@@ -27,6 +27,8 @@ export class TabbarComponent {
   @Input() backButton?: boolean = false;
   @Input() backRoute?: (string | number)[];
   @Input() isLoading?: boolean = false;
+  @Input() compact?: boolean = false;
+  @Input() alignTabs?: 'center' | 'left' = 'center';
 
   @Output() titleChange = new EventEmitter<string>();
   @Output() delete = new EventEmitter<void>();

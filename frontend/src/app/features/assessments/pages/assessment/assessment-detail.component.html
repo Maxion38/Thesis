@@ -1,0 +1,47 @@
+<div class="page">
+    <div>
+        <app-tabbar
+            class="tabbar" 
+            [alignTabs]="'left'"
+            [tabs]="tabs" 
+            [compact]="true" 
+        ></app-tabbar>
+    </div>
+    <div class="criterias">
+        <div class="cell">
+            <div class="cell__votes"></div>
+            <div class="cell__text"><span>Le sujet n'est pas lié à un client réel.</span></div>
+            <div class="cell__actions">
+                <div class="cell__actions__chose">
+                    Choisir
+                </div>
+                0/2
+            </div>
+        </div>
+        <div class="cell cell-last">
+            <div class="cell__votes"></div>
+            <span class="cell__text">L'étudiant est en contact avec un client intéressé par le sujet, idéalement un professionnel “métier” prêt à suivre régulièrement le projet.</span>
+            <div class="cell__actions">
+                <div class="cell__actions__chose cell__actions__chose--active">
+                    <span class="material-symbols-outlined check">check</span>
+                </div>
+                <div class="cell__actions__adapt">
+                    <div class="arrow" (click)="decrementInput()"><span class="material-symbols-outlined arrow__icon">arrow_back_ios</span></div>
+                    <input 
+                        class="cell__actions__adapt__input" 
+                        type="number"
+                        [(ngModel)]="score"
+                        [min]="1"
+                        [max]="2"
+                        [step]="0.1"
+                        (blur)="normalizeScore()"
+                    > / 2
+                    <div class="arrow" (click)="incrementInput()"><span class="material-symbols-outlined arrow__icon">arrow_forward_ios</span></div>
+                </div>
+            </div>
+        </div>
+        
+        
+    </div>
+
+</div> 

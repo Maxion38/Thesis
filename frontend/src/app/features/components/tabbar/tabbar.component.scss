@@ -27,6 +27,26 @@
       align-items: center;
     }
 
+    // NOUVEAU : mode compact
+    &--compact {
+      height: auto;
+      min-height: 0;
+
+      &.tabbar__tabs__only-tabs {
+        height: auto;
+        min-height: 0;
+      }
+
+      .tabbar__tabs__element {
+        padding: 4px 8px;
+      }
+    }
+
+    // NOUVEAU : alignement à gauche
+    &--left {
+      justify-content: flex-start;
+    }
+
     &__element {
       cursor: pointer;
       padding: 8px;
@@ -42,6 +62,11 @@
         border-bottom: 6px solid #E2E2E2;
       }
     }
+  }
+
+  &__content {
+      flex: 1;
+      min-width: 0;
   }
 
   &__title {
@@ -149,7 +174,4 @@
   &:hover {
     background-color: #a5a5a5;
   }
-}
-
-.back-button {
 }

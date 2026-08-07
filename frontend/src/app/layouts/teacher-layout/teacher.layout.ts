@@ -59,7 +59,7 @@ export class TeacherLayoutComponent implements OnInit, OnDestroy {
     { titre: 'Accueil', iconName: 'home', route: '/teacher', exact: true },
     { titre: 'Étudiants', iconName: 'groups', route: '/teacher/users'},
     { titre: 'Rapportage', iconName: 'assignment_ind', route: '/teacher/supervisors'},
-    { titre: 'Jurys', iconName: 'account_balance', route: '/teacher/juries'},
+    { titre: 'Évaluations', iconName: 'box_edit', route: '/teacher/assessments'},
     { titre: 'Notifications', iconName: 'notifications', route: '/teacher/notifications'},
   ];
 }

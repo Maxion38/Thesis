@@ -1,0 +1,109 @@
+.criterias {
+    display: flex;
+}
+
+.cell {
+    border: solid grey;
+    border-width: 1px 1px 1px 0;
+    flex: 1;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 15px;
+
+    &__votes {
+        height: 30px;
+    }
+
+    &__actions {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+
+        &__chose {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 130px;
+            height: 32px;
+            border: 1.5px solid black;
+            border-radius: 25px;
+            cursor: pointer;
+            user-select: none;
+            transition: all ease 0.2s;
+
+            &:hover {
+                background-color: #ebebeb;
+            }
+
+            &--active {
+                background-color: #E4E4E4;
+            }
+        }
+
+        &__adapt {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+
+            &__input {
+                width: 28px;
+                margin-right: 5px;
+            }
+
+            @supports (field-sizing: content) {
+                &__input {
+                    width: auto;
+                    field-sizing: content;
+                    max-width: 50px;
+                }
+            }
+        }
+
+
+    }
+}
+
+.cell-last {
+    border-right-width: 0;
+}
+
+.check {
+    font-size: 16px;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.arrow {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &__icon {
+        font-size: 10px;
+        user-select: none;
+        border-radius: 50%;
+    }
+    &:hover {
+        background-color: #E4E4E4;
+    }
+}
+
+.tabbar {
+    margin-bottom: 5px;
+}
