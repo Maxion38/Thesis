@@ -1,3 +1,5 @@
+import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+
 export class CellDto {
   description!: string;
   order!: number;
@@ -5,6 +7,7 @@ export class CellDto {
 }
 
 export class CriteriaDto {
+  id!: number;
   name!: string;
   order!: number;
   defaultWeight!: number;
@@ -16,9 +19,70 @@ export class GridSummaryDto {
   name!: string;
 }
 
-export class StudentWithGridsDto {
+export class ProjectMemberSummaryDto {
   id!: number;
   firstname!: string | null;
   surname!: string;
+}
+
+export class ProjectWithGridsDto {
+  id!: number;
+  title!: string | null;
+  students!: ProjectMemberSummaryDto[];
   grids!: GridSummaryDto[];
+}
+
+export class SetCriteriaNoteDto {
+  @IsInt()
+  projectId!: number;
+
+  // Note continue (2 décimales) dans la plage de la cellule votée :
+  // [cellOrder - 1 + 0.01, cellOrder], ou 0 pour la cellule d'ordre 0.
+  // null = annulation du vote (retire la note existante sans supprimer le
+  // reste de l'évaluation, ex. commentFeedback).
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  note!: number | null;
+}
+
+export class CriteriaAssessmentDto {
+  note!: number | null;
+  commentFeedback?: string | null;
+}
+
+export class EvaluationDto {
+  criteriaId!: number;
+  teacherId!: number;
+  teacherFirstname!: string | null;
+  teacherSurname!: string;
+  note!: number | null;
+  commentFeedback!: string | null;
+  date!: Date | null;
+}
+
+export class SetCriteriaFeedbackDto {
+  @IsInt()
+  projectId!: number;
+
+  @IsString()
+  commentFeedback!: string;
+}
+
+export class CriteriaDiscussionDto {
+  id!: number;
+  comment!: string | null;
+  teacherId!: number;
+  teacherFirstname!: string | null;
+  teacherSurname!: string;
+  date!: Date | null;
+}
+
+export class CreateCriteriaDiscussionDto {
+  @IsInt()
+  projectId!: number;
+
+  @IsString()
+  @IsNotEmpty()
+  comment!: string;
 }

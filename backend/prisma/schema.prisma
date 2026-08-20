@@ -17,6 +17,7 @@
 //   grille_evaluation -> AssessmentGrid    critere -> Criteria
 //   cellule -> Cell                        ponderation -> Weighting
 //   evaluation_critere -> CriteriaAssessment
+//   discussion_critere -> CriteriaDiscussion
 //   evaluation_grille (renommée feedback_grille) -> GridFeedback
 //   projet -> Project                      groupe -> Group
 //   enseignant_groupe -> UserGroup         projet_groupe -> ProjectGroup
@@ -34,8 +35,23 @@
 //   - CriteriaAssessment.note passe en Decimal, plus de cellId stocké
 //     (la cellule votée est déduite côté UI à partir de note + poids cumulés).
 //   - Cell.weight (poids) ajouté pour permettre le calcul de bornes cumulées.
-//   - GridFeedback.comment scindé en commentEval (interne) / commentFeedback
-//     (visible étudiant).
+//   - GridFeedback redevenu un feedback unique et global par grille/projet
+//     (plus de commentEval/commentFeedback ni d'auteur unique : écrit par
+//     n'importe quel enseignant), et porte désormais le statut (attente /
+//     correction / public / vu), déplacé depuis ailleurs. C'est le
+//     commentaire final affiché à l'étudiant une fois la grille publiée
+//     (status PUBLISHED), typiquement rédigé par le rapporteur.
+//   - Trois niveaux de commentaire distincts sur une grille (revu en cours
+//     de route, cf. assessment-grid.md pour le détail) :
+//       1. CriteriaDiscussion : fil de discussion interne (multi-messages)
+//          entre enseignants sur un critère, jamais visible étudiant.
+//       2. CriteriaAssessment.commentFeedback (+ note) : UN commentaire par
+//          (critère, enseignant, projet), visible étudiant. D'où le retour
+//          à une clé primaire composite (criteriaId, teacherId, projectId)
+//          et un unique champ `date` (plus de split dateEval/dateFeedback :
+//          le commentaire "eval" interne a été déplacé vers
+//          CriteriaDiscussion).
+//       3. GridFeedback.comment : commentaire global unique par grille/projet.
 //   - UserSupervisorPreference : ajout du champ order (ordre de préférence).
 //
 // Confirmations de la review V2 :
@@ -72,19 +88,19 @@ model User {
   hoursQuota     Int?
   expiresAt      DateTime?
 
-  roles                UserRole[]
-  groups               UserGroup[]
-  projectMemberships   ProjectMember[]
+  roles                          UserRole[]
+  groups                         UserGroup[]
+  projectMemberships             ProjectMember[]
   supervisorPreferencesAsStudent UserSupervisorPreference[] @relation("StudentPreferences")
   supervisorPreferencesAsTeacher UserSupervisorPreference[] @relation("TeacherPreferences")
-  formSubmissions      FormSubmission[]
-  workSubmissions      UserWorkSubmission[]
-  userValidations      UserValidation[]
-  notifications        Notification[]
-  notebooks            Notebook[]
-  validatedConditions  Condition[]           @relation("ConditionValidator")
-  criteriaAssessments  CriteriaAssessment[]  @relation("CriteriaAssessmentTeacher")
-  gridFeedbacks        GridFeedback[]
+  formSubmissions                FormSubmission[]
+  workSubmissions                UserWorkSubmission[]
+  userValidations                UserValidation[]
+  notifications                  Notification[]
+  notebooks                      Notebook[]
+  validatedConditions            Condition[]                @relation("ConditionValidator")
+  criteriaAssessments            CriteriaAssessment[]       @relation("CriteriaAssessmentTeacher")
+  criteriaDiscussions            CriteriaDiscussion[]       @relation("CriteriaDiscussionTeacher")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -136,10 +152,10 @@ model Invitation {
 // ----------------------------------------------------------------------------
 
 model TrainingCourse {
-  id                    Int       @id @default(autoincrement())
-  name                  String
-  startDate             DateTime?
-  endDate               DateTime?
+  id                       Int       @id @default(autoincrement())
+  name                     String
+  startDate                DateTime?
+  endDate                  DateTime?
   supervisorAssignmentDate DateTime? // date_repartition_rapporteurs
 
   projects Project[]
@@ -180,7 +196,7 @@ model Tool {
   activity       Activity?
   work           Work?
   assessmentGrid AssessmentGrid?
-  conditions     Condition[] @relation("ConditionTool")
+  conditions     Condition[]     @relation("ConditionTool")
 
   linksAsSource ToolLink[] @relation("ToolLinkSource")
   linksAsTarget ToolLink[] @relation("ToolLinkTarget")
@@ -367,6 +383,7 @@ model Criteria {
   grid                AssessmentGrid       @relation(fields: [gridId], references: [id], onDelete: Cascade)
   cells               Cell[]
   criteriaAssessments CriteriaAssessment[]
+  criteriaDiscussions CriteriaDiscussion[]
   weightings          Weighting[]
 
   createdAt DateTime @default(now())
@@ -404,17 +421,18 @@ model Weighting {
   @@id([criteriaId, projectId])
 }
 
-// note par critère : la cellule votée est déduite en front à partir de
-// `note` et des `weight` cumulés des cellules du critère (pas de FK stockée).
+// note + commentaire de feedback (visible étudiant) d'UN enseignant sur UN
+// critère pour UN projet : clé primaire composite (pas de FK stockée pour la
+// cellule votée, déduite en front à partir de `note` et des `weight` cumulés
+// des cellules du critère). Le commentaire interne (non visible étudiant) vit
+// désormais dans CriteriaDiscussion, cf. assessment-grid.md.
 model CriteriaAssessment {
-  id               Int      @id @default(autoincrement())
-  date             DateTime
-  commentEval      String?  @db.Text // commentaire visible profs uniquement
-  commentFeedback  String?  @db.Text // commentaire visible étudiants (+ profs)
-  note             Decimal? @db.Decimal(5, 2)
-  criteriaId       Int
-  teacherId        Int
-  projectId        Int
+  date            DateTime?
+  commentFeedback String?   @db.Text // commentaire visible étudiants (+ profs)
+  note            Decimal?  @db.Decimal(5, 2)
+  criteriaId      Int
+  teacherId       Int
+  projectId       Int
 
   criteria Criteria @relation(fields: [criteriaId], references: [id])
   teacher  User     @relation("CriteriaAssessmentTeacher", fields: [teacherId], references: [id])
@@ -423,30 +441,52 @@ model CriteriaAssessment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@id([criteriaId, teacherId, projectId])
   @@index([projectId])
   @@index([teacherId])
-  @@index([criteriaId])
 }
 
-// feedback global déposé sur la grille (indépendant des CriteriaAssessment)
-model GridFeedback {
-  id              Int     @id @default(autoincrement())
-  commentEval     String? @db.Text
-  commentFeedback String? @db.Text
-  userId          Int
-  projectId       Int
-  gridId          Int
+// fil de discussion interne entre enseignants sur un critère (jamais visible
+// étudiant) : plusieurs messages possibles par (critère, projet), donc id
+// propre (pas de clé composite, plusieurs entrées par enseignant possibles).
+model CriteriaDiscussion {
+  id         Int       @id @default(autoincrement())
+  date       DateTime?
+  comment    String?   @db.Text
+  criteriaId Int
+  teacherId  Int
+  projectId  Int
 
-  user    User           @relation(fields: [userId], references: [id])
+  criteria Criteria @relation(fields: [criteriaId], references: [id])
+  teacher  User     @relation("CriteriaDiscussionTeacher", fields: [teacherId], references: [id])
+  project  Project  @relation(fields: [projectId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([criteriaId, projectId])
+  @@index([teacherId])
+}
+
+// feedback global et unique par grille/projet (indépendant des CriteriaAssessment) :
+// un commentaire constructif unique pour toute la grille, modifiable par
+// n'importe quel enseignant (pas d'auteur unique stocké).
+model GridFeedback {
+  id        Int                @id @default(autoincrement())
+  date      DateTime?
+  comment   String?            @db.Text
+  status    GridFeedbackStatus
+  projectId Int
+  gridId    Int
+
   project Project        @relation(fields: [projectId], references: [id])
   grid    AssessmentGrid @relation(fields: [gridId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([gridId, projectId])
   @@index([projectId])
-  @@index([gridId])
-  @@index([userId])
 }
 
 // ----------------------------------------------------------------------------
@@ -467,6 +507,7 @@ model Project {
   formSubmissions       FormSubmission[]
   workSubmissions       UserWorkSubmission[]
   criteriaAssessments   CriteriaAssessment[]
+  criteriaDiscussions   CriteriaDiscussion[]
   weightings            Weighting[]
   gridFeedbacks         GridFeedback[]
   supervisorPreferences UserSupervisorPreference[]
@@ -516,7 +557,7 @@ model Group {
   location      String?
   eventId       Int
 
-  event    Activity        @relation(fields: [eventId], references: [id])
+  event    Activity       @relation(fields: [eventId], references: [id])
   users    UserGroup[]
   projects ProjectGroup[]
 
@@ -699,4 +740,11 @@ enum QuestionType {
   TEXT
   CHECKBOX
   SELECT
+}
+
+enum GridFeedbackStatus {
+  PENDING // attente
+  CORRECTION // correction
+  PUBLISHED // public
+  SEEN // vu
 }

@@ -57,9 +57,9 @@ export class TeacherLayoutComponent implements OnInit, OnDestroy {
 
   menuItems: MenuItem[] = [
     { titre: 'Accueil', iconName: 'home', route: '/teacher', exact: true },
-    { titre: 'Étudiants', iconName: 'groups', route: '/teacher/users'},
+    { titre: 'Projets', iconName: 'work', route: '/teacher/projects'},
     { titre: 'Rapportage', iconName: 'assignment_ind', route: '/teacher/supervisors'},
-    { titre: 'Évaluations', iconName: 'box_edit', route: '/teacher/assessments'},
+    { titre: 'Utilisateurs', iconName: 'groups', route: '/teacher/users'},
     { titre: 'Notifications', iconName: 'notifications', route: '/teacher/notifications'},
   ];
 }

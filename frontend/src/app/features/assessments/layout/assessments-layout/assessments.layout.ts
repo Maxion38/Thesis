@@ -2,7 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router, ActivatedRoute } from '@angular/router';
 import { AssessmentGridService } from '../../services/assessments.service';
-import { StudentWithGridsModel, GridSummaryModel } from '../../models/students-grids-id.model';
+import { EvaluationsVisibilityService } from '../../services/evaluations-visibility.service';
+import { ProjectWithGridsModel, GridSummaryModel } from '../../../projects/models/project-with-grids.model';
 
 @Component({
   selector: 'app-assessments-layout',
@@ -12,53 +13,54 @@ import { StudentWithGridsModel, GridSummaryModel } from '../../models/students-g
   styleUrls: ['./assessments.layout.scss'],
 })
 export class AssessmentsLayoutComponent implements OnInit {
-  showUserOptions = false;
+  showProjectOptions = false;
   showGridOptions = false;
 
-  students!: StudentWithGridsModel[];
-  selectedStudent?: StudentWithGridsModel;
+  projects!: ProjectWithGridsModel[];
+  selectedProject?: ProjectWithGridsModel;
   selectedGrid?: GridSummaryModel;
 
   constructor(
     private assessmentGridService: AssessmentGridService,
+    protected evaluationsVisibility: EvaluationsVisibilityService,
     private router: Router,
     private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
-    const routeUserId = Number(this.route.snapshot.paramMap.get('userId'));
+    const routeProjectId = Number(this.route.snapshot.paramMap.get('projectId'));
     const routeGridId = Number(this.route.snapshot.paramMap.get('assessmentId'));
 
-    this.assessmentGridService.getStudentsWithGrids().subscribe(students => {
-      this.students = students;
+    this.assessmentGridService.getProjectsWithGrids().subscribe(projects => {
+      this.projects = projects;
 
-      this.selectedStudent =
-        students.find(student => student.id === routeUserId) ?? students[0];
+      this.selectedProject =
+        projects.find(project => project.id === routeProjectId) ?? projects[0];
 
       this.selectedGrid =
-        this.selectedStudent?.grids.find(grid => grid.id === routeGridId) ??
-        this.selectedStudent?.grids[0];
+        this.selectedProject?.grids.find(grid => grid.id === routeGridId) ??
+        this.selectedProject?.grids[0];
 
-      // Si l'URL initiale ne pointait pas déjà vers cet utilisateur/cette
+      // Si l'URL initiale ne pointait pas déjà vers ce projet/cette
       // grille (route '' au chargement, ou id invalide), on la met à jour
       // pour qu'elle reflète toujours la sélection courante.
       if (
-        this.selectedStudent &&
+        this.selectedProject &&
         this.selectedGrid &&
-        (this.selectedStudent.id !== routeUserId || this.selectedGrid.id !== routeGridId)
+        (this.selectedProject.id !== routeProjectId || this.selectedGrid.id !== routeGridId)
       ) {
-        this.navigateTo(this.selectedStudent.id, this.selectedGrid.id, true);
+        this.navigateTo(this.selectedProject.id, this.selectedGrid.id, true);
       }
     });
   }
 
-  selectStudent(student: StudentWithGridsModel): void {
-    this.selectedStudent = student;
-    this.selectedGrid = student.grids[0];
-    this.showUserOptions = false;
+  selectProject(project: ProjectWithGridsModel): void {
+    this.selectedProject = project;
+    this.selectedGrid = project.grids[0];
+    this.showProjectOptions = false;
 
     if (this.selectedGrid) {
-      this.navigateTo(student.id, this.selectedGrid.id);
+      this.navigateTo(project.id, this.selectedGrid.id);
     }
   }
 
@@ -66,18 +68,27 @@ export class AssessmentsLayoutComponent implements OnInit {
     this.selectedGrid = grid;
     this.showGridOptions = false;
 
-    if (this.selectedStudent) {
-      this.navigateTo(this.selectedStudent.id, grid.id);
+    if (this.selectedProject) {
+      this.navigateTo(this.selectedProject.id, grid.id);
     }
   }
 
-  private navigateTo(userId: number, gridId: number, replaceUrl = false): void {
-    this.router.navigate(['/teacher', 'assessments', userId, gridId], { replaceUrl });
+  private navigateTo(projectId: number, gridId: number, replaceUrl = false): void {
+    this.router.navigate(['/teacher', 'projects', projectId, 'assessments', gridId], { replaceUrl });
   }
 
-  getInitials(student: StudentWithGridsModel): string {
-    const firstName = student.firstname || '';
-    const lastName = student.surname || '';
-    return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+  getStudentsLabel(project: ProjectWithGridsModel): string {
+    if (project.students.length === 0) {
+      return project.title ?? 'Projet';
+    }
+    return project.students
+      .map(student => `${student.firstname ?? ''} ${student.surname}`.trim())
+      .join(', ');
+  }
+
+  getInitials(project: ProjectWithGridsModel): string {
+    const first = project.students[0];
+    if (!first) return '?';
+    return ((first.firstname?.charAt(0) ?? '') + first.surname.charAt(0)).toUpperCase();
   }
 }

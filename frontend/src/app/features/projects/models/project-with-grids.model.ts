@@ -3,9 +3,15 @@ export interface GridSummaryModel {
   name: string;
 }
 
-export interface StudentWithGridsModel {
+export interface ProjectMemberModel {
   id: number;
   firstname: string | null;
   surname: string;
+}
+
+export interface ProjectWithGridsModel {
+  id: number;
+  title: string | null;
+  students: ProjectMemberModel[];
   grids: GridSummaryModel[];
 }

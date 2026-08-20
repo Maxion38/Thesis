@@ -1,35 +1,48 @@
 <div class="page">
 
   <div class="header">
+    <div class="header-center">
 
-    <div class="user-card" *ngIf="selectedStudent" (click)="showUserOptions = !showUserOptions">
-      <div class="user-card__profile">{{ getInitials(selectedStudent) }}</div>
-      <div class="user-card__name">{{ selectedStudent.firstname || '' }} {{ selectedStudent.surname }}</div>
-      <span class="material-symbols-outlined user-card__dropdown">{{ showUserOptions ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
+      <div class="user-card" *ngIf="selectedProject" (click)="showProjectOptions = !showProjectOptions">
+        <div class="user-card__profile">{{ getInitials(selectedProject) }}</div>
+        <div class="user-card__name">{{ getStudentsLabel(selectedProject) }}</div>
+        <span class="material-symbols-outlined user-card__dropdown">{{ showProjectOptions ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
 
-      <div class="add-menu" *ngIf="showUserOptions" (click)="$event.stopPropagation()">
-        <button
-          *ngFor="let student of students"
-          class="add-menu__item"
-          (click)="selectStudent(student); $event.stopPropagation()">
-          {{ student.firstname }} {{ student.surname }}
-        </button>
+        <div class="add-menu" *ngIf="showProjectOptions" (click)="$event.stopPropagation()">
+          <button
+            *ngFor="let project of projects"
+            class="add-menu__item"
+            [class.add-menu__item--active]="project.id === selectedProject.id"
+            (click)="selectProject(project); $event.stopPropagation()">
+            {{ getStudentsLabel(project) }}
+          </button>
+        </div>
       </div>
+
+      <div class="user-card grid-name" *ngIf="selectedGrid" (click)="showGridOptions = !showGridOptions">
+        <div class="user-card__icon"><span class="material-symbols-outlined">box_edit</span></div>
+        <div class="user-card__name">{{ selectedGrid.name }}</div>
+        <span class="material-symbols-outlined user-card__dropdown">{{ showGridOptions ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
+
+        <div class="add-menu" *ngIf="showGridOptions" (click)="$event.stopPropagation()">
+          <button
+            *ngFor="let grid of selectedProject?.grids"
+            class="add-menu__item"
+            [class.add-menu__item--active]="grid.id === selectedGrid.id"
+            (click)="selectGrid(grid); $event.stopPropagation()">
+            {{ grid.name }}
+          </button>
+        </div>
+      </div>
+
     </div>
 
-    <div class="user-card grid-name" *ngIf="selectedGrid" (click)="showGridOptions = !showGridOptions">
-      <div class="user-card__name">{{ selectedGrid.name }}</div>
-      <span class="material-symbols-outlined user-card__dropdown">{{ showGridOptions ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
-
-      <div class="add-menu" *ngIf="showGridOptions" (click)="$event.stopPropagation()">
-        <button
-          *ngFor="let grid of selectedStudent?.grids"
-          class="add-menu__item"
-          (click)="selectGrid(grid); $event.stopPropagation()">
-          {{ grid.name }}
-        </button>
-      </div>
-    </div>
+    <div
+      class="evals-btn"
+      [class.evals-btn--active]="evaluationsVisibility.showOtherVotes()"
+      [title]="evaluationsVisibility.showOtherVotes() ? 'Masquer les votes des autres évaluateurs' : 'Afficher les votes des autres évaluateurs'"
+      (click)="evaluationsVisibility.toggle()"
+    ><span class="material-symbols-outlined">groups</span></div>
 
   </div>
 

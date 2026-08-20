@@ -49,8 +49,11 @@
  *     `note` aux bornes cumulées des Cell.weight du critère. Un des critères
  *     de démo utilise des poids de cellule non uniformes pour illustrer
  *     concrètement ce mécanisme dans le rapport.
- *   - GridVersionFeedback renommé GridFeedback, le champ comment est scindé
- *     en commentEval (interne profs) / commentFeedback (visible étudiant).
+ *   - GridVersionFeedback renommé GridFeedback : redevenu un feedback unique
+ *     et global par grille/projet (plus de commentEval/commentFeedback ni
+ *     d'auteur, un seul champ `comment`), portant désormais un `status`
+ *     (GridFeedbackStatus) et une `date`.
+ *   - CriteriaAssessment.date scindée en dateEval / dateFeedback.
  * ─────────────────────────────────────────────────────────────────────────
  */
 
@@ -63,6 +66,7 @@ import {
   ConditionMethod,
   ConditionOperator,
   Importance,
+  GridFeedbackStatus,
 } from '@prisma/client';
 import { fakerFR as faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt'; // remplacer par bcryptjs si c'est ce que le projet utilise
@@ -245,6 +249,712 @@ const TECH_OPTIONS = [
   'MongoDB',
   'Docker',
 ];
+
+// ─────────────────────────────────────────────────────────────────────────
+// GRILLES RÉELLES — retranscrites depuis les PDF officiels de l'école
+//
+// Chaque grille (nom d'outil, critères, descriptions de cellules) est reprise
+// telle quelle depuis les PDF fournis par l'école, pour remplacer le contenu
+// générique par du contenu réel et exploitable dans le rapport :
+//   - cdc                 <- TFE_-_Évaluation_1_-_cahier_des_charges.pdf
+//   - validationSujet     <- TFE_-_Évaluation_1_-_validation_sujet.pdf
+//   - analyse             <- grille_cdc_analyse_v2_pyg.pdf
+//   - suiviRapporteur     <- grille_suivi_rapporteur.pdf
+//   - oral                <- grille_oral_final.pdf
+//   - realisationPratique <- grille_realisation_pratique.pdf
+//   - rapportFinal        <- grille_rapport_final.pdf
+//
+// Le schéma n'a pas de notion de "catégorie" regroupant plusieurs Criteria
+// au sein d'une AssessmentGrid (pas de table intermédiaire dans le drawio
+// V2) : les sous-thèmes visuels des PDF (ex. "Evaluation de la forme" /
+// "Evaluation du fond", "Cahier des charges", "Conclusion", ...) ne sont
+// donc pas repris, seuls les critères eux-mêmes sont modélisés.
+//
+// IMPORTANT : le nombre de cellules par critère n'est PAS une constante à
+// faire respecter globalement. Certains PDF laissent une colonne vide pour
+// un critère donné (ex. pas de "Bien"/"Très bien" pour "Réalisation
+// pratique" dans la grille de validation du sujet, ou pas de "Bien"/"Très
+// bien" pour "Mise en œuvre de la méthodologie" dans la grille d'analyse) :
+// dans ce cas, seules les cellules réellement présentes dans le PDF sont
+// créées pour ce critère. `createGridsForModule` ci-dessous se base
+// uniquement sur `criteria[i].cells.length`, critère par critère -> rien
+// n'empêche un jeu de critères avec 2 cellules pour l'un et 6 pour un autre.
+//
+// Les poids par critère (defaultWeight) ne figurent pas dans les PDF ; ils
+// ont été estimés pour totaliser 100 par grille, à ajuster librement.
+// ─────────────────────────────────────────────────────────────────────────
+
+interface RealGridCriterionDef {
+  name: string;
+  weight: number;
+  cells: string[]; // du niveau le plus bas au plus haut ; la longueur varie selon le critère
+}
+
+interface RealGridDef {
+  key: string;
+  toolName: string;
+  toolDescription: string;
+  module: 'cadrage' | 'suivi' | 'soutenance';
+  evaluator: 'rapporteur' | 'jury';
+  criteria: RealGridCriterionDef[];
+}
+
+const REAL_GRIDS: RealGridDef[] = [
+  {
+    key: 'cdc',
+    toolName: 'Évaluation 1 - Cahier des charges',
+    toolDescription: 'Grille utilisée par le rapporteur pour évaluer le cahier des charges remis par l’étudiant.',
+    module: 'cadrage',
+    evaluator: 'rapporteur',
+    criteria: [
+      {
+        name: 'Forme du texte',
+        weight: 15,
+        cells: [
+          'La forme du rapport n\'est pas professionnelle : plus de 5 fautes d\'orthographe par page, mise en page non homogène gênant la lecture, pas de structuration des sections. Illustrations (schémas, images, photos) absentes ou non cohérentes avec le texte.',
+          'L\'orthographe est suffisante (maximum une ou deux fautes par page), la mise en page est homogène, les titres sont structurés et numérotés.',
+          'L\'orthographe est correcte, il y a peu de fautes d\'orthographe (moins de 5 sur le document). La mise en page est soignée et la structuration correcte.',
+          'Il n\'y a pas ou très peu de fautes d\'orthographe. La mise en page est particulièrement agréable et professionnelle. Les sections sont bien organisées. Des illustrations légendées et exploitées dans le texte viennent clarifier le propos.',
+        ],
+      },
+      {
+        name: 'Qualité du texte',
+        weight: 15,
+        cells: [
+          'Le vocabulaire utilisé n\'est pas adapté au public. Les phrases ne sont grammaticalement pas correctes. Le style n\'est pas professionnel. Il n\'y a pas de cohésion dans le texte.',
+          'Le vocabulaire utilisé est adapté au public. Les phrases sont grammaticalement correctes et le style suffisant. Les sections ont une suite logique.',
+          'Le vocabulaire est adapté au public et spécifique au domaine. Le style d\'écriture est agréable. Un fil rouge permet de faire le lien entre les sections qui se suivent logiquement.',
+          'Le style est particulièrement soigné et professionnel, le texte est agréable à lire, tous les éléments s\'enchaînent de manière fluide et logique.',
+        ],
+      },
+      {
+        name: 'Oral',
+        weight: 10,
+        cells: [
+          'L\'étudiant n\'a rien préparé et n\'est pas en mesure d\'expliquer clairement son sujet.',
+          'L\'étudiant a préparé son explication orale et permet au jury de comprendre la problématique.',
+          'L\'étudiant fait une présentation professionnelle de son sujet, et peut répondre aux questions posées.',
+          'L\'étudiant fait une présentation professionnelle de son sujet et est particulièrement convainquant pour la mise en avant de l\'intérêt de son sujet. Il interagit et rebondit intelligemment aux critiques et suggestions formulées.',
+        ],
+      },
+      {
+        name: 'Problème et contexte',
+        weight: 15,
+        cells: [
+          'La problématique n\'est pas décrite, ou insuffisamment. Le lecteur ne comprend pas de quoi il est question dans le TFE.',
+          'La problématique et son contexte sont présentés dans le texte, de manière à ce que le lecteur puisse comprendre le sujet du TFE.',
+          'La problématique et le contexte sont introduits de manière détaillée. La problématique est mise en perspective sur base des spécificités du contexte. Les enjeux et objectifs des parties prenantes sont identifiés.',
+          'La problématique et le contexte sont présentés de manière détaillée et fine. Les enjeux et objectifs des parties prenantes sont identifiés et correctement analysés. L\'étudiant démontre une bonne capacité de prise de recul et d\'analyse par rapport au contexte du TFE.',
+        ],
+      },
+      {
+        name: 'Identification des intervenants',
+        weight: 10,
+        cells: [
+          'Les intervenants de la problématique ne sont pas identifiés (client, différents utilisateurs, ...).',
+          'Les intervenants de la problématique sont identifiés (client, différents utilisateurs, ...).',
+          'Les intervenants de la problématique sont identifiés et leurs spécificités sont décrites. Leurs objectifs spécifiques sont identifiés.',
+          'Les intervenants de la problématique sont identifiés et leurs spécificités sont analysées de manière approfondie. Leurs objectifs spécifiques sont identifiés, décrits et analysés.',
+        ],
+      },
+      {
+        name: 'Identification des fonctionnalités',
+        weight: 15,
+        cells: [
+          'Les fonctionnalités ne sont pas décrites, ou sont décrites de manière superficielle ou incomplète.',
+          'Les fonctionnalités sont décrites et couvrent effectivement la problématique présentée.',
+          'Les fonctionnalités sont décrites de manière précise (éventuellement sous forme d\'US) et classifiées par type d\'utilisateur. Elles sont réfléchies, adéquates et couvrent bien l\'entièreté de la problématique.',
+          'Les fonctionnalités sont complètes, bien décrites (éventuellement sous forme d\'US), classées par type d\'utilisateur et éventuellement illustrées par des cas d\'utilisation. Elles possèdent des critères d\'acceptation. Elles sont classées par ordre d\'importance pour le "client" et possèdent une estimation de la complexité.',
+        ],
+      },
+      {
+        name: 'Méthodologie : organisation du travail',
+        weight: 10,
+        cells: [
+          'Le CdC ne précise pas la méthodologie qui sera suivie.',
+          'La méthodologie est présentée : étapes principales du travail, mention du type de gestion de projet envisagée (+ outils), organisation des interactions avec les intervenants (rapporteur, client, …).',
+          'La méthodologie est présentée : étapes principales du travail avec échéances, explication claire du type de gestion de projet envisagée (+ outils), organisation régulière d\'interactions avec les intervenants (rapporteur, client, …).',
+          'La méthodologie est présentée et l\'étudiant montre qu\'il a intégré de bonnes pratiques dans sa gestion de projet : étapes principales du travail avec échéances et objectifs, explication claire du type de gestion de projet envisagée, choix d\'outil pertinent, interactions régulières et spécifiques avec les intervenants (rapporteur, client, …).',
+        ],
+      },
+      {
+        name: 'Méthodologie : approche itérative et incrémentale',
+        weight: 10,
+        cells: [
+          'L\'étudiant n\'identifie pas de premier objectif de réalisation (type MVP - Minimum Valuable Product).',
+          'L\'étudiant a organisé l\'implémentation des fonctionnalités pour la réalisation pratique par priorité. Le MVP est présent et représente bien une première itération fonctionnelle apportant de la valeur au client. Il est rapidement réalisable.',
+          'L\'étudiant organise l\'implémentation pratique des fonctionnalités par priorité. Plusieurs itérations sont prévues, en commençant par un MVP qui représente bien une première itération fonctionnelle apportant de la valeur au client et rapidement réalisable. Il montre qu\'il fait preuve de souplesse et qu\'il sera capable de s\'adapter au rythme réel d\'avancement du TFE.',
+          'L\'étudiant a tout mis en place pour suivre une méthodologie type SCRUM, avec un outil permettant de suivre l\'avancement du travail et d\'adapter la planification sur base de métriques (ex : vélocité, story point, burndown chart, …). Exemples d\'outils : Jira, IceScrum, ...',
+        ],
+      },
+    ],
+  },
+  {
+    key: 'validationSujet',
+    toolName: 'Évaluation 1 - Validation du sujet',
+    toolDescription: 'Grille utilisée par le rapporteur pour évaluer la pertinence du sujet proposé par l’étudiant.',
+    module: 'cadrage',
+    evaluator: 'rapporteur',
+    criteria: [
+      {
+        name: 'Client',
+        weight: 20,
+        cells: [
+          'Le sujet n\'est pas lié à un client réel.',
+          'L\'étudiant est en contact avec un client intéressé par le sujet.',
+          'Le client est un professionnel "métier" de la problématique, et a des attentes par rapport au résultat du TFE.',
+          'Le client est un professionnel "métier" de la problématique, il a de réelles attentes par rapport à cette dernière et demande à pouvoir suivre régulièrement le projet.',
+        ],
+      },
+      {
+        name: 'Réalisation pratique',
+        weight: 20,
+        cells: [
+          'Le sujet ne permet pas la réalisation d\'un cas pratique.',
+          'La problématique permet d\'envisager une solution qui mènera à une réalisation pratique significative.',
+        ],
+      },
+      {
+        name: 'Etendue du sujet',
+        weight: 20,
+        cells: [
+          'Le sujet abordé n\'est pas représentatif du profil métier TI, ou possède déjà une solution existante évidente pour laquelle une variante plus adaptée pour le client n\'est pas concevable.',
+          'Le sujet permet la mise en oeuvre d\'une solution se démarquant de l\'existant. Dans le cadre de ce sujet, l\'étudiant sera amené à mettre en oeuvre de manière non superficielle minimum deux piliers de la formation TI (Réseaux/admin, télécom, électronique, développement). Par exemple, si le sujet est du développement Web, l\'étudiant le déploie sur une infrastructure d\'hébergement non triviale (et cela a du sens dans le cadre de la problématique).',
+          'Le sujet permet la mise en oeuvre d\'une solution se démarquant de l\'existant. Le sujet intègre deux piliers ou plus de la formation TI que l\'étudiant sera amené à analyser et mettre en oeuvre de manière approfondie.',
+          'Le sujet permet la mise en oeuvre d\'une solution se démarquant de l\'existant. Le sujet correspond particulièrement au profil-métier TI en intégrant "naturellement" plusieurs piliers, et est particulièrement innovant.',
+        ],
+      },
+      {
+        name: 'Intérêt de l\'analyse',
+        weight: 20,
+        cells: [
+          'L\'ampleur du sujet ne permet pas une analyse suffisamment intéressante.',
+          'Le sujet permettra à l\'étudiant de creuser la problématique métier, de mettre en oeuvre des techniques d\'analyse (schémas DB, UML, réseaux, …) et de comparer plusieurs solutions techniques connues, en appliquant les approches et procédures vues dans le cadre des projets.',
+          'Le sujet permettra à l\'étudiant de creuser une problématique métier originale se démarquant des projets réalisés durant le cursus, de mettre en oeuvre des techniques d\'analyse (schémas DB, UML, réseaux, …) et de comparer plusieurs solutions techniques peu ou pas vues au cours du cursus.',
+          'L\'analyse à mener sort de l\'ordinaire et amène des challenges inédits dans le cadre de la formation. L\'étudiant sera amené à creuser des pratiques et techniques sortant éventuellement des domaines d\'expertises de l\'équipe enseignante.',
+        ],
+      },
+      {
+        name: 'Ampleur du TFE',
+        weight: 20,
+        cells: [
+          'Le sujet ne permet pas d\'effectuer un travail nécessitant 16 ECTS de travail (~450 heures).',
+          'Les fonctionnalités identifiées dans le cahier des charges devraient permettre de réaliser la charge de travail attendue (16 ECTS).',
+          'Les fonctionnalités identifiées dans le cahier des charges devraient permettre de réaliser la charge de travail attendue (16 ECTS). L\'étudiant a classé ces dernières par ordre de priorité afin de pouvoir ajuster le périmètre du TFE au fur et à mesure de l\'avancement.',
+        ],
+      },
+    ],
+  },
+  {
+    key: 'analyse',
+    toolName: 'Évaluation 2 - analyse',
+    toolDescription: 'Grille utilisée par le rapporteur pour évaluer l’analyse de la problématique et les choix de conception, en cours d’année.',
+    module: 'suivi',
+    evaluator: 'rapporteur',
+    criteria: [
+      {
+        name: 'Forme du texte',
+        weight: 8,
+        cells: [
+          'Rapport pas professionnel : plus de 5 fautes d\'orthographe par page ; mise en page non-homogène ; pas de structuration en sections ; illustrations absentes ou incohérentes avec le texte.',
+          'L\'orthographe est suffisante (maximum une ou deux fautes par page), la mise en page est homogène, les titres sont structurés et numérotés.',
+          'La mise en page est bien soignée, très agréable ; des illustrations accompagnent le propos.',
+          'Il n\'y a pas ou très peu de fautes d\'orthographe. La mise en page est remarquable. Des illustrations légendées et citées dans le texte clarifient le propos.',
+        ],
+      },
+      {
+        name: 'Qualité du texte',
+        weight: 8,
+        cells: [
+          'Le style n\'est pas professionnel : vocabulaire pas adapté au public ; erreurs flagrantes de grammaire ; pas de cohésion dans le texte.',
+          'Le vocabulaire utilisé est adapté au public ; la grammaire est correcte. Les sections sont logiquement structurées.',
+          'Le vocabulaire est spécifique au domaine. Le style d\'écriture est agréable et la compréhension aisée. Les sections s\'organisent autour d\'un fil rouge clair.',
+          'Le style est particulièrement soigné et professionnel, le texte est agréable à lire, tous les éléments s\'enchaînent de manière fluide et logique.',
+        ],
+      },
+      {
+        name: 'Oral',
+        weight: 6,
+        cells: [
+          'L\'étudiant n\'a rien préparé et/ou n\'est pas en mesure d\'expliquer clairement son sujet.',
+          'L\'étudiant a préparé son exposé (éventuellement avec un support) et permet au jury de comprendre la problématique.',
+          'La présentation est professionnelle. L\'étudiant peut répondre adéquatement aux questions posées.',
+          'L\'étudiant interagit et rebondit intelligemment aux critiques et suggestions formulées.',
+        ],
+      },
+      {
+        name: 'Problème et contexte',
+        weight: 8,
+        cells: [
+          'La problématique n\'est pas décrite, ou insuffisamment. Le lecteur ne comprend pas de quoi il est question dans le TFE.',
+          'La problématique et son contexte sont présentés dans le texte, de manière à ce que le lecteur puisse comprendre le sujet du TFE.',
+          'La problématique est mise en perspective sur base des spécificités du contexte. Les enjeux et objectifs des parties prenantes sont identifiés.',
+          'L\'étudiant démontre une bonne capacité de prise de recul et d\'analyse par rapport au contexte du TFE.',
+        ],
+      },
+      {
+        name: 'Identification des intervenants',
+        weight: 6,
+        cells: [
+          'Les intervenants de la problématique ne sont pas identifiés (client, différents utilisateurs).',
+          'Les intervenants de la problématique sont identifiés (client, différents utilisateurs).',
+          'Les spécificités et objectifs des intervenants sont décrites ("rôles").',
+          'L\'étudiant analyse les enjeux et impacts fonctionnels des différents rôles dans la problématique.',
+        ],
+      },
+      {
+        name: 'Identification des fonctionnalités',
+        weight: 8,
+        cells: [
+          'Les fonctionnalités ne sont pas décrites, ou sont décrites de manière superficielle ou incomplète.',
+          'Les fonctionnalités sont décrites et couvrent effectivement la problématique présentée.',
+          'Les fonctionnalités sont : classées par type d\'utilisateur ; éventuellement formulées sous forme de User Stories ; précises, réfléchies et pertinentes.',
+          'Les fonctionnalités sont : illustrées par des cas d\'utilisation ; possèdent des critères d\'acceptation ; classées par ordre d\'importance pour le client ; possèdent une estimation de la complexité.',
+        ],
+      },
+      {
+        name: 'Méthodologie : organisation du travail',
+        weight: 8,
+        cells: [
+          'Le cahier des charges ne précise pas la méthodologie qui sera suivie.',
+          'Le document décrit : les étapes principales du travail ; le type de gestion de projet envisagée (et les outils) ; l\'organisation des interactions avec les intervenants (rapporteur, client).',
+          'Le document détaille : les étapes du travail, sous forme d\'un calendrier sommaire ; comment la méthodologie de travail sera mise en œuvre concrètement ; un planning grossier des interactions avec les intervenants.',
+          'L\'organisation est incrémentale. Le document identifie : une première itération fonctionnelle (MVP) ; les étapes successives nécessaires à obtenir différentes versions à montrer au client ; les outils de suivi de l\'avancement du travail permettant une organisation flexible aux aléas du projet.',
+        ],
+      },
+      {
+        name: 'Positionnement de la solution',
+        weight: 8,
+        cells: [
+          'Le TFE n\'est pas comparé aux solutions existantes répondant à la problématique.',
+          'Une ou deux solutions concurrentes sont identifiées et comparées au projet défendu. Le développement d\'une solution nouvelle est justifié.',
+          'Plusieurs solutions sont présentées, leurs forces et faiblesses sont décrites. La pertinence du développement d\'une solution nouvelle est convaincante.',
+          'Une analyse des avantages et inconvénients d\'une nouvelle solution est effectuée.',
+        ],
+      },
+      {
+        name: 'Analyse technique',
+        weight: 8,
+        cells: [
+          'Les éléments techniques nécessaires pour répondre à la problématique ne sont pas décrits, ou les choix posés ne sont pas justifiés.',
+          'Les éléments techniques et technologies nécessaires pour répondre à la problématique sont identifiés et comparés. Le choix effectué est raisonné.',
+          'Les critères de comparaison des technologies sont choisis sur base des objectifs du client. Le choix effectué est basé sur ce comparatif. Les limites de ce choix sont exposées.',
+          'Les éléments de comparaisons sont basés sur des analyses ou des benchmarks reproductibles et scientifiquement vérifiables. Tous les éléments utilisés sont référencés adéquatement.',
+        ],
+      },
+      {
+        name: 'Conception de la solution',
+        weight: 8,
+        cells: [
+          'Les outils de conception vus lors du cursus (schémas DB, UML, électroniques, etc) ne sont pas mis en oeuvre. Aucune maquette d\'interface ou du produit n\'est présentée.',
+          'Les outils adaptés au sujet sont utilisés pour proposer une solution (schéma DB, UML, réseau, électronique, etc). Les diagrammes sont corrects, suffisants, lisibles, légendés et accompagnés d\'une explication textuelle.',
+          'Des maquettes ou des schémas du produit sont fournis et permettent d\'imaginer l\'aspect de la solution finale. Les diagrammes sont justifiés dans le texte, et cette justification démontre la profondeur de la réflexion menée.',
+          'Les diagrammes sont remarquables par leur ampleur et/ou leur qualité intrinsèque, reflétée dans le texte.',
+        ],
+      },
+      {
+        name: 'Stratégie de validation',
+        weight: 8,
+        cells: [
+          'Aucune stratégie de validation n\'est présentée.',
+          'Des critères d\'acceptation des fonctionnalités sont fournis. Les outils de validation décrits.',
+          'Une stratégie de validation variée (deux techniques différentes au moins), permet de vérifier que la solution répond au besoin. Les outils de validation sont pertinents.',
+          'La stratégie de validation envisagée est riche, les éléments techniques sont validés individuellement et de manière intégrée.',
+        ],
+      },
+      {
+        name: 'Stratégie de sécurité et RGPD',
+        weight: 8,
+        cells: [
+          'La question de la sécurité et des enjeux liés au RGPD est éludée.',
+          'Les points critiques de sécurité sont identifiés. Les stratégies de protection mises en place sont imaginées.',
+          'Les biens à protéger et les menaces qui s\'y réfèrent sont identifiés et priorisés. Des contre-mesures correspondantes à ces menaces sont proposées.',
+          'L\'analyse de sécurité est particulièrement remarquable : les contre-mesures sont choisies avec soin et justifiées au moyen de critères solides et documentés.',
+        ],
+      },
+      {
+        name: 'Mise en œuvre de la méthodologie',
+        weight: 8,
+        cells: [
+          'Les méthodologies de travail identifiées dans le cahier des charges ne sont pas mises en œuvre.',
+          'Les outils de base soutenant la méthodologie de travail sont mis en œuvre adéquatement (repository, outils d\'organisation, etc.). Les outils sont conformes au cahier des charges.',
+        ],
+      },
+    ],
+  },
+  {
+    key: 'suiviRapporteur',
+    toolName: 'Évaluation 3 - suivi rapporteur',
+    toolDescription: 'Grille utilisée par le rapporteur pour évaluer l’assiduité et l’implication de l’étudiant tout au long de l’année.',
+    module: 'suivi',
+    evaluator: 'rapporteur',
+    criteria: [
+      {
+        name: 'Présences',
+        weight: 40,
+        cells: [
+          '',
+          'L\'étudiant.e a participé à au moins 5 activités parmi : la discussion préalable d\'un sujet, le pitch des sujets, la présentation du sujet et du CDC, une première analyse, le 1er état d\'avancement, le second état d\'avancement, l\'envoi par mail d\'une première version du rapport.',
+          'L\'étudiant.e a participé à au moins 6 activités.',
+          'L\'étudiant.e a participé à toutes les activités proposées.',
+        ],
+      },
+      {
+        name: 'Méthodologie',
+        weight: 30,
+        cells: [
+          '',
+          'L\'étudiant.e a contacté plusieurs fois son rapporteur pour prendre rendez-vous.',
+          'L\'étudiant.e a pris des notes lors des réunions et en a fait des compte-rendus personnels.',
+          'L\'étudiant.e a envoyé à son rapporteur un ordre du jour avant les réunions ainsi qu\'un PV après celles-ci contenant les points d\'action à réaliser.',
+        ],
+      },
+      {
+        name: 'Implication et attitude professionnelle',
+        weight: 30,
+        cells: [
+          '',
+          'L\'étudiant.e a participé activement aux activités où il.elle était présent.e.',
+          'Au moins la moitié des rencontres étaient bien préparées. L\'étudiant a tenu compte de la plupart des suggestions/feedback donnés.',
+          'L\'étudiant.e a été proactif, toutes les rencontres étaient bien préparées, l\'étudiant.e a tenu compte de toutes les suggestions/feedback donnés, tous les délais ont été respectés.',
+        ],
+      },
+    ],
+  },
+  {
+    key: 'rapportFinal',
+    toolName: 'Évaluation 3 - rapport',
+    toolDescription: 'Grille utilisée par le jury pour évaluer le rapport écrit remis en fin de TFE.',
+    module: 'soutenance',
+    evaluator: 'jury',
+    criteria: [
+      {
+        name: 'Forme du texte',
+        weight: 10,
+        cells: [
+          '',
+          'L\'orthographe est suffisante (maximum une ou deux fautes par page), la mise en page est homogène, les titres sont structurés et numérotés.',
+          'La mise en page est bien soignée, très agréable ; des illustrations accompagnent le propos.',
+          'Il n\'y a pas ou très peu de fautes d\'orthographe. La mise en page est remarquable. Des illustrations légendées et citées dans le texte clarifient le propos.',
+        ],
+      },
+      {
+        name: 'Qualité du texte',
+        weight: 9,
+        cells: [
+          '',
+          'Le vocabulaire utilisé est adapté au public ; la grammaire est correcte. Les sections sont logiquement structurées.',
+          'Le vocabulaire est spécifique au domaine. Le style d\'écriture est agréable et la compréhension aisée. Les sections s\'organisent autour d\'un fil rouge clair.',
+          'Le style est particulièrement soigné et professionnel, le texte est agréable à lire, tous les éléments s\'enchaînent de manière fluide et logique.',
+        ],
+      },
+      {
+        name: 'Références',
+        weight: 5,
+        cells: [
+          '',
+          'La plupart des références sont écrites correctement et sont fiables.',
+          'La plupart des références sont citées dans le texte ; respect irréprochable des normes bibliographiques.',
+          'Chaque référence est citée au moins une fois à un endroit adéquat. Toutes les sources sont fiables.',
+        ],
+      },
+      {
+        name: 'Introduction',
+        weight: 5,
+        cells: [
+          '',
+          'Une introduction est présente.',
+          'L\'introduction introduit le contexte et la problématique du TFE. Elle présente la structure du rapport.',
+          'L\'introduction éveille la curiosité du lecteur et lui donne une idée claire de la contribution effectuée.',
+        ],
+      },
+      {
+        name: 'Problème et contexte',
+        weight: 6,
+        cells: [
+          '',
+          'La problématique et son contexte sont présentés de manière à ce que le lecteur comprenne le sujet du TFE.',
+          'La problématique est mise en perspective sur base du contexte. Les enjeux des intervenants sont identifiés.',
+          'L\'étudiant.e démontre une bonne capacité de prise de recul et d\'analyse par rapport au contexte du TFE.',
+        ],
+      },
+      {
+        name: 'Identification des intervenants',
+        weight: 5,
+        cells: [
+          '',
+          'Les intervenants de la problématique sont identifiés (client, différents utilisateurs).',
+          'Les spécificités et objectifs des intervenants sont décrits ("rôles").',
+          'L\'étudiant.e analyse les enjeux et impacts fonctionnels des différents rôles dans la problématique.',
+        ],
+      },
+      {
+        name: 'Identification des fonctionnalités',
+        weight: 6,
+        cells: [
+          '',
+          'Les fonctionnalités sont décrites et couvrent effectivement la problématique présentée.',
+          'Les fonctionnalités sont : classées par type d\'utilisateur ; éventuellement formulées sous forme de User Stories ; précises, réfléchies et pertinentes.',
+          'Les fonctionnalités possèdent : des cas d\'utilisation ; des critères d\'acceptation ; un classement par ordre d\'importance pour le client ; une estimation de leur complexité.',
+        ],
+      },
+      {
+        name: 'Méthodologie : organisation du travail',
+        weight: 6,
+        cells: [
+          '',
+          'Le document décrit : les étapes principales du travail ; le type de gestion de projet envisagé (et les outils) ; l\'organisation des interactions avec les intervenants (rapporteur, client).',
+          'Le document détaille : les étapes du travail, sous forme d\'un calendrier sommaire ; comment la méthodologie de travail sera mise en œuvre concrètement ; un planning grossier des interactions avec les intervenants.',
+          'Le document décrit une organisation incrémentale : une première itération fonctionnelle (MVP) ; les étapes successives nécessaires à obtenir différentes versions à montrer au client ; les outils de suivi de l\'avancement du travail permettent une organisation flexible aux aléas du projet.',
+        ],
+      },
+      {
+        name: 'Positionnement de la solution',
+        weight: 5,
+        cells: [
+          '',
+          'Une ou deux solutions concurrentes sont identifiées et comparées au projet défendu. Le développement d\'une solution nouvelle est justifié.',
+          'Plusieurs solutions sont présentées, leurs forces et faiblesses sont décrites. La pertinence du développement d\'une solution nouvelle est convaincante.',
+          'Une analyse des avantages et inconvénients d\'une nouvelle solution est effectuée.',
+        ],
+      },
+      {
+        name: 'Analyse technique',
+        weight: 6,
+        cells: [
+          '',
+          'Les éléments techniques et technologies nécessaires pour répondre à la problématique sont identifiés et comparés. Le choix effectué est raisonné.',
+          'Les critères de comparaison des technologies sont choisis sur base des objectifs du client. Le choix effectué est basé sur ce comparatif. Les limites de ce choix sont exposées.',
+          'Les éléments de comparaison sont basés sur des analyses ou des benchmarks reproductibles et scientifiquement vérifiables. Tous les éléments utilisés sont référencés.',
+        ],
+      },
+      {
+        name: 'Conception de la solution',
+        weight: 6,
+        cells: [
+          '',
+          'Les outils adaptés au sujet sont utilisés pour proposer une solution (schéma DB, UML, réseau, électronique, etc.). Les diagrammes sont corrects, suffisants, lisibles, légendés et expliqués. Des maquettes ont été produites pour permettre d\'imaginer l\'aspect de la solution finale.',
+          'Les diagrammes sont justifiés dans le texte et cette justification démontre la profondeur de la réflexion menée.',
+          'Les diagrammes sont remarquables par leur ampleur et/ou leur qualité intrinsèque, reflétée dans le texte.',
+        ],
+      },
+      {
+        name: 'Description du cas pratique',
+        weight: 10,
+        cells: [
+          '',
+          'Le texte décrit la réalisation effectuée et est illustré par des screenshots, de telle sorte que le lecteur a une bonne idée du résultat obtenu.',
+          'L\'étudiant.e fait un compte-rendu des étapes de la réalisation. Il explique les challenges techniques rencontrés et les solutions apportées. Les éléments techniques présentés sont compréhensibles pour le lecteur uniquement sur base du texte (ex : pas besoin de connaître le code source).',
+          'Les éléments techniques présentés démontrent que l\'étudiant.e a développé une expertise dans son domaine.',
+        ],
+      },
+      {
+        name: 'Description de la validation',
+        weight: 7,
+        cells: [
+          '',
+          'L\'étudiant.e décrit les tests effectués sur sa réalisation.',
+          'L\'étudiant.e présente une stratégie de validation cohérente et fait le bilan de son application dans le TFE : couverture des tests, conformité de la solution par rapport aux fonctionnalités visées, … ET/OU il présente les limites de sa solution (par ex. par une campagne de mesures des performances dans le cas d\'un circuit électronique).',
+          'L\'étudiant.e effectue une analyse critique de sa stratégie de validation et de sa mise en œuvre dans le cadre du TFE ET/OU des performances mesurées de sa réalisation. Il.elle en dégage des pistes d\'amélioration pour la suite.',
+        ],
+      },
+      {
+        name: 'Législation',
+        weight: 4,
+        cells: [
+          '',
+          'L\'étudiant.e liste les contraintes législatives qui s\'appliquent sur son TFE et indique s\'il.elle en a tenu compte dans sa réalisation.',
+          'L\'étudiant.e détaille les contraintes législatives, les analyse et explique comment il.elle en a tenu compte dans sa réalisation.',
+        ],
+      },
+      {
+        name: 'Sécurité',
+        weight: 6,
+        cells: [
+          '',
+          'L\'étudiant.e liste ce qu\'il.elle a mis en place pour la sécurisation de son travail.',
+          'L\'étudiant.e a identifié les éléments à protéger, a listé les risques qui s\'y appliquent et les contre-mesures correspondantes. Il.elle justifie les contre-mesures qu\'il.elle a mises en place et documente leur implémentation.',
+          'L\'étudiant.e montre au travers de son texte que la sécurité est prise en compte à toutes les étapes du travail. Il.elle documente ce qu\'il faut prévoir en termes de maintenance pour garantir la sécurité à long terme de la solution (backup, mises à jour etc.).',
+        ],
+      },
+      {
+        name: 'Conclusion',
+        weight: 4,
+        cells: [
+          '',
+          'Une conclusion est présente et fait le bilan de la réalisation par rapport à la demande du client.',
+          'La conclusion intègre une analyse réflexive : de la réalisation, de la méthodologie choisie et de son application dans le TFE. La conclusion indique quelques pistes d\'amélioration.',
+          'La conclusion remet le travail en perspective dans son contexte. Les analyses critiques démontrent une profondeur de réflexion, notamment en intégrant une analyse fine des retours du client. La conclusion indique ce qu\'il faut prévoir pour assurer la pérennité de la réalisation (mise en production, suivi, maintenance, ...).',
+        ],
+      },
+    ],
+  },
+  {
+    key: 'realisationPratique',
+    toolName: 'Évaluation 3 - réalisation pratique',
+    toolDescription: 'Grille utilisée par le jury pour évaluer la réalisation pratique. Préalable : « L’étudiant a-t-il réalisé un cas pratique ? » — une réponse négative vaut cote d’exclusion, indépendamment des critères ci-dessous.',
+    module: 'soutenance',
+    evaluator: 'jury',
+    criteria: [
+      {
+        name: 'Ampleur du cas pratique',
+        weight: 30,
+        cells: [
+          '',
+          'La réalisation pratique est fonctionnelle, correspond à la charge de travail attendue pour un TFE de bachelier (environ 450h, rapport compris), répond aux besoins du client et tourne dans un environnement proche de l\'environnement de production OU constitue un prototype satisfaisant (dans le cas d\'un sujet exploratoire). Elle fait intervenir deux piliers de la formation TI.',
+          'Le cas pratique tourne en environnement de production et/ou le client est satisfait après l\'avoir testé concrètement.',
+          'La réalisation pratique dépasse les attentes du client en termes de fonctionnalités réalisées à bon escient et/ou a bénéficié de plusieurs itérations d\'amélioration en tenant compte du feedback du client.',
+        ],
+      },
+      {
+        name: 'Technicité',
+        weight: 30,
+        cells: [
+          '',
+          'L\'étudiant.e n\'a pas effectué d\'erreur grossière de conception et/ou d\'implémentation ; les attentes minimales liées au domaine sont respectées (voir doc. des attentes minimales sur Moodle).',
+          'Les bonnes pratiques techniques vues dans le cadre du cursus sont mises en œuvre dans la réalisation pratique.',
+          'La réalisation pratique démontre une maitrise technique poussée et une compréhension profonde des technologies et techniques mises en œuvre ; ET/OU l\'étudiant.e a exploré, s\'est formé et a mis en œuvre des technologies innovantes non vues durant le cursus en adéquation avec le besoin du client.',
+        ],
+      },
+      {
+        name: 'Validation',
+        weight: 20,
+        cells: [
+          '',
+          'L\'étudiant.e a validé sa réalisation pratique conformément à une procédure.',
+          'Selon le domaine, l\'étudiant a automatisé le processus de validation (scripts, CI/CD), et/ou a exploré les limites de validité de sa solution (électronique).',
+          'Le processus de validation est particulièrement complet et a été exploité par l\'étudiant.e tout au long de sa réalisation.',
+        ],
+      },
+      {
+        name: 'Sécurité et législation',
+        weight: 20,
+        cells: [
+          '',
+          'L\'étudiant.e a respecté les contraintes législatives. Il.elle a fait une analyse de sécurité et a mis en place les contre-mesures de sécurité incontournables (ex : chiffrement).',
+          'L\'étudiant.e a mis en place un ensemble cohérent et adéquat de contre-mesures contre les risques principaux visant son système.',
+          'L\'étudiant.e a intégré la sécurité à toutes les étapes et aspects de sa réalisation pratique. Un grand nombre de risques sont couverts par des contre-mesures adéquates. L\'implémentation des contre-mesures est validée.',
+        ],
+      },
+    ],
+  },
+  {
+    key: 'oral',
+    toolName: 'Évaluation 3 - présentation orale et défense',
+    toolDescription: 'Grille utilisée par le jury pour évaluer la présentation orale lors de la soutenance. La grille contient quatre niveaux (insuffisant, suffisant, bien, très bien) ; pour valider un niveau, il faut aussi valider tous les niveaux situés à sa gauche. Le critère "Contenu de la présentation" attend 6 points : contexte et client, cahier des charges, analyse et choix techniques, réalisation pratique et sa validation, sécurité et législation, limites et pistes d’amélioration.',
+    module: 'soutenance',
+    evaluator: 'jury',
+    criteria: [
+      {
+        name: 'Qualité de l\'exposé (forme)',
+        weight: 20,
+        cells: [
+          '',
+          'La longueur de l\'exposé n\'excède pas 15 min (20 min pour des groupes) démo comprise ; l\'étudiant.e a un support de présentation.',
+          'Le support de présentation est soigné : le texte et les figures sont lisibles, les graphiques sont annotés (légende, axes). Il y a moins de cinq fautes d\'orthographe.',
+          'Le discours est fluide et préparé. Il y a moins de deux fautes d\'orthographe.',
+        ],
+      },
+      {
+        name: 'Contenu de la présentation',
+        weight: 25,
+        cells: [
+          '',
+          'Au moins quatre des six points mentionnés sont abordés dans la présentation.',
+          'Au moins cinq des six points mentionnés sont abordés dans la présentation.',
+          'Les six points mentionnés sont abordés dans la présentation.',
+        ],
+      },
+      {
+        name: 'Démonstration du cas pratique',
+        weight: 30,
+        cells: [
+          '',
+          'L\'étudiant.e propose une démonstration sans bug majeur illustrant sa réalisation pratique.',
+          'L\'étudiant.e propose une démonstration fonctionnelle du produit fini, en local ou déployé en production. Celle-ci met en avant les fonctionnalités essentielles, sans perte de temps sur du superflu.',
+          'La démonstration est complète et met en avant les points forts de la solution présentée. Le produit fini peut être testé par le jury durant la défense, ou l\'a été avant par le promoteur, en fonction des contraintes liées au TFE.',
+        ],
+      },
+      {
+        name: 'Maîtrise/appropriation du sujet',
+        weight: 25,
+        cells: [
+          '',
+          'L\'étudiant.e apporte des éléments de réponse pertinents aux questions posées.',
+          'Le vocabulaire utilisé (oral + slides) est correct. L\'étudiant.e répond de manière complète aux questions posées. Il.elle convainc le jury.',
+          'Le vocabulaire utilisé (oral + slides) est précis (termes techniques idoines). L\'étudiant.e prend du recul et interagit avec le jury lors des questions.',
+        ],
+      },
+    ],
+  },
+];
+
+const CADRAGE_GRID_KEYS = REAL_GRIDS.filter((g) => g.module === 'cadrage').map((g) => g.key);
+const SUIVI_GRID_KEYS = REAL_GRIDS.filter((g) => g.module === 'suivi').map((g) => g.key);
+const SOUTENANCE_GRID_KEYS = REAL_GRIDS.filter((g) => g.module === 'soutenance').map((g) => g.key);
+const GRID_FEEDBACK_STATUSES = [
+  GridFeedbackStatus.PENDING,
+  GridFeedbackStatus.CORRECTION,
+  GridFeedbackStatus.PUBLISHED,
+  GridFeedbackStatus.SEEN,
+];
+// `cellCount` niveaux (2, 3, 4peu importe). Générique et biaisé vers le
+// haut de l'échelle (les niveaux supérieurs sont un peu plus probables que
+// les niveaux inférieurs), pour représenter une promo qui s'en sort plutôt
+// bien dans l'ensemble.
+function pickConsensusOrder(cellCount: number): number {
+  const candidates: number[] = [];
+  for (let i = 0; i < cellCount; i++) {
+    const weight = i + 1; // le dernier niveau pèse plus que le premier
+    for (let w = 0; w < weight; w++) candidates.push(i);
+  }
+  return pick(candidates);
+}
+
+type GridAssets = {
+  toolId: number;
+  gridId: number;
+  evaluator: 'rapporteur' | 'jury';
+  criteria: { id: number; cells: { id: number; order: number; weight: number | null }[] }[];
+};
+
+// Crée, pour un module donné, tous les Tool/AssessmentGrid/Criteria/Cell des
+// grilles réelles de REAL_GRIDS rattachées à ce module (ex. 'cadrage' porte
+// à la fois la grille "cdc" et "validationSujet").
+async function createGridsForModule(
+  moduleKey: 'cadrage' | 'suivi' | 'soutenance',
+  moduleId: number,
+  editable: boolean,
+): Promise<Record<string, GridAssets>> {
+  const result: Record<string, GridAssets> = {};
+  for (const def of REAL_GRIDS.filter((g) => g.module === moduleKey)) {
+    const tool = await prisma.tool.create({
+      data: { name: def.toolName, description: def.toolDescription, type: ToolType.ASSESSMENT, moduleId },
+    });
+    // AssessmentGrid partage sa PK avec Tool -> pas d'autoincrement, on fixe id.
+    const grid = await prisma.assessmentGrid.create({ data: { id: tool.id, editable } });
+
+    const criteria: { id: number; cells: { id: number; order: number; weight: number | null }[] }[] = [];
+    for (const [i, critDef] of def.criteria.entries()) {
+      if (critDef.cells.length < 2) {
+        throw new Error(`REAL_GRIDS["${def.key}"]["${critDef.name}"] doit avoir au moins 2 cellules.`);
+      }
+      const crit = await prisma.criteria.create({
+        data: { name: critDef.name, order: i, defaultWeight: critDef.weight, gridId: grid.id },
+      });
+      const cells: { id: number; order: number; weight: number | null }[] = [];
+      for (const [j, description] of critDef.cells.entries()) {
+        const cell = await prisma.cell.create({
+          data: { description, order: j, weight: 1, criteriaId: crit.id },
+        });
+        cells.push({ id: cell.id, order: j, weight: 1 });
+      }
+      criteria.push({ id: crit.id, cells });
+    }
+    result[def.key] = { toolId: tool.id, gridId: grid.id, evaluator: def.evaluator, criteria };
+  }
+  return result;
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // RESET (idempotence) — supprime uniquement les données taguées "démo"
@@ -435,20 +1145,18 @@ async function main() {
     tcId: number;
     formToolId: number;
     formId: number;
+    formDueDate: Date;
     questions: { id: number; type: QuestionType }[];
     workToolId: number;
     workId: number;
     dueDate: Date;
     soutenanceToolId: number; // Tool (type ACTIVITY) sous lequel on crée un créneau par soutenance
-    assessmentGridId: number; // = id du Tool "grille d'évaluation" (clé partagée)
-    criteria: { id: number; cells: { id: number; order: number; weight: number | null }[] }[];
     accessConditionValidatorId: number;
     accessConditionId: number; // condition SUPERVISOR_VALIDATION, pour illustrer UserValidation
+    grids: Record<string, GridAssets>; // toutes les grilles réelles (REAL_GRIDS), indexées par leur "key"
   };
 
   const assetsByCourse: Record<'A' | 'B', CourseAssets> = {} as any;
-
-  const CELL_LEVELS = ['Insuffisant', 'Satisfaisant', 'Bon', 'Excellent'];
 
   for (const { course, label, finished } of courses) {
     // Module 1 — Cadrage du sujet
@@ -501,6 +1209,11 @@ async function main() {
       },
     });
 
+    // Grilles réelles rattachées au module "Cadrage du sujet" (cf. REAL_GRIDS) :
+    // "cdc" (cahier des charges) et "validationSujet" (pertinence du sujet),
+    // toutes deux remplies par le rapporteur.
+    const cadrageGrids = await createGridsForModule('cadrage', moduleCadrage.id, false);
+
     // Module 2 — Suivi de projet
     const moduleSuivi = await prisma.module.create({
       data: {
@@ -538,6 +1251,10 @@ async function main() {
         },
       });
     }
+
+    // Grilles réelles rattachées au module "Suivi de projet" (cf. REAL_GRIDS) :
+    // "analyse" et "suiviRapporteur", toutes deux remplies par le rapporteur.
+    const suiviGrids = await createGridsForModule('suivi', moduleSuivi.id, false);
 
     // Module 3 — Remise du mémoire
     const moduleRemise = await prisma.module.create({
@@ -578,62 +1295,10 @@ async function main() {
       },
     });
 
-    const toolAssessment = await prisma.tool.create({
-      data: {
-        name: 'Grille d’évaluation de la soutenance',
-        description: 'Grille utilisée par le jury pour noter la présentation et le mémoire.',
-        type: ToolType.ASSESSMENT,
-        moduleId: moduleSoutenance.id,
-      },
-    });
-    // AssessmentGrid partage sa PK avec Tool -> pas d'autoincrement, on fixe id.
-    const assessmentGrid = await prisma.assessmentGrid.create({
-      data: { id: toolAssessment.id, editable: !finished },
-    });
-
-    // Deux jeux de critères différents selon la promo, pour varier la démo
-    // (plus de notion de "version" -> juste un jeu de critères par grille).
-    const CRITERIA_DEFS = finished
-      ? [
-          { name: 'Qualité rédactionnelle du mémoire', weight: 20 },
-          { name: 'Maîtrise technique et pertinence des choix', weight: 25 },
-          { name: 'Originalité et valeur ajoutée du projet', weight: 20 },
-          { name: 'Qualité de la présentation orale', weight: 20 },
-          { name: 'Respect du planning et autonomie', weight: 15 },
-        ]
-      : [
-          { name: 'Qualité rédactionnelle et structuration du mémoire', weight: 25 },
-          { name: 'Maîtrise technique et pertinence des choix', weight: 30 },
-          { name: 'Originalité et valeur ajoutée du projet', weight: 15 },
-          { name: 'Qualité de la présentation orale', weight: 20 },
-          { name: 'Respect du planning et autonomie', weight: 10 },
-        ];
-
-    const criteria: { id: number; cells: { id: number; order: number; weight: number | null }[] }[] = [];
-    for (const [i, def] of CRITERIA_DEFS.entries()) {
-      const crit = await prisma.criteria.create({
-        data: { name: def.name, order: i, defaultWeight: def.weight, gridId: assessmentGrid.id },
-      });
-      // Sur le critère "Maîtrise technique..." (index 1), on illustre une
-      // pondération de cellule non uniforme (cf. discussion pondération) :
-      // la cellule "Bon" (order=2) pèse 4x plus que les autres transitions.
-      const isWeightedDemo = i === 1;
-      const cellWeights: (number | null)[] = isWeightedDemo ? [null, 1, 4, 1] : [null, 1, 1, 1];
-
-      const cells: { id: number; order: number; weight: number | null }[] = [];
-      for (const [j, level] of CELL_LEVELS.entries()) {
-        const cell = await prisma.cell.create({
-          data: {
-            description: `${level} — ${def.name.toLowerCase()}`,
-            order: j,
-            weight: cellWeights[j],
-            criteriaId: crit.id,
-          },
-        });
-        cells.push({ id: cell.id, order: j, weight: cellWeights[j] });
-      }
-      criteria.push({ id: crit.id, cells });
-    }
+    // Grilles réelles rattachées au module "Soutenance" (cf. REAL_GRIDS) :
+    // "oral", "realisationPratique" et "rapportFinal", toutes remplies par
+    // le jury complet lors de la défense (cf. section 8).
+    const soutenanceGrids = await createGridsForModule('soutenance', moduleSoutenance.id, !finished);
 
     // Condition d'accès au module Soutenance (mémoire déposé + date passée +
     // validation par un enseignant désigné -> illustre les 3 méthodes de
@@ -663,6 +1328,7 @@ async function main() {
       tcId: course.id,
       formToolId: toolForm.id,
       formId: form.id,
+      formDueDate,
       questions: [
         { id: q1.id, type: QuestionType.TEXT },
         { id: q2.id, type: QuestionType.SELECT },
@@ -674,10 +1340,9 @@ async function main() {
       workId: work.id,
       dueDate,
       soutenanceToolId: toolSoutenanceTemplate.id,
-      assessmentGridId: assessmentGrid.id,
-      criteria,
       accessConditionValidatorId: validator.id,
       accessConditionId: supervisorValidationCondition.id,
+      grids: { ...cadrageGrids, ...suiviGrids, ...soutenanceGrids },
     };
   }
 
@@ -774,6 +1439,89 @@ async function main() {
       }
       await prisma.response.create({ data: { value, questionId: q.id, submissionId: submission.id } });
     }
+
+    // Évaluation des grilles "Cadrage du sujet" (cahier des charges +
+    // pertinence du sujet) par le rapporteur (le promoteur du projet, seul
+    // évaluateur sur ces grilles — cf. "Etudiant / Rapporteur" en en-tête
+    // des PDF, contrairement aux grilles de soutenance qui sont évaluées
+    // par tout le jury, cf. section 8).
+    const evalDate = randomDateBetween(assets.formDueDate, new Date(assets.formDueDate.getTime() + 14 * 24 * 60 * 60 * 1000));
+    for (const gridKey of CADRAGE_GRID_KEYS) {
+      const grid = assets.grids[gridKey];
+      for (const crit of grid.criteria) {
+        const bounds = cumulativeBounds(crit.cells);
+        const order = pickConsensusOrder(crit.cells.length);
+        const note = noteForCellIndex(bounds, order);
+        await prisma.criteriaAssessment.create({
+          data: {
+            date: evalDate,
+            commentFeedback: Math.random() < 0.6 ? faker.lorem.sentence() : null,
+            note,
+            criteriaId: crit.id,
+            teacherId: project.supervisor.id,
+            projectId: project.id,
+          },
+        });
+      }
+
+      if (Math.random() < 0.5) {
+        await prisma.gridFeedback.create({
+          data: {
+            date: evalDate,
+            comment: faker.lorem.paragraph(),
+            status: pick(GRID_FEEDBACK_STATUSES),
+            projectId: project.id,
+            gridId: grid.gridId,
+          },
+        });
+      }
+    }
+  }
+
+  // ───────────────────────────────────────────────────────────────────────
+  // 5bis) ÉVALUATIONS "SUIVI DE PROJET" (analyse + suivi rapporteur)
+  //    Comme le "Cadrage", ces grilles sont remplies par le seul rapporteur,
+  //    mais plus tard dans l'année (pas de date de remise associée, donc on
+  //    étale l'évaluation entre la fin du cadrage et la remise du mémoire).
+  // ───────────────────────────────────────────────────────────────────────
+  console.log('🔎  Création des évaluations de suivi (analyse, suivi rapporteur)...');
+
+  for (const project of allProjects) {
+    const assets = assetsByCourse[project.courseLabel];
+    const suiviWindowStart = new Date(assets.formDueDate.getTime() + 14 * 24 * 60 * 60 * 1000);
+    const suiviWindowEnd = new Date(Math.min(assets.dueDate.getTime(), Date.now()));
+    const evalDate = suiviWindowEnd > suiviWindowStart ? randomDateBetween(suiviWindowStart, suiviWindowEnd) : suiviWindowStart;
+
+    for (const gridKey of SUIVI_GRID_KEYS) {
+      const grid = assets.grids[gridKey];
+      for (const crit of grid.criteria) {
+        const bounds = cumulativeBounds(crit.cells);
+        const order = pickConsensusOrder(crit.cells.length);
+        const note = noteForCellIndex(bounds, order);
+        await prisma.criteriaAssessment.create({
+          data: {
+            date: evalDate,
+            commentFeedback: Math.random() < 0.6 ? faker.lorem.sentence() : null,
+            note,
+            criteriaId: crit.id,
+            teacherId: project.supervisor.id,
+            projectId: project.id,
+          },
+        });
+      }
+
+      if (Math.random() < 0.5) {
+        await prisma.gridFeedback.create({
+          data: {
+            date: evalDate,
+            comment: faker.lorem.paragraph(),
+            status: pick(GRID_FEEDBACK_STATUSES),
+            projectId: project.id,
+            gridId: grid.gridId,
+          },
+        });
+      }
+    }
   }
 
   // ───────────────────────────────────────────────────────────────────────
@@ -820,10 +1568,14 @@ async function main() {
     const assets = assetsByCourse[project.courseLabel];
     // pondération personnalisée pour ~15% des projets (le reste utilise le defaultWeight)
     if (Math.random() < 0.15) {
-      const customWeights = [25, 20, 25, 20, 10];
-      for (const [i, crit] of assets.criteria.entries()) {
+      const rapportFinalCriteria = assets.grids['rapportFinal'].criteria;
+      // Redistribution arbitraire : les 3 premiers critères (forme, forme,
+      // références) perdent un peu de poids au profit des 3 suivants.
+      for (const [i, crit] of rapportFinalCriteria.entries()) {
+        const original = REAL_GRIDS.find((g) => g.key === 'rapportFinal')!.criteria[i].weight;
+        const adjusted = i < 3 ? Math.max(2, original - 2) : i < 6 ? original + 2 : original;
         await prisma.weighting.create({
-          data: { criteriaId: crit.id, projectId: project.id, weight: customWeights[i] ?? 20 },
+          data: { criteriaId: crit.id, projectId: project.id, weight: adjusted },
         });
       }
     }
@@ -888,40 +1640,64 @@ async function main() {
     }
     await prisma.projectGroup.create({ data: { groupId: group.id, projectId: project.id } });
 
-    // Évaluation par critère, au niveau du projet (plus par étudiant)
-    for (const crit of assets.criteria) {
-      const bounds = cumulativeBounds(crit.cells);
-      // "consensus" de base pour ce critère, centré sur "Bon" (order 2)
-      const baseOrder = pick([0, 1, 1, 2, 2, 2, 2, 3, 3]);
-      for (const evaluator of jury) {
-        // chaque évaluateur peut diverger légèrement du consensus (+/-1 niveau)
-        const jitter = pick([-1, 0, 0, 0, 1]);
-        const order = Math.min(3, Math.max(0, baseOrder + jitter));
-        const note = noteForCellIndex(bounds, order);
-        await prisma.criteriaAssessment.create({
+    // Évaluation par critère, au niveau du projet (plus par étudiant), pour
+    // chacune des 3 grilles réelles de soutenance (oral, réalisation
+    // pratique, rapport final) : tout le jury note chaque critère.
+    for (const gridKey of SOUTENANCE_GRID_KEYS) {
+      const grid = assets.grids[gridKey];
+      for (const crit of grid.criteria) {
+        const bounds = cumulativeBounds(crit.cells);
+        // "consensus" de base pour ce critère (générique quel que soit le
+        // nombre de niveaux du critère - certains n'en ont que 2, d'autres 4).
+        const baseOrder = pickConsensusOrder(crit.cells.length);
+        const soutenanceEvalDate = randomDateBetween(new Date('2025-06-15'), new Date('2025-06-30'));
+
+        // Fil de discussion interne du jury sur ce critère (jamais visible
+        // étudiant), typiquement échangé juste avant que chacun ne note.
+        if (jury.length > 1 && Math.random() < 0.35) {
+          const discussionAuthors = pickMany(jury, randomInt(1, Math.min(2, jury.length)));
+          for (const author of discussionAuthors) {
+            await prisma.criteriaDiscussion.create({
+              data: {
+                date: soutenanceEvalDate,
+                comment: faker.lorem.sentence(),
+                criteriaId: crit.id,
+                teacherId: author.id,
+                projectId: project.id,
+              },
+            });
+          }
+        }
+
+        for (const evaluator of jury) {
+          // chaque évaluateur peut diverger légèrement du consensus (+/-1 niveau)
+          const jitter = pick([-1, 0, 0, 0, 1]);
+          const order = Math.min(crit.cells.length - 1, Math.max(0, baseOrder + jitter));
+          const note = noteForCellIndex(bounds, order);
+          await prisma.criteriaAssessment.create({
+            data: {
+              date: soutenanceEvalDate,
+              commentFeedback: Math.random() < 0.5 ? faker.lorem.sentence() : null,
+              note,
+              criteriaId: crit.id,
+              teacherId: evaluator.id,
+              projectId: project.id,
+            },
+          });
+        }
+      }
+
+      if (Math.random() < 0.6) {
+        await prisma.gridFeedback.create({
           data: {
-            date: randomDateBetween(new Date('2025-06-15'), new Date('2025-06-30')),
-            commentEval: Math.random() < 0.3 ? faker.lorem.sentence() : null,
-            commentFeedback: Math.random() < 0.5 ? faker.lorem.sentence() : null,
-            note,
-            criteriaId: crit.id,
-            teacherId: evaluator.id,
+            date: randomDateBetween(new Date('2025-06-15'), new Date('2025-07-05')),
+            comment: faker.lorem.paragraph(),
+            status: pick(GRID_FEEDBACK_STATUSES),
             projectId: project.id,
+            gridId: grid.gridId,
           },
         });
       }
-    }
-
-    if (Math.random() < 0.6) {
-      await prisma.gridFeedback.create({
-        data: {
-          commentEval: faker.lorem.sentence(),
-          commentFeedback: faker.lorem.paragraph(),
-          userId: project.supervisor.id,
-          projectId: project.id,
-          gridId: assets.assessmentGridId,
-        },
-      });
     }
   }
 
@@ -949,7 +1725,7 @@ async function main() {
   const notifTemplates: { title: string; description: string; importance: Importance }[] = [
     { title: 'Rappel de dépôt', description: 'Le dépôt du mémoire final approche à grands pas.', importance: Importance.HIGH },
     { title: 'Réunion planifiée', description: 'Une nouvelle réunion de suivi a été ajoutée à votre agenda.', importance: Importance.LOW },
-    { title: 'Grille mise à jour', description: 'La grille d’évaluation de la soutenance a été révisée.', importance: Importance.MEDIUM },
+    { title: 'Grille mise à jour', description: 'La grille d’évaluation du rapport final a été révisée.', importance: Importance.MEDIUM },
     { title: 'Formulaire à compléter', description: 'Le formulaire de proposition de sujet est en attente de validation.', importance: Importance.MEDIUM },
   ];
   for (const user of pickMany(allDemoUsers, 25)) {
@@ -1014,6 +1790,7 @@ async function main() {
   console.log(`     dont terminés  : ${allProjects.filter((p) => p.status === 'TERMINE').length}`);
   console.log(`     dont en cours  : ${allProjects.filter((p) => p.status === 'EN_COURS').length}`);
   console.log(`     dont en retard : ${allProjects.filter((p) => p.status === 'EN_RETARD').length}`);
+  console.log(`   Grilles réelles  : ${REAL_GRIDS.length} (${REAL_GRIDS.map((g) => g.key).join(', ')})`);
   console.log(`\n   Mot de passe pour tous les comptes de démo : ${DEMO_PASSWORD}\n`);
 }
 

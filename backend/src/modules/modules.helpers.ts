@@ -31,7 +31,7 @@ export function buildToolsInclude(userId: number, projectId: number) {
         assessmentGrid: {
           include: {
             feedbacks: {
-              where: { userId, projectId },
+              where: { projectId },
               orderBy: { createdAt: 'desc' as const },
             },
           },

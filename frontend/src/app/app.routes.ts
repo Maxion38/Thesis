@@ -43,6 +43,9 @@ import { UserInspectionComponent } from './features/user-inspection/layouts/insp
 import { SubmissionComponent } from './features/work-tool/pages/submissions/submissions.component';
 import { AssessmentDetailComponent } from './features/assessments/pages/assessment/assessment-detail.component';
 import { AssessmentsLayoutComponent } from './features/assessments/layout/assessments-layout/assessments.layout';
+import { ProjectsLayoutComponent } from './features/projects/layouts/projects-layout/projects.layout';
+import { AllProjectsComponent } from './features/projects/pages/all-projects/all-projects.component';
+import { MyProjectsComponent } from './features/projects/pages/my-projects/my-projects.component';
 
 
 export const routes: Routes = [
@@ -125,34 +128,55 @@ export const routes: Routes = [
     data: { roles: ['TEACHER'] },
     children: [
       { path: '', component: DashboardComponent},
-      { 
-        path: 'users', 
+
+      // Inspection utilisateur : profil, infos générales, lien vers projet
+      {
+        path: 'users',
         component: UsersLayoutComponent,
         children: [
           { path: '', redirectTo: 'all', pathMatch: 'full'},
           { path: 'all', component: AllUsersComponent},
-          { path: 'my-users', component: AllUsersComponent}, //TODO my-users page
+          { path: 'my-users', component: AllUsersComponent},
         ]
-      },  
-      { 
-        path: 'users/:userId', 
+      },
+      {
+        path: 'users/:userId',
         component: UserInspectionComponent,
+        children: [
+          { path: '', redirectTo: 'profile', pathMatch: 'full'},
+          { path: 'profile', component: SubmissionComponent},
+        ]
+      },
+
+      // Projets : soumissions, grilles d'évaluation
+      {
+        path: 'projects',
+        component: ProjectsLayoutComponent,
+        children: [
+          { path: '', redirectTo: 'all', pathMatch: 'full' },
+          { path: 'all', component: AllProjectsComponent },
+          { path: 'myProjects', component: MyProjectsComponent },
+        ]
+      },
+      {
+        path: 'projects/:projectId',
+        component: UserInspectionComponent /*ProjectInspectionComponent*/,
         children: [
           { path: '', redirectTo: 'submissions', pathMatch: 'full'},
           { path: 'submissions', component: SubmissionComponent},
-          { path: 'training-course', component: SubmissionComponent}, //TODO training-course page
-          { path: 'profile', component: SubmissionComponent}, //TODO profile page
+          { path: 'training-course', component: SubmissionComponent},
         ]
-      },  
-      { path: 'supervisors', component: SupervisorsComponent},  
+      },
       {
-        path: 'assessments',
+        path: 'projects/:projectId/assessments/:assessmentId',
         component: AssessmentsLayoutComponent,
         children: [
           { path: '', component: AssessmentDetailComponent },
-          { path: ':userId/:assessmentId', component: AssessmentDetailComponent },
+          { path: 'criteria/:criteriaId', component: AssessmentDetailComponent },
         ]
       },
+
+      { path: 'supervisors', component: SupervisorsComponent},
       { path: 'notifications', component: NotificationsComponent},
     ]
   },

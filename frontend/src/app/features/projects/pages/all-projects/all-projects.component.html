@@ -1,0 +1,48 @@
+<div class="page">
+
+  <div class="page__top-bar">
+
+    <!-- SEARCH -->
+    <div class="search-wrapper">
+      <span class="material-symbols-outlined search-icon">search</span>
+      <input
+        class="input"
+        type="text"
+        [(ngModel)]="searchText"
+        (input)="applyFilters()"
+      >
+    </div>
+
+  </div>
+
+  <!-- PROJECTS GRID -->
+  <div class="page__projects-div">
+
+    <div
+      *ngFor="let project of filteredProjects"
+      class="project-card"
+      [class.project-card--disabled]="!isClickable(project)"
+      (click)="onProjectCardClick(project)"
+    >
+
+      <div class="project-card__profile">
+        {{ getInitials(project) }}
+      </div>
+
+      <div class="project-card__infos">
+
+        <span class="project-card__infos__name">
+          {{ getStudentsLabel(project) }}
+        </span>
+
+        <span class="project-card__infos__title">
+          {{ project.title }}
+        </span>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
