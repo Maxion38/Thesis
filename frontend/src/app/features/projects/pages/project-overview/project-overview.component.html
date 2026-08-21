@@ -1,0 +1,87 @@
+<div class="page">
+
+  <div class="header">
+    <app-back-button class="header-left" [route]="backRoute"></app-back-button>
+
+    <div class="header-center">
+      <app-dropdown #projectDropdown class="user-card" *ngIf="selectedProject">
+        <div dropdownTrigger class="user-card__name" [title]="getProjectLabel(selectedProject)">{{ getProjectLabel(selectedProject) }}</div>
+        <span dropdownTrigger class="material-symbols-outlined user-card__dropdown">{{ projectDropdown.open ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
+        <ng-container dropdownPanel>
+          <button
+            *ngFor="let project of projects"
+            class="dropdown-item"
+            [class.dropdown-item--active]="project.id === selectedProject.id"
+            (click)="selectProject(project)">
+            {{ getProjectLabel(project) }}
+          </button>
+        </ng-container>
+      </app-dropdown>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <ng-container *ngIf="!loading; else loadingTpl">
+
+      <div class="module-section" *ngFor="let module of modules">
+        <h2 class="module-section__title">{{ module.name }}</h2>
+
+        <div class="module-section__empty" *ngIf="module.tools.length === 0">
+          Aucun outil dans ce module.
+        </div>
+
+        <div class="cards-grid" *ngIf="module.tools.length > 0">
+          <div
+            *ngFor="let tool of module.tools"
+            class="tool-card"
+            [class.tool-card--assessment]="tool.type === 'ASSESSMENT'"
+            [class.tool-card--missing]="tool.type === 'WORK' && !tool.submission"
+            (click)="tool.type === 'ASSESSMENT' ? openAssessment(tool) : null"
+          >
+            <div class="tool-card__icon">
+              <span class="material-symbols-outlined">{{ tool.type === 'ASSESSMENT' ? 'box_edit' : 'upload_file' }}</span>
+            </div>
+
+            <div class="tool-card__infos">
+              <span class="tool-card__name" [title]="tool.name">{{ tool.name }}</span>
+
+              <ng-container *ngIf="tool.type === 'ASSESSMENT'">
+                <span class="tool-card__status" [class.tool-card__status--ok]="tool.corrected">
+                  {{ tool.corrected ? 'Corrigé' : 'Non corrigé' }}
+                </span>
+              </ng-container>
+
+              <ng-container *ngIf="tool.type === 'WORK'">
+                <span class="tool-card__status" *ngIf="!tool.submission">Non soumis</span>
+                <span class="tool-card__status tool-card__status--ok" *ngIf="tool.submission">
+                  Soumis le {{ tool.submission.submittedAt | date: 'd MMMM yyyy' : '' : 'fr' }}
+                </span>
+              </ng-container>
+            </div>
+
+            <button
+              *ngIf="tool.type === 'WORK' && tool.submission"
+              class="tool-card__download"
+              title="Télécharger la remise"
+              (click)="downloadSubmission(tool); $event.stopPropagation()"
+            >
+              <span class="material-symbols-outlined">download</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="modules.length === 0">
+        Aucun module pour ce projet.
+      </div>
+
+    </ng-container>
+
+    <ng-template #loadingTpl>
+      <div class="loading-state">Chargement...</div>
+    </ng-template>
+
+  </div>
+
+</div>

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { RoleType, ToolType } from '@prisma/client';
+import { RoleType, SubRoleType, ToolType } from '@prisma/client';
 import {
   CriteriaDto,
   ProjectWithGridsDto,
@@ -17,8 +17,24 @@ import {
 export class AssessmentGridService {
   constructor(private prisma: PrismaService) {}
 
-  async getProjectsWithAssessmentsId(): Promise<ProjectWithGridsDto[]> {
+  async getProjectsWithAssessmentsId(
+    trainingCourseId?: number,
+    rapporteurId?: number,
+  ): Promise<ProjectWithGridsDto[]> {
     const projects = await this.prisma.project.findMany({
+      where: {
+        ...(trainingCourseId ? { trainingCourseId } : {}),
+        ...(rapporteurId
+          ? {
+              members: {
+                some: {
+                  userId: rapporteurId,
+                  subRole: { subRole: SubRoleType.SUPERVISOR },
+                },
+              },
+            }
+          : {}),
+      },
       select: {
         id: true,
         title: true,
@@ -33,13 +49,16 @@ export class AssessmentGridService {
             modules: {
               select: {
                 tools: {
-                  where: { type: ToolType.ASSESSMENT },
-                  // id du Tool == id de l'AssessmentGrid (PK partagée)
-                  select: { id: true, name: true },
+                  where: { type: { in: [ToolType.ASSESSMENT, ToolType.WORK] } },
+                  // id du Tool == id de l'AssessmentGrid/Work (PK partagée)
+                  select: { id: true, name: true, type: true },
                 },
               },
             },
           },
+        },
+        workSubmissions: {
+          select: { workId: true },
         },
       },
       orderBy: { id: 'asc' },
@@ -47,11 +66,17 @@ export class AssessmentGridService {
 
     return projects.map((project) => {
       const grids = new Map<number, GridSummaryDto>();
+      let worksTotal = 0;
       for (const m of project.trainingCourse.modules) {
         for (const t of m.tools) {
-          grids.set(t.id, { id: t.id, name: t.name });
+          if (t.type === ToolType.ASSESSMENT) {
+            grids.set(t.id, { id: t.id, name: t.name });
+          } else if (t.type === ToolType.WORK) {
+            worksTotal++;
+          }
         }
       }
+      const worksSubmitted = new Set(project.workSubmissions.map((w) => w.workId)).size;
 
       return {
         id: project.id,
@@ -62,6 +87,8 @@ export class AssessmentGridService {
           surname: m.user.surname,
         })),
         grids: Array.from(grids.values()),
+        worksSubmitted,
+        worksTotal,
       };
     });
   }

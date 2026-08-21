@@ -4,21 +4,21 @@ import { RouterOutlet, Router, ActivatedRoute } from '@angular/router';
 import { AssessmentGridService } from '../../services/assessments.service';
 import { EvaluationsVisibilityService } from '../../services/evaluations-visibility.service';
 import { ProjectWithGridsModel, GridSummaryModel } from '../../../projects/models/project-with-grids.model';
+import { DropdownComponent } from '../../../components/dropdown/dropdown.component';
+import { BackButtonComponent } from '../../../components/back-button/back-button.component';
 
 @Component({
   selector: 'app-assessments-layout',
   standalone: true,
-  imports: [RouterOutlet, CommonModule],
+  imports: [RouterOutlet, CommonModule, DropdownComponent, BackButtonComponent],
   templateUrl: './assessments.layout.html',
   styleUrls: ['./assessments.layout.scss'],
 })
 export class AssessmentsLayoutComponent implements OnInit {
-  showProjectOptions = false;
-  showGridOptions = false;
-
   projects!: ProjectWithGridsModel[];
   selectedProject?: ProjectWithGridsModel;
   selectedGrid?: GridSummaryModel;
+  scope: 'mine' | 'all' = 'mine';
 
   constructor(
     private assessmentGridService: AssessmentGridService,
@@ -30,6 +30,7 @@ export class AssessmentsLayoutComponent implements OnInit {
   ngOnInit(): void {
     const routeProjectId = Number(this.route.snapshot.paramMap.get('projectId'));
     const routeGridId = Number(this.route.snapshot.paramMap.get('assessmentId'));
+    this.scope = this.route.snapshot.queryParamMap.get('scope') === 'all' ? 'all' : 'mine';
 
     this.assessmentGridService.getProjectsWithGrids().subscribe(projects => {
       this.projects = projects;
@@ -57,7 +58,6 @@ export class AssessmentsLayoutComponent implements OnInit {
   selectProject(project: ProjectWithGridsModel): void {
     this.selectedProject = project;
     this.selectedGrid = project.grids[0];
-    this.showProjectOptions = false;
 
     if (this.selectedGrid) {
       this.navigateTo(project.id, this.selectedGrid.id);
@@ -66,7 +66,6 @@ export class AssessmentsLayoutComponent implements OnInit {
 
   selectGrid(grid: GridSummaryModel): void {
     this.selectedGrid = grid;
-    this.showGridOptions = false;
 
     if (this.selectedProject) {
       this.navigateTo(this.selectedProject.id, grid.id);
@@ -74,7 +73,10 @@ export class AssessmentsLayoutComponent implements OnInit {
   }
 
   private navigateTo(projectId: number, gridId: number, replaceUrl = false): void {
-    this.router.navigate(['/teacher', 'projects', projectId, 'assessments', gridId], { replaceUrl });
+    this.router.navigate(['/teacher', 'projects', projectId, 'assessments', gridId], {
+      replaceUrl,
+      queryParamsHandling: 'preserve',
+    });
   }
 
   getStudentsLabel(project: ProjectWithGridsModel): string {
@@ -90,5 +92,16 @@ export class AssessmentsLayoutComponent implements OnInit {
     const first = project.students[0];
     if (!first) return '?';
     return ((first.firstname?.charAt(0) ?? '') + first.surname.charAt(0)).toUpperCase();
+  }
+
+  get backRoute(): (string | number)[] {
+    if (this.selectedProject) {
+      return ['/teacher', 'projects', this.selectedProject.id];
+    }
+    return ['/teacher', 'projects'];
+  }
+
+  get backQueryParams(): Record<string, string> {
+    return { scope: this.scope };
   }
 }

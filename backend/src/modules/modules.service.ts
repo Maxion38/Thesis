@@ -1,10 +1,13 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ToolType } from '@prisma/client';
 import { CreateModuleDto } from './dto/create-module.dto';
 import { UpdateModuleDto } from './dto/update-module.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { ModuleOverviewDto } from './dto/module-overview.dto';
 import { ModuleDetailsDto } from './dto/module-details.dto';
+import { ProjectOverviewModuleDto } from './dto/project-overview.dto';
 import { buildToolsInclude, resolveToolGroup } from './modules.helpers';
+import { isTrainingCourseActive } from '../training-courses/training-course-status.util';
 
 @Injectable()
 export class ModulesService {
@@ -81,9 +84,7 @@ export class ModulesService {
       );
     }
 
-    const now = new Date();
-
-    if (now < course.startDate || now > course.endDate) {
+    if (!isTrainingCourseActive(course)) {
       throw new ForbiddenException(
         `Training course is not active (accessible only between ${course.startDate} and ${course.endDate})`,
       );
@@ -100,6 +101,92 @@ export class ModulesService {
       name: module.name,
       status: { locked: false },
       groups: module.tools.map(tool => resolveToolGroup(tool)),
+    }));
+  }
+
+  // ----------------------------------------------------------------
+  // Project overview  (modules + WORK/ASSESSMENT tools of a project,
+  // scoped to the whole project rather than a single member - used by
+  // the teacher-facing project overview page)
+  // ----------------------------------------------------------------
+
+  async findProjectOverview(projectId: number): Promise<ProjectOverviewModuleDto[]> {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { trainingCourseId: true },
+    });
+
+    if (!project) {
+      throw new NotFoundException(`Project ${projectId} not found`);
+    }
+
+    const modules = await this.prisma.module.findMany({
+      where: { trainingCourseId: project.trainingCourseId },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        tools: {
+          where: { type: { in: [ToolType.WORK, ToolType.ASSESSMENT] } },
+          orderBy: { id: 'asc' },
+          include: {
+            work: {
+              include: {
+                submissions: {
+                  where: { projectId },
+                  orderBy: { submittedAt: 'desc' },
+                  take: 1,
+                  select: {
+                    id: true,
+                    fileName: true,
+                    submittedAt: true,
+                    user: { select: { firstname: true, surname: true } },
+                  },
+                },
+              },
+            },
+            assessmentGrid: {
+              include: {
+                feedbacks: {
+                  where: { projectId },
+                  select: { id: true },
+                  take: 1,
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return modules.map((module) => ({
+      id: module.id,
+      name: module.name,
+      tools: module.tools.map((tool) => {
+        if (tool.type === ToolType.WORK) {
+          const submission = tool.work?.submissions[0];
+          return {
+            id: tool.id,
+            name: tool.name,
+            type: 'WORK' as const,
+            dueDate: tool.work?.dueDate ?? null,
+            submission: submission
+              ? {
+                  id: submission.id,
+                  fileName: submission.fileName,
+                  submittedAt: submission.submittedAt,
+                  submittedByFirstname: submission.user.firstname,
+                  submittedBySurname: submission.user.surname,
+                }
+              : null,
+          };
+        }
+
+        return {
+          id: tool.id,
+          name: tool.name,
+          type: 'ASSESSMENT' as const,
+          corrected: (tool.assessmentGrid?.feedbacks.length ?? 0) > 0,
+        };
+      }),
     }));
   }
 

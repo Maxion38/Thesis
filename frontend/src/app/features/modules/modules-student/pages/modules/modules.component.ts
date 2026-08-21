@@ -1,13 +1,19 @@
 import { Component, OnInit, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { switchMap } from 'rxjs';
+import { merge, switchMap } from 'rxjs';
 import { ModuleCardActionEvent, StudentModuleCardComponent } from '../../components/module-card/module-card.component';
 import { MOCK_STUDENT_MODULES } from './modules.mock';
 import { UsersService } from '../../../../users/services/users.service';
-import { ModulesService } from '../../../services/modules.service'; 
+import { ModulesService } from '../../../services/modules.service';
 import { ModuleOverviewModel } from '../../model/module-overview.model';
+import { TrainingCourseContextService } from '../../../../training-course/services/training-course-context.service';
+import { DropdownComponent } from '../../../../components/dropdown/dropdown.component';
+
+interface FilterOption {
+  value: string;
+  label: string;
+}
 
 export interface UserToInvite {
   id: number,
@@ -20,7 +26,7 @@ export interface UserToInvite {
   templateUrl: './modules.component.html',
   styleUrls: ['./modules.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, StudentModuleCardComponent],
+  imports: [CommonModule, RouterModule, StudentModuleCardComponent, DropdownComponent],
 })
 export class StudentModulesComponent implements OnInit {
   @ViewChild('tasksSection') tasksSectionRef!: ElementRef<HTMLDivElement>;
@@ -32,15 +38,41 @@ export class StudentModulesComponent implements OnInit {
   selectedTaskFilter: string = 'TODO';
   selectedOtherFilter: string = 'OTHER';
 
+  readonly taskFilterOptions: FilterOption[] = [
+    { value: 'TODO', label: 'Tâches à faire' },
+    { value: 'ASSESSMENTS', label: 'Évaluations disponibles' },
+    { value: 'NO_DATE', label: 'Tâches sans dates' },
+    { value: 'ALL', label: 'Tous les modules' },
+  ];
+
+  readonly otherFilterOptions: FilterOption[] = [
+    { value: 'OTHER', label: 'Autre' },
+    { value: 'FINISHED', label: 'Tâches terminées' },
+    { value: 'LOCKED', label: 'À venir' },
+  ];
+
+  get selectedTaskFilterLabel(): string {
+    return this.taskFilterOptions.find(o => o.value === this.selectedTaskFilter)?.label ?? '';
+  }
+
+  get selectedOtherFilterLabel(): string {
+    return this.otherFilterOptions.find(o => o.value === this.selectedOtherFilter)?.label ?? '';
+  }
+
   constructor(
     private cdr: ChangeDetectorRef,
     private router: Router,
     private usersService: UsersService,
     private modulesService: ModulesService,
+    private trainingCourseContext: TrainingCourseContextService,
   ) {}
 
   ngOnInit(): void {
-    this.usersService.getMyFirstProject().pipe(
+    merge(
+      this.trainingCourseContext.initIfApplicable(),
+      this.trainingCourseContext.changes$,
+    ).pipe(
+      switchMap(course => this.usersService.getMyFirstProject(course?.id)),
       switchMap(project => this.modulesService.getProjectModulesOverview(project.id))
     ).subscribe({
       next: (modules) => {

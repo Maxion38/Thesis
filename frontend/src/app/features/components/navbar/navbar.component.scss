@@ -88,3 +88,27 @@ $hauteur: 60px;
     flex: 10;
   }
 }
+
+.course-selector {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  &__text {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 1rem;
+    font-family: 'joan', serif;
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__chevron {
+    font-size: 1.2rem;
+  }
+}

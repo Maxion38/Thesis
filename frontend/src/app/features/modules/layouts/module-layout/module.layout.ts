@@ -13,11 +13,12 @@ import { FormsModule } from '@angular/forms';
 import { NavbarItemComponent } from '../../components/navbar-item/navbar-item.component';
 import { AuthService } from '../../../auth/services/auth.service';
 import { RoleType } from '../../../entities/role.entity';
+import { DropdownComponent } from '../../../components/dropdown/dropdown.component';
 
 @Component({
   selector: 'app-module-layout',
   standalone: true,
-  imports: [TabbarComponent, RouterOutlet, CommonModule, RouterLink, RouterLinkActive, FormsModule, NavbarItemComponent],
+  imports: [TabbarComponent, RouterOutlet, CommonModule, RouterLink, RouterLinkActive, FormsModule, NavbarItemComponent, DropdownComponent],
   templateUrl: './module.layout.html',
   styleUrls: ['./module.layout.scss'],
 })
@@ -30,7 +31,6 @@ export class ModuleLayoutComponent implements OnInit {
 
   tabbarItems: Tabs[] = [];
   isVisible: boolean = true;
-  showAddOptions = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -83,17 +83,10 @@ export class ModuleLayoutComponent implements OnInit {
     }
   }
 
-  toggleAddOptions(): void {
-    this.showAddOptions = !this.showAddOptions;
-  }
-
   addForm(): void {
-    this.showAddOptions = false;
   }
 
   addWorkSubmission(): void {
-    this.showAddOptions = false;
-
     const workData: CreateWorkModel = {
       name: "Nouvelle remise de travail",
       description: "Veuillez insérer une description.",
@@ -112,7 +105,6 @@ export class ModuleLayoutComponent implements OnInit {
   }
 
   addAssessment(): void {
-    this.showAddOptions = false;
   }
 
   onToolNameChange(tool: ToolModel, newName: string): void {

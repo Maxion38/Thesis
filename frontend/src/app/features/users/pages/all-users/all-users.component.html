@@ -14,43 +14,54 @@
     </div>
 
     <!-- ROLE FILTER -->
-    <select 
-      class="select"
-      [(ngModel)]="selectedRole"
-      (change)="applyFilters()"
-    >
-      <option value="ALL">Tous</option>
-      <option value="STUDENT">Étudiant</option>
-      <option value="TEACHER">Enseignant</option>
-      <option value="COORDINATOR">Coordinateur</option>
-    </select>
+    <app-dropdown class="select">
+      <span dropdownTrigger class="select__label">
+        {{ selectedRoleLabel }}
+        <span class="material-symbols-outlined">expand_more</span>
+      </span>
+      <ng-container dropdownPanel>
+        <button
+          *ngFor="let role of roleFilterOptions"
+          class="dropdown-item"
+          [class.dropdown-item--active]="role === selectedRole"
+          (click)="selectRole(role)"
+        >{{ getRoleFilterLabel(role) }}</button>
+      </ng-container>
+    </app-dropdown>
 
-    <!-- COURSE FILTER -->
-    <select 
-      class="select"
-      [(ngModel)]="selectedCourseId"
-      (change)="applyFilters()"
-    >
-      <option [ngValue]="'ALL'">Tous les parcours</option>
+    <!-- COURSE FILTER (moved to the navbar course switcher for teachers) -->
+    <app-dropdown class="select" *ngIf="role !== RoleType.TEACHER">
+      <span dropdownTrigger class="select__label">
+        {{ selectedCourseLabel }}
+        <span class="material-symbols-outlined">expand_more</span>
+      </span>
+      <ng-container dropdownPanel>
+        <button
+          class="dropdown-item"
+          [class.dropdown-item--active]="selectedCourseId === 'ALL'"
+          (click)="selectCourse('ALL')"
+        >Tous les parcours</button>
+        <button
+          *ngFor="let course of trainingCourses"
+          class="dropdown-item"
+          [class.dropdown-item--active]="selectedCourseId === course.id"
+          (click)="selectCourse(course.id)"
+        >{{ course.label }}</button>
+      </ng-container>
+    </app-dropdown>
 
-      <option 
-        *ngFor="let course of trainingCourses"
-        [ngValue]="course.id"
-      >
-        {{ course.label }}
-      </option>
-    </select>
+    <span class="page__count">{{ filteredUsers.length }} utilisateur{{ filteredUsers.length > 1 ? 's' : '' }}</span>
 
   </div>
 
   <!-- USERS GRID -->
   <div class="page__users-div">
 
-    <div 
-      *ngFor="let card of filteredUsers" 
-      class="user-card" 
-      [class.user-card--disabled]="!isClickable()"
-      (click)="isClickable() && onUserCardClick(card)"
+    <div
+      *ngFor="let card of filteredUsers"
+      class="user-card"
+      [class.user-card--disabled]="!isClickable(card)"
+      (click)="isClickable(card) && onUserCardClick(card)"
     >
 
       <div class="user-card__profile">

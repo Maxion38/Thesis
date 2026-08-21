@@ -7,19 +7,22 @@ import { USER_WITH_ROLES } from './includes/users.include'
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll() {
+  async findAll(trainingCourseId?: number) {
     const users = await this.prisma.user.findMany({
+      where: trainingCourseId
+        ? { projectMemberships: { some: { project: { trainingCourseId } } } }
+        : undefined,
       include: USER_WITH_ROLES,
     });
 
-    return users.map(user => toDtoUser(user));    
+    return users.map(user => toDtoUser(user));
   }
 
   findOne(id: number) {
     return `This action returns a #${id} user`;
   }
 
-  async findFirstProject(userId: number) {
+  async findFirstProject(userId: number, trainingCourseId?: number) {
     return await this.prisma.project.findFirst({
       where: {
         members: {
@@ -27,6 +30,7 @@ export class UsersService {
             userId,
           },
         },
+        ...(trainingCourseId ? { trainingCourseId } : {}),
       },
       select: {
         id: true,

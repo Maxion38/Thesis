@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, HostListener, ElementRef, ViewChild  } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ElementRef, ViewChild  } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, forkJoin } from 'rxjs';
 import { switchMap, map, takeUntil, filter, tap } from 'rxjs/operators';
@@ -11,10 +11,11 @@ import { CellModel } from '../../models/cell.model';
 import { EvaluationModel } from '../../models/evaluation.model';
 import { CriteriaDiscussionModel } from '../../models/discussion.model';
 import { AuthService } from '../../../auth/services/auth.service';
+import { DropdownComponent } from '../../../components/dropdown/dropdown.component';
 
 @Component({
   selector: 'app-assessment-detail',
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, DropdownComponent],
   templateUrl: './assessment-detail.component.html',
   styleUrl: './assessment-detail.component.scss',
 })
@@ -26,7 +27,6 @@ export class AssessmentDetailComponent implements OnInit, OnDestroy {
   protected evaluationsVisibility = inject(EvaluationsVisibilityService);
   private destroy$ = new Subject<void>();
 
-  @ViewChild('criteriaSelector') criteriaSelector!: ElementRef<HTMLElement>;
   @ViewChild('noteInput') noteInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild('discussionScroll') discussionScrollRef?: ElementRef<HTMLElement>;
 
@@ -36,7 +36,6 @@ export class AssessmentDetailComponent implements OnInit, OnDestroy {
   projectId!: number;
   assessmentId!: number;
   loading = false;
-  isDropdownOpen = false;
   votingCriteriaId: number | null = null;
 
   // Pas d'ajustement au clic sur les chevrons ; la base stocke jusqu'à 0.01
@@ -121,24 +120,8 @@ export class AssessmentDetailComponent implements OnInit, OnDestroy {
   }
 
   selectCriteria(order: number): void {
-    this.isDropdownOpen = false;
     if (order !== this.selectedCriteriaOrder) {
       this.navigateToCriteria(order);
-    }
-  }
-
-  toggleDropdown(): void {
-    this.isDropdownOpen = !this.isDropdownOpen;
-  }
-
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    if (
-      this.isDropdownOpen &&
-      this.criteriaSelector &&
-      !this.criteriaSelector.nativeElement.contains(event.target as Node)
-    ) {
-      this.isDropdownOpen = false;
     }
   }
 
@@ -423,7 +406,7 @@ export class AssessmentDetailComponent implements OnInit, OnDestroy {
   private navigateToCriteria(order: number, replaceUrl = false): void {
     this.router.navigate(
       ['/teacher/projects', this.projectId, 'assessments', this.assessmentId, 'criteria', order],
-      { replaceUrl }
+      { replaceUrl, queryParamsHandling: 'preserve' }
     );
   }
 

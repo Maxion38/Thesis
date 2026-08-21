@@ -2,10 +2,14 @@ import { ChangeDetectorRef , Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { merge } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { RoleType } from '../../../entities/role.entity';
 import { UsersService } from '../../services/users.service';
 import { UserModel } from '../../models/users.model';
 import { AuthService } from '../../../auth/services/auth.service';
+import { TrainingCourseContextService } from '../../../training-course/services/training-course-context.service';
+import { DropdownComponent } from '../../../components/dropdown/dropdown.component';
 
 // TODO : exclude logged user
 
@@ -23,9 +27,11 @@ export interface trainingCourse {
   selector: 'app-all-users',
   templateUrl: './all-users.component.html',
   styleUrls: ['./all-users.component.scss'],
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, DropdownComponent],
 })
 export class AllUsersComponent implements OnInit {
+  protected readonly RoleType = RoleType;
+
   users: UserModel[] = [];
   trainingCourses: trainingCourse[] = [];
   role!: RoleType;
@@ -48,13 +54,19 @@ export class AllUsersComponent implements OnInit {
     private changeDetectorRef: ChangeDetectorRef,
     private usersService : UsersService,
     private authService : AuthService,
+    private trainingCourseContext: TrainingCourseContextService,
     private router: Router,
   ) {}
 
   ngOnInit(): void {
     this.role = this.authService.getFirstRole();
 
-    this.usersService.getAll().subscribe ({
+    merge(
+      this.trainingCourseContext.initIfApplicable(),
+      this.trainingCourseContext.changes$,
+    ).pipe(
+      switchMap(course => this.usersService.getAll(course?.id)),
+    ).subscribe ({
       next: (users) => {
         this.users = users;
         this.userCards = this.buildUserCards(users);
@@ -148,8 +160,38 @@ export class AllUsersComponent implements OnInit {
     }
   }
 
-  isClickable(): boolean {
-    return this.role === RoleType.TEACHER;
+  get roleFilterOptions(): string[] {
+    const options = ['ALL', 'STUDENT', 'TEACHER', 'COORDINATOR'];
+    return this.role === RoleType.TEACHER
+      ? options.filter(o => o !== 'COORDINATOR')
+      : options;
+  }
+
+  getRoleFilterLabel(role: string): string {
+    return role === 'ALL' ? 'Tous' : this.getRoleLabel(role as RoleType);
+  }
+
+  selectRole(role: string): void {
+    this.selectedRole = role;
+    this.applyFilters();
+  }
+
+  get selectedRoleLabel(): string {
+    return this.getRoleFilterLabel(this.selectedRole);
+  }
+
+  selectCourse(courseId: number | 'ALL'): void {
+    this.selectedCourseId = courseId;
+    this.applyFilters();
+  }
+
+  get selectedCourseLabel(): string {
+    if (this.selectedCourseId === 'ALL') return 'Tous les parcours';
+    return this.trainingCourses.find(c => c.id === this.selectedCourseId)?.label ?? 'Tous les parcours';
+  }
+
+  isClickable(card: UserCard): boolean {
+    return this.role === RoleType.TEACHER && card.role === RoleType.STUDENT;
   }
 
   onUserCardClick(card: UserCard): void {

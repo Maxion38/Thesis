@@ -14,14 +14,16 @@ import { RouterModule } from '@angular/router';
 
 import { UserModel } from '../../users/models/users.model';
 import { RoleType } from '../../entities/role.entity';
+import { DropdownComponent } from '../dropdown/dropdown.component';
 
 @Component({
   selector: 'app-users-pool',
   templateUrl: './users-pool.component.html',
   styleUrls: ['./users-pool.component.scss'],
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, DropdownComponent],
 })
 export class UsersPoolComponent implements OnInit, OnChanges {
+  readonly roleFilterOptions: string[] = ['ALL', 'STUDENT', 'TEACHER', 'COORDINATOR', 'GUEST'];
 
   @Input() users: UserModel[] = [];
   @Input() title?: string;
@@ -93,6 +95,19 @@ export class UsersPoolComponent implements OnInit, OnChanges {
       default:
         return role ?? '';
     }
+  }
+
+  getRoleFilterLabel(role: string): string {
+    return role === 'ALL' ? 'Tous' : this.getRoleLabel(role as RoleType);
+  }
+
+  selectRole(role: string): void {
+    this.selectedRole = role;
+    this.applyFilters();
+  }
+
+  get selectedRoleLabel(): string {
+    return this.getRoleFilterLabel(this.selectedRole);
   }
 
   toggleUserSelection(user: UserModel): void {

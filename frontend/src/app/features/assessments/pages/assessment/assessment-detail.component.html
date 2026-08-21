@@ -1,20 +1,19 @@
 <div class="page">
     <div class="criteria">
 
-        <div class="criteria__selector" #criteriaSelector>
-            <span class="criteria__text" (click)="toggleDropdown()">{{ selectedCriteria?.name }}</span>
-
-            <div class="criteria__dropdown" *ngIf="isDropdownOpen">
-                <div 
-                    class="criteria__dropdown__item"
-                    [class.criteria__dropdown__item--active]="c.order === selectedCriteriaOrder"
+        <app-dropdown class="criteria__selector">
+            <span dropdownTrigger class="criteria__text">{{ selectedCriteria?.name }}</span>
+            <ng-container dropdownPanel>
+                <div
+                    class="dropdown-item"
+                    [class.dropdown-item--active]="c.order === selectedCriteriaOrder"
                     *ngFor="let c of criteria"
                     (click)="selectCriteria(c.order)"
                 >
                     {{ c.name }}
                 </div>
-            </div>
-        </div>
+            </ng-container>
+        </app-dropdown>
 
     </div>
 

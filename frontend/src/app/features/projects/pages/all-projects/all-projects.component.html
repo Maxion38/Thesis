@@ -25,18 +25,24 @@
       (click)="onProjectCardClick(project)"
     >
 
-      <div class="project-card__profile">
-        {{ getInitials(project) }}
+      <div
+        class="project-card__profile"
+        title="Travaux remis : {{ project.worksSubmitted }} / {{ project.worksTotal }}"
+      >
+        {{ project.worksSubmitted }}/{{ project.worksTotal }}
       </div>
 
       <div class="project-card__infos">
 
-        <span class="project-card__infos__name">
-          {{ getStudentsLabel(project) }}
+        <span
+          class="project-card__infos__title"
+          [title]="project.title"
+        >
+          {{ project.title }}
         </span>
 
-        <span class="project-card__infos__title">
-          {{ project.title }}
+        <span class="project-card__infos__name">
+          {{ getStudentsLabel(project) }}
         </span>
 
       </div>

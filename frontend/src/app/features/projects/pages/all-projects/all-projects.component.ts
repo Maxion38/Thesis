@@ -2,8 +2,11 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { merge } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { ProjectsService } from '../../services/projects.service';
 import { ProjectWithGridsModel } from '../../models/project-with-grids.model';
+import { TrainingCourseContextService } from '../../../training-course/services/training-course-context.service';
 
 @Component({
   selector: 'app-all-projects',
@@ -20,11 +23,17 @@ export class AllProjectsComponent implements OnInit {
   constructor(
     private changeDetectorRef: ChangeDetectorRef,
     private projectsService: ProjectsService,
+    private trainingCourseContext: TrainingCourseContextService,
     private router: Router,
   ) {}
 
   ngOnInit(): void {
-    this.projectsService.getProjectsWithGrids().subscribe({
+    merge(
+      this.trainingCourseContext.initIfApplicable(),
+      this.trainingCourseContext.changes$,
+    ).pipe(
+      switchMap(course => this.projectsService.getProjectsWithGrids(course?.id)),
+    ).subscribe({
       next: (projects) => {
         this.projects = projects;
         this.filteredProjects = projects;
@@ -70,18 +79,11 @@ export class AllProjectsComponent implements OnInit {
       .join(', ');
   }
 
-  getInitials(project: ProjectWithGridsModel): string {
-    const first = project.students[0];
-    if (!first) return '?';
-    return ((first.firstname?.charAt(0) ?? '') + first.surname.charAt(0)).toUpperCase();
-  }
-
   isClickable(project: ProjectWithGridsModel): boolean {
-    return project.grids.length > 0;
+    return true;
   }
 
   onProjectCardClick(project: ProjectWithGridsModel): void {
-    if (!this.isClickable(project)) return;
-    this.router.navigate(['/teacher/projects', project.id, 'assessments', project.grids[0].id]);
+    this.router.navigate(['/teacher/projects', project.id], { queryParams: { scope: 'all' } });
   }
 }

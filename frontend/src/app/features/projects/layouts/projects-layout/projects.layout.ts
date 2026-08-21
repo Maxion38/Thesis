@@ -13,12 +13,12 @@ import { TabbarComponent, Tabs } from '../../../components/tabbar/tabbar.compone
 export class ProjectsLayoutComponent {
   tabbarItems: Tabs[] = [
     {
-      title: 'Tous les projets',
-      route: '/teacher/projects/all'
-    },
-    {
       title: 'Mes projets',
       route: '/teacher/projects/myProjects'
     },
+    {
+      title: 'Tous les projets',
+      route: '/teacher/projects/all'
+    }
   ];
 }

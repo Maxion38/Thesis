@@ -55,8 +55,16 @@ describe('UsersController', () => {
       const result = await controller.findMyProject(mockRequest as any);
 
       // Vérifie que le userId est bien extrait de req.user
-      expect(mockUsersService.findFirstProject).toHaveBeenCalledWith(1);
+      expect(mockUsersService.findFirstProject).toHaveBeenCalledWith(1, undefined);
       expect(result).toEqual({ id: 42, title: 'Mon TFE' });
+    });
+
+    it('should forward an explicit trainingCourseId query param', async () => {
+      mockUsersService.findFirstProject.mockResolvedValue({ id: 42, title: 'Mon TFE' });
+
+      await controller.findMyProject(mockRequest as any, '7');
+
+      expect(mockUsersService.findFirstProject).toHaveBeenCalledWith(1, 7);
     });
   });
 

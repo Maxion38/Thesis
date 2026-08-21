@@ -14,28 +14,31 @@
     </div>
 
     <!-- ROLE FILTER -->
-    <select 
-      class="select"
-      [(ngModel)]="selectedRole"
-      (change)="applyFilters()"
-    >
-      <option value="ALL">Tous</option>
-      <option value="STUDENT">Étudiant</option>
-      <option value="TEACHER">Enseignant</option>
-      <option value="COORDINATOR">Coordinateur</option>
-      <option value="GUEST">Invité</option>
-    </select>
+    <app-dropdown class="select">
+      <span dropdownTrigger class="select__label">
+        {{ selectedRoleLabel }}
+        <span class="material-symbols-outlined">expand_more</span>
+      </span>
+      <ng-container dropdownPanel>
+        <button
+          *ngFor="let role of roleFilterOptions"
+          class="dropdown-item"
+          [class.dropdown-item--active]="role === selectedRole"
+          (click)="selectRole(role)"
+        >{{ getRoleFilterLabel(role) }}</button>
+      </ng-container>
+    </app-dropdown>
 
     <!-- COURSE FILTER -->
     <!--
-    <select 
+    <select
       class="select"
       [(ngModel)]="selectedCourseId"
       (change)="applyFilters()"
     >
       <option [ngValue]="'ALL'">Tous les parcours</option>
 
-      <option 
+      <option
         *ngFor="let course of mockTrainingCourses"
         [ngValue]="course.id"
       >

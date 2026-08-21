@@ -14,4 +14,6 @@ export interface ProjectWithGridsModel {
   title: string | null;
   students: ProjectMemberModel[];
   grids: GridSummaryModel[];
+  worksSubmitted: number;
+  worksTotal: number;
 }

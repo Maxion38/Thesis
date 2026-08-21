@@ -27,8 +27,8 @@ import { RegisterActivateAccountComponent } from './features/invitations/pages/r
 import { LoginComponent } from './features/auth/pages/login/login.component';
 import { AuthGuard } from './guards/auth.guard';
 import { RoleGuard } from './guards/role.guard';
-import { CoordinatorLayoutComponent } from './layouts/coordinator-layout/coordinator.layout';
-import { StudentLayoutComponent } from './layouts/student-layout/student.layout';
+import { MainLayoutComponent } from './layouts/main-layout/main.layout';
+import { MenuItem } from './features/components/menu/menu.component';
 import { EmptyComponent } from './empty.component';
 import { RootRedirectGuard } from './guards/root-redirect.guard';
 import { NoAuthGuard } from './guards/no-auth.guard';
@@ -38,7 +38,6 @@ import { StudentModuleLayoutComponent } from './features/modules/modules-student
 import { StudentModulesComponent } from './features/modules/modules-student/pages/modules/modules.component';
 import { StudentModuleDescriptionComponent } from './features/modules/modules-student/pages/module/description/description.component';
 import { ModuleLayoutComponent } from './features/modules/layouts/module-layout/module.layout';
-import { TeacherLayoutComponent } from './layouts/teacher-layout/teacher.layout';
 import { UserInspectionComponent } from './features/user-inspection/layouts/inspection/user-inspection.layout';
 import { SubmissionComponent } from './features/work-tool/pages/submissions/submissions.component';
 import { AssessmentDetailComponent } from './features/assessments/pages/assessment/assessment-detail.component';
@@ -46,7 +45,31 @@ import { AssessmentsLayoutComponent } from './features/assessments/layout/assess
 import { ProjectsLayoutComponent } from './features/projects/layouts/projects-layout/projects.layout';
 import { AllProjectsComponent } from './features/projects/pages/all-projects/all-projects.component';
 import { MyProjectsComponent } from './features/projects/pages/my-projects/my-projects.component';
+import { ProjectOverviewComponent } from './features/projects/pages/project-overview/project-overview.component';
 
+
+const coordinatorMenuItems: MenuItem[] = [
+  { titre: 'Accueil', iconName: 'home', route: '/coordinator', exact: true },
+  { titre: 'Parcours', iconName: 'school', route: '/coordinator/training-courses'},
+  { titre: 'Participants', iconName: 'groups', route: '/coordinator/users'},
+  { titre: 'Rapporteurs', iconName: 'assignment_ind', route: '/coordinator/supervisors'},
+  { titre: 'Notifications', iconName: 'notifications', route: '/coordinator/notifications'},
+];
+
+const teacherMenuItems: MenuItem[] = [
+  { titre: 'Accueil', iconName: 'home', route: '/teacher', exact: true },
+  { titre: 'Projets', iconName: 'work', route: '/teacher/projects'},
+  { titre: 'Rapportage', iconName: 'assignment_ind', route: '/teacher/supervisors'},
+  { titre: 'Utilisateurs', iconName: 'groups', route: '/teacher/users'},
+  { titre: 'Notifications', iconName: 'notifications', route: '/teacher/notifications'},
+];
+
+const studentMenuItems: MenuItem[] = [
+  { titre: 'Accueil', iconName: 'home', route: '/student', exact: true },
+  { titre: 'Modules', iconName: 'book', route: '/student/modules'},
+  { titre: 'Rapporteur', iconName: 'assignment_ind', route: '/student/supervisors'},
+  { titre: 'Notifications', iconName: 'notifications', route: '/student/notifications'},
+];
 
 export const routes: Routes = [
   {
@@ -70,9 +93,9 @@ export const routes: Routes = [
   },
   {
     path: 'coordinator',
-    component: CoordinatorLayoutComponent,
+    component: MainLayoutComponent,
     canActivate: [AuthGuard, RoleGuard],
-    data: { roles: ['COORDINATOR'] },
+    data: { roles: ['COORDINATOR'], menuItems: coordinatorMenuItems },
     children: [
       { path: '', component: DashboardComponent},
 
@@ -117,15 +140,14 @@ export const routes: Routes = [
         ]
       },  
       { path: 'supervisors', component: SupervisorsComponent},  
-      { path: 'juries', component: JuriesComponent},  
       { path: 'notifications', component: NotificationsComponent},
     ]
   },
   {
     path: 'teacher',
-    component: TeacherLayoutComponent,
+    component: MainLayoutComponent,
     canActivate: [AuthGuard, RoleGuard],
-    data: { roles: ['TEACHER'] },
+    data: { roles: ['TEACHER'], menuItems: teacherMenuItems },
     children: [
       { path: '', component: DashboardComponent},
 
@@ -136,7 +158,6 @@ export const routes: Routes = [
         children: [
           { path: '', redirectTo: 'all', pathMatch: 'full'},
           { path: 'all', component: AllUsersComponent},
-          { path: 'my-users', component: AllUsersComponent},
         ]
       },
       {
@@ -153,19 +174,14 @@ export const routes: Routes = [
         path: 'projects',
         component: ProjectsLayoutComponent,
         children: [
-          { path: '', redirectTo: 'all', pathMatch: 'full' },
-          { path: 'all', component: AllProjectsComponent },
+          { path: '', redirectTo: 'myProjects', pathMatch: 'full' },
           { path: 'myProjects', component: MyProjectsComponent },
+          { path: 'all', component: AllProjectsComponent },
         ]
       },
       {
         path: 'projects/:projectId',
-        component: UserInspectionComponent /*ProjectInspectionComponent*/,
-        children: [
-          { path: '', redirectTo: 'submissions', pathMatch: 'full'},
-          { path: 'submissions', component: SubmissionComponent},
-          { path: 'training-course', component: SubmissionComponent},
-        ]
+        component: ProjectOverviewComponent,
       },
       {
         path: 'projects/:projectId/assessments/:assessmentId',
@@ -182,9 +198,9 @@ export const routes: Routes = [
   },
   {
     path: 'student',
-    component: StudentLayoutComponent,
+    component: MainLayoutComponent,
     canActivate: [AuthGuard, RoleGuard],
-    data: { roles: ['STUDENT'] },
+    data: { roles: ['STUDENT'], menuItems: studentMenuItems },
     children: [
       { path: '', component: DashboardComponent},
       { 
@@ -211,7 +227,6 @@ export const routes: Routes = [
       //   ]
       // },  
       { path: 'supervisors', component: SupervisorsComponent},  
-      { path: 'juries', component: JuriesComponent},  
       { path: 'notifications', component: NotificationsComponent},
     ]
   },

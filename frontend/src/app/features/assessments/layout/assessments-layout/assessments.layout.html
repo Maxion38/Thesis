@@ -1,39 +1,39 @@
 <div class="page">
 
   <div class="header">
+    <app-back-button class="header-left" [route]="backRoute" [queryParams]="backQueryParams"></app-back-button>
+
     <div class="header-center">
 
-      <div class="user-card" *ngIf="selectedProject" (click)="showProjectOptions = !showProjectOptions">
-        <div class="user-card__profile">{{ getInitials(selectedProject) }}</div>
-        <div class="user-card__name">{{ getStudentsLabel(selectedProject) }}</div>
-        <span class="material-symbols-outlined user-card__dropdown">{{ showProjectOptions ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
-
-        <div class="add-menu" *ngIf="showProjectOptions" (click)="$event.stopPropagation()">
+      <app-dropdown #projectDropdown class="user-card" *ngIf="selectedProject">
+        <div dropdownTrigger class="user-card__profile">{{ getInitials(selectedProject) }}</div>
+        <div dropdownTrigger class="user-card__name">{{ getStudentsLabel(selectedProject) }}</div>
+        <span dropdownTrigger class="material-symbols-outlined user-card__dropdown">{{ projectDropdown.open ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
+        <ng-container dropdownPanel>
           <button
             *ngFor="let project of projects"
-            class="add-menu__item"
-            [class.add-menu__item--active]="project.id === selectedProject.id"
-            (click)="selectProject(project); $event.stopPropagation()">
+            class="dropdown-item"
+            [class.dropdown-item--active]="project.id === selectedProject.id"
+            (click)="selectProject(project)">
             {{ getStudentsLabel(project) }}
           </button>
-        </div>
-      </div>
+        </ng-container>
+      </app-dropdown>
 
-      <div class="user-card grid-name" *ngIf="selectedGrid" (click)="showGridOptions = !showGridOptions">
-        <div class="user-card__icon"><span class="material-symbols-outlined">box_edit</span></div>
-        <div class="user-card__name">{{ selectedGrid.name }}</div>
-        <span class="material-symbols-outlined user-card__dropdown">{{ showGridOptions ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
-
-        <div class="add-menu" *ngIf="showGridOptions" (click)="$event.stopPropagation()">
+      <app-dropdown #gridDropdown class="user-card grid-name" *ngIf="selectedGrid">
+        <div dropdownTrigger class="user-card__icon"><span class="material-symbols-outlined">box_edit</span></div>
+        <div dropdownTrigger class="user-card__name">{{ selectedGrid.name }}</div>
+        <span dropdownTrigger class="material-symbols-outlined user-card__dropdown">{{ gridDropdown.open ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
+        <ng-container dropdownPanel>
           <button
             *ngFor="let grid of selectedProject?.grids"
-            class="add-menu__item"
-            [class.add-menu__item--active]="grid.id === selectedGrid.id"
-            (click)="selectGrid(grid); $event.stopPropagation()">
+            class="dropdown-item"
+            [class.dropdown-item--active]="grid.id === selectedGrid.id"
+            (click)="selectGrid(grid)">
             {{ grid.name }}
           </button>
-        </div>
-      </div>
+        </ng-container>
+      </app-dropdown>
 
     </div>
 

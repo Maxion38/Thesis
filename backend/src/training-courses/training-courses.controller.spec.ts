@@ -9,6 +9,7 @@ const mockTrainingCoursesService = {
   create: jest.fn(),
   findAll: jest.fn(),
   findAllWithRelatedInfos: jest.fn(),
+  findMyActiveCourses: jest.fn(),
   findOne: jest.fn(),
   update: jest.fn(),
   remove: jest.fn(),
@@ -71,6 +72,17 @@ describe('TrainingCoursesController', () => {
       await controller.findAllWithDetails();
 
       expect(mockTrainingCoursesService.findAllWithRelatedInfos).toHaveBeenCalled();
+    });
+  });
+
+  describe('findMyActiveCourses', () => {
+    it('should call service.findMyActiveCourses with the userId from request', async () => {
+      mockTrainingCoursesService.findMyActiveCourses.mockResolvedValue([{ id: 1 }]);
+
+      const result = await controller.findMyActiveCourses({ user: { userId: 1 } } as any);
+
+      expect(mockTrainingCoursesService.findMyActiveCourses).toHaveBeenCalledWith(1);
+      expect(result).toHaveLength(1);
     });
   });
 

@@ -12,6 +12,7 @@ import { CommonModule, Location } from '@angular/common';
 
 export class BackButtonComponent {
   @Input() route?: (string | number)[];
+  @Input() queryParams?: Record<string, any>;
 
   constructor(
     private router: Router,
@@ -20,7 +21,7 @@ export class BackButtonComponent {
 
   goBack() {
     if (this.route) {
-      this.router.navigate(this.route);
+      this.router.navigate(this.route, this.queryParams ? { queryParams: this.queryParams } : undefined);
     } else {
       this.location.back();
     }

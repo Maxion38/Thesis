@@ -49,15 +49,5 @@ export class UsersLayoutComponent implements OnInit {
         },
       )
     }
-
-    if (this.userRole === RoleType.TEACHER) {
-      this.tabbarItems.push(
-        {
-          title: 'Mes étudiants',
-          route: `/${ROLE_BASE_ROUTE[this.userRole]}/users/my-users`
-        },
-      )
-    }
-
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
 import { TrainingCoursesService } from './training-courses.service';
 import { CreateTrainingCourseDto } from './dto/create-training-course.dto';
 import { UpdateTrainingCourseDto } from './dto/update-training-course.dto';
@@ -29,6 +29,12 @@ export class TrainingCoursesController {
   @Get('details')
   findAllWithDetails() {
     return this.trainingCoursesService.findAllWithRelatedInfos();
+  }
+
+  @Auth()
+  @Get('mine')
+  findMyActiveCourses(@Req() req) {
+    return this.trainingCoursesService.findMyActiveCourses(req.user.userId);
   }
 
   @Auth()

@@ -80,6 +80,11 @@
     }
 }
 
+.header-left {
+    grid-column: 1;
+    justify-self: start;
+}
+
 .header-center {
     grid-column: 2;
     display: flex;
@@ -162,42 +167,3 @@
 
 
 
-.add-menu {
-    position: absolute;
-    left: 0;
-    top: calc(100% + 8px);
-    background-color: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    min-width: 220px;
-    max-width: 320px;
-    max-height: 250px;
-    overflow-y: auto;
-    z-index: 10;
-}
-
-.add-menu__item {
-    display: block;
-    width: 100%;
-    border: none;
-    background: none;
-    color: inherit;
-    font: inherit;
-    padding: 10px 16px;
-    text-align: left;
-    white-space: normal;
-    font-size: 0.95rem;
-    cursor: pointer;
-    user-select: none;
-    transition: background-color 120ms ease;
-
-    &:hover {
-        background-color: #f2f2f2;
-    }
-
-    &--active {
-        background-color: #E4E4E4;
-        font-weight: 600;
-    }
-}

@@ -10,8 +10,15 @@ export class AssessmentGridController {
 
   @Auth(RoleType.COORDINATOR, RoleType.TEACHER)
   @Get('projects')
-  async getProjectsWithAssessmentsId() {
-    return this.assessmentGridService.getProjectsWithAssessmentsId();
+  async getProjectsWithAssessmentsId(
+    @Query('trainingCourseId') trainingCourseId: string | undefined,
+    @Query('rapporteur') rapporteur: string | undefined,
+    @Req() req: any,
+  ) {
+    return this.assessmentGridService.getProjectsWithAssessmentsId(
+      trainingCourseId ? +trainingCourseId : undefined,
+      rapporteur === 'true' ? req.user.userId : undefined,
+    );
   }
 
   @Auth(RoleType.COORDINATOR, RoleType.TEACHER)

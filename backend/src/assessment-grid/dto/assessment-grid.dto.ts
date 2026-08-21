@@ -30,6 +30,8 @@ export class ProjectWithGridsDto {
   title!: string | null;
   students!: ProjectMemberSummaryDto[];
   grids!: GridSummaryDto[];
+  worksSubmitted!: number;
+  worksTotal!: number;
 }
 
 export class SetCriteriaNoteDto {

@@ -3,6 +3,7 @@ import { CreateTrainingCourseDto } from './dto/create-training-course.dto';
 import { UpdateTrainingCourseDto } from './dto/update-training-course.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { RoleType } from '@prisma/client';
+import { isTrainingCourseActive } from './training-course-status.util';
 
 @Injectable()
 export class TrainingCoursesService {
@@ -16,6 +17,15 @@ export class TrainingCoursesService {
 
   findAll() {
     return this.prisma.trainingCourse.findMany();
+  }
+
+  async findMyActiveCourses(userId: number) {
+    const courses = await this.prisma.trainingCourse.findMany({
+      where: { projects: { some: { members: { some: { userId } } } } },
+      orderBy: { name: 'asc' },
+    });
+
+    return courses.filter(isTrainingCourseActive);
   }
 
 

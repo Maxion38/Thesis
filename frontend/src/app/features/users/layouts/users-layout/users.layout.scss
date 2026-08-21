@@ -11,13 +11,6 @@
     flex: 1;
     min-height: 0;
 
-    &__tabbar {
-        position: sticky;
-        top: 0;
-        z-index: 20;
-        background: white;
-    }
-
     &__content-wrapper {
         display: flex;
         flex-direction: column;
@@ -32,6 +25,6 @@
         flex-direction: column;
         flex: 1;
         min-height: 0;
-        padding: 0 50px 30px 50px; 
+        padding: 30px 50px;
     }
 }

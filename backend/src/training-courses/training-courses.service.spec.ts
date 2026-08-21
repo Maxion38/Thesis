@@ -129,6 +129,44 @@ describe('TrainingCoursesService', () => {
     });
   });
 
+  // ── findMyActiveCourses ──────────────────────────────────────────────────────
+
+  describe('findMyActiveCourses', () => {
+    it('should query courses the user is a project member of, ordered by name', async () => {
+      mockPrismaService.trainingCourse.findMany.mockResolvedValue([]);
+
+      await service.findMyActiveCourses(1);
+
+      expect(mockPrismaService.trainingCourse.findMany).toHaveBeenCalledWith({
+        where: { projects: { some: { members: { some: { userId: 1 } } } } },
+        orderBy: { name: 'asc' },
+      });
+    });
+
+    it('should only return courses whose start/end window includes now', async () => {
+      const now = new Date();
+      const active = {
+        ...mockCourse,
+        id: 1,
+        startDate: new Date(now.getTime() - 86400000),
+        endDate: new Date(now.getTime() + 86400000),
+      };
+      const past = {
+        ...mockCourse,
+        id: 2,
+        startDate: new Date(now.getTime() - 2 * 86400000),
+        endDate: new Date(now.getTime() - 86400000),
+      };
+      const noDates = { ...mockCourse, id: 3, startDate: null, endDate: null };
+
+      mockPrismaService.trainingCourse.findMany.mockResolvedValue([active, past, noDates]);
+
+      const result = await service.findMyActiveCourses(1);
+
+      expect(result).toEqual([active]);
+    });
+  });
+
   // ── findOne ─────────────────────────────────────────────────────────────────
 
   describe('findOne', () => {

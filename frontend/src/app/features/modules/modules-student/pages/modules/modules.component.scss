@@ -73,18 +73,19 @@
         font-family: 'joan', serif;
     }
 
-    &__select {
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
+    &__dropdown {
+        display: flex;
+        align-items: center;
+    }
 
-        width: auto;
+    &__label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
         font-size: 1.4rem;
         font-family: 'joan', serif;
-        border: none;
         letter-spacing: 0.7px;
-        padding-right: 15px;
-        outline: none;
+        user-select: none;
     }
 }
 

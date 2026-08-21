@@ -1,21 +1,15 @@
-// :host {
-//     display: flex;
-//     flex-direction: column;
-//     height: 100vh;
-//     background-color: red;
-// }
-
 .app-layout {
     display: flex;
     flex-direction: column;
     height: 100vh;
     background-color: rgb(245, 245, 245);
-    overflow-y: hidden;
+    overflow: hidden;
 }
 
 .app-navbar {
-  position: sticky;
-  top: 0;
+    position: sticky;
+    top: 0;
+    z-index: 20;
 }
 
 .app-menu-content-layout {
@@ -26,25 +20,24 @@
 }
 
 .app-menu {
-  position: sticky;
-  left: 0;
+    position: sticky;
+    left: 0;
 }
 
-// .app-content {
-//     flex: 1;
-//     height: 100%;
-//     overflow: hidden;
-//     // min-height: 0;
-//     // min-width: 0;
-// }
-
+.app-corner-wrapper {
+    background-color: rgb(245, 245, 245);
+    display: flex;
+    flex: 1;
+}
 
 .app-content {
     flex: 1;
-    min-height: 0;
-    overflow: hidden;
+
     display: flex;
     flex-direction: column;
+
     border-radius: 16px;
     background-color: #ffffff;
+
+    overflow: visible;
 }

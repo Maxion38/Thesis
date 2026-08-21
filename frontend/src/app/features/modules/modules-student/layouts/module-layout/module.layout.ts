@@ -5,9 +5,8 @@ import { TabbarComponent, Tabs } from '../../../../components/tabbar/tabbar.comp
 import { ModuleDetailsModel } from '../../model/module-details.model';
 import { UsersService } from '../../../../users/services/users.service';
 import { ModulesService } from '../../../services/modules.service';
-import { switchMap } from 'rxjs';
-// import { TrainingCoursesService } from '../../services/training-courses.service';
-// import { TrainingCourseModel } from '../../models/training-course.model';
+import { merge, switchMap } from 'rxjs';
+import { TrainingCourseContextService } from '../../../../training-course/services/training-course-context.service';
 
 @Component({
   selector: 'app-student-module-layout',
@@ -27,13 +26,18 @@ export class StudentModuleLayoutComponent implements OnInit {
     private route: ActivatedRoute,
     private usersService: UsersService,
     private modulesService: ModulesService,
+    private trainingCourseContext: TrainingCourseContextService,
   ) {}
 
   ngOnInit(): void {
     this.moduleId = Number(this.route.snapshot.paramMap.get('moduleId'));
     this.buildTabs();
 
-    this.usersService.getMyFirstProject().pipe(
+    merge(
+      this.trainingCourseContext.initIfApplicable(),
+      this.trainingCourseContext.changes$,
+    ).pipe(
+      switchMap(course => this.usersService.getMyFirstProject(course?.id)),
       switchMap(project => this.modulesService.getProjectModuleDetails(this.moduleId, project.id))
     ).subscribe({
       next: (module) => {

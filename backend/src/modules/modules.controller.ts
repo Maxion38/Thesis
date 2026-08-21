@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, ParseIntPipe, Delete, Req, Query } from '@nestjs/common';
 import { ModulesService } from './modules.service';
 import { CreateModuleDto } from './dto/create-module.dto';
 import { UpdateModuleDto } from './dto/update-module.dto';
@@ -37,6 +37,12 @@ export class ModulesController {
       req.user.userId,
       Number(projectId),
     );
+  }
+
+  @Auth(RoleType.COORDINATOR, RoleType.TEACHER)
+  @Get('projects/:projectId/overview')
+  findProjectOverview(@Param('projectId', ParseIntPipe) projectId: number) {
+    return this.modulesService.findProjectOverview(projectId);
   }
 
   @Auth()

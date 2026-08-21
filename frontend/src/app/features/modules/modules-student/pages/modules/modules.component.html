@@ -3,20 +3,21 @@
   <div>
     <div class="title">
 
-      <span class="material-symbols-outlined dropdown-icon">stat_minus_1</span>
-      <select class="title__select" [(ngModel)]="selectedTaskFilter">
-        <option value="TODO">Tâches à faire</option>
-
-        <option value="ASSESSMENTS">
-          Évaluations disponibles
-        </option>
-
-        <option *ngIf="noDateModules.length > 0" value="NO_DATE">
-          Tâches sans dates
-        </option>
-
-        <option value="ALL">Tous les modules</option>
-      </select>
+      <app-dropdown class="title__dropdown">
+        <span dropdownTrigger class="title__label">
+          {{ selectedTaskFilterLabel }}
+          <span class="material-symbols-outlined dropdown-icon">stat_minus_1</span>
+        </span>
+        <ng-container dropdownPanel>
+          <button
+            *ngFor="let option of taskFilterOptions"
+            class="dropdown-item"
+            [class.dropdown-item--active]="option.value === selectedTaskFilter"
+            [hidden]="option.value === 'NO_DATE' && noDateModules.length === 0"
+            (click)="selectedTaskFilter = option.value"
+          >{{ option.label }}</button>
+        </ng-container>
+      </app-dropdown>
 
     </div>
 
@@ -40,12 +41,20 @@
   <div>
     <div class="title">
 
-      <span class="material-symbols-outlined dropdown-icon">stat_minus_1</span>
-      <select class="title__select" [(ngModel)]="selectedOtherFilter">
-        <option value="OTHER">Autre</option>
-        <option value="FINISHED">Tâches terminées</option>
-        <option value="LOCKED">À venir</option>
-      </select>
+      <app-dropdown class="title__dropdown">
+        <span dropdownTrigger class="title__label">
+          {{ selectedOtherFilterLabel }}
+          <span class="material-symbols-outlined dropdown-icon">stat_minus_1</span>
+        </span>
+        <ng-container dropdownPanel>
+          <button
+            *ngFor="let option of otherFilterOptions"
+            class="dropdown-item"
+            [class.dropdown-item--active]="option.value === selectedOtherFilter"
+            (click)="selectedOtherFilter = option.value"
+          >{{ option.label }}</button>
+        </ng-container>
+      </app-dropdown>
 
     </div>
 

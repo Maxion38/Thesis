@@ -1,5 +1,5 @@
 import { Component, signal, OnInit, OnDestroy } from '@angular/core';
-import { RouterOutlet, Router, NavigationEnd } from '@angular/router';
+import { ActivatedRoute, RouterOutlet, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { NavbarComponent } from '../../features/components/navbar/navbar.component';
@@ -18,11 +18,14 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   menuOpen = false;
   currentMenuName = 'Dashboard';
+  menuItems: MenuItem[] = [];
   private routerSubscription: Subscription = new Subscription();
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private route: ActivatedRoute) {}
 
   ngOnInit() {
+    this.menuItems = this.route.snapshot.data['menuItems'] ?? [];
+
     this.routerSubscription = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: NavigationEnd) => {
@@ -54,13 +57,4 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   closeMenu() {
     this.menuOpen = false;
   }
-
-  menuItems: MenuItem[] = [
-    { titre: 'Accueil', iconName: 'home', route: '/', exact: true },
-    { titre: 'Parcours', iconName: 'school', route: '/training-courses'},
-    { titre: 'Participants', iconName: 'groups', route: '/users'},
-    { titre: 'Rapporteurs', iconName: 'book', route: '/supervisors'},
-    { titre: 'Jurys', iconName: 'account_balance', route: '/juries'},
-    { titre: 'Notifications', iconName: 'notifications', route: '/notifications'},
-  ];
 }

@@ -1,3 +1,5 @@
+$card-width: 380px;
+
 :host {
     display: flex;
     flex: 1;
@@ -12,4 +14,130 @@
     background-color: #F4F4F4;
     border-radius: 12px;
     padding: 40px;
+    overflow: hidden;
+
+    &__top-bar {
+        flex-shrink: 0;
+        margin-bottom: 60px;
+        display: flex;
+        align-items: center;
+        gap: 30px;
+    }
+
+    &__projects-div {
+        display: grid;
+        align-items: start;
+        justify-content: start;
+        grid-template-columns: repeat(auto-fit, minmax($card-width, auto));
+        align-content: start;
+        gap: 16px;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+    }
+}
+
+.input {
+    height: 50px;
+    width: 300px;
+    background-color: rgb(255, 255, 255);
+    font-size: 1rem;
+    font-family: 'joan', serif;
+    color: rgb(39, 39, 39);
+    border-radius: 30px;
+    box-shadow: inset 2px 2px 2px rgba(0, 0, 0, 0.25);
+    border: none;
+    padding-left: 55px;
+    padding-right: 10px;
+    cursor: pointer;
+    transition: all ease 0.1s;
+}
+
+.search-wrapper {
+    position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: gray;
+  pointer-events: none;
+}
+
+.project-card {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+
+    width: $card-width;
+    min-height: 120px;
+    background: white;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+    transition: all ease 0.1s;
+
+    &:hover {
+        background-color: #cccccc;
+    }
+
+    &--disabled {
+        cursor: default;
+
+        &:hover {
+            background-color: white;
+            box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.25);
+            transform: none;
+        }
+    }
+
+    &__profile {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+
+        font-size: 1rem;
+        font-weight: 600;
+        white-space: nowrap;
+        background-color: #d9d9d9;
+        width: 60px;
+        min-width: 60px;
+        height: 60px;
+        border-radius: 60px;
+        cursor: default;
+    }
+
+    &__infos {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 6px;
+        overflow: hidden;
+        min-width: 0;
+
+        &__title {
+            font-size: 0.9rem;
+            cursor: default;
+            line-height: 1.25;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            word-break: break-word;
+        }
+
+        &__name {
+            font-size: 0.8rem;
+            font-weight: 300;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
 }

@@ -51,16 +51,16 @@
           (deleted)="deleteTool(tool)"
         />
 
-        <div *ngIf="userRole === 'COORDINATOR'" class="add-button-wrapper">
-          <div class="add-button" (click)="toggleAddOptions()">
+        <app-dropdown *ngIf="userRole === 'COORDINATOR'" class="add-button-wrapper" align="center">
+          <div dropdownTrigger class="add-button">
             <span class="material-symbols-outlined">add</span>
           </div>
-          <div *ngIf="showAddOptions" class="add-menu">
-            <!-- <button type="button" class="add-menu__item" (click)="addForm()">Formulaire</button> -->
-            <button type="button" class="add-menu__item" (click)="addWorkSubmission()">Remise de travail</button>
-            <!-- <button type="button" class="add-menu__item" (click)="addAssessment()">Evaluation</button> -->
-          </div>
-        </div>
+          <ng-container dropdownPanel>
+            <!-- <button type="button" class="dropdown-item" (click)="addForm()">Formulaire</button> -->
+            <button type="button" class="dropdown-item" (click)="addWorkSubmission()">Remise de travail</button>
+            <!-- <button type="button" class="dropdown-item" (click)="addAssessment()">Evaluation</button> -->
+          </ng-container>
+        </app-dropdown>
 
         <span *ngIf="userRole === 'COORDINATOR'" class="delete-module" (click)="deleteModule()">Supprimer ce module</span>
 
