@@ -7,6 +7,7 @@ import { CriteriaModel } from '../models/criteria.model';
 import { ProjectWithGridsModel } from '../../projects/models/project-with-grids.model';
 import { EvaluationModel, SetCriteriaNoteResultModel } from '../models/evaluation.model';
 import { CriteriaDiscussionModel } from '../models/discussion.model';
+import { GridContextModel } from '../models/grid-context.model';
 
 @Injectable({
   providedIn: 'root'
@@ -66,6 +67,13 @@ export class AssessmentGridService {
       `${this.apiUrl}/criteria/${criteriaId}/discussions`,
       { projectId, comment },
       { withCredentials: true }
+    );
+  }
+
+  getGridContext(gridId: number, projectId: number): Observable<GridContextModel> {
+    return this.http.get<GridContextModel>(
+      `${this.apiUrl}/${gridId}/context`,
+      { params: { projectId }, withCredentials: true }
     );
   }
 }

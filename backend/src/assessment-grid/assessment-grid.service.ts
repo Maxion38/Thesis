@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { RoleType, SubRoleType, ToolType } from '@prisma/client';
+import { GridFeedbackStatus, RoleType, SubRoleType, ToolType } from '@prisma/client';
 import {
   CriteriaDto,
   ProjectWithGridsDto,
@@ -11,6 +11,7 @@ import {
   EvaluationDto,
   CriteriaDiscussionDto,
   CreateCriteriaDiscussionDto,
+  GridContextDto,
 } from './dto/assessment-grid.dto';
 
 @Injectable()
@@ -325,5 +326,60 @@ export class AssessmentGridService {
       commentFeedback: e.commentFeedback,
       date: e.date,
     }));
+  }
+
+  // Statut de correction (GridFeedback.status, PENDING tant qu'aucun
+  // enseignant n'a encore écrit de feedback global) + soumission PDF liée
+  // via ToolLink (grid <-> work), pour affichage dans l'en-tête de la page.
+  async getGridContext(gridId: number, projectId: number): Promise<GridContextDto> {
+    const grid = await this.prisma.assessmentGrid.findUnique({
+      where: { id: gridId },
+      select: { id: true },
+    });
+    if (!grid) {
+      throw new NotFoundException(`AssessmentGrid ${gridId} not found`);
+    }
+
+    const feedback = await this.prisma.gridFeedback.findUnique({
+      where: { gridId_projectId: { gridId, projectId } },
+      select: { status: true },
+    });
+
+    const link = await this.prisma.toolLink.findFirst({
+      where: {
+        OR: [
+          { sourceToolId: gridId, targetTool: { type: ToolType.WORK } },
+          { targetToolId: gridId, sourceTool: { type: ToolType.WORK } },
+        ],
+      },
+      select: {
+        sourceToolId: true,
+        targetToolId: true,
+        sourceTool: { select: { type: true } },
+      },
+    });
+
+    let linkedSubmission: GridContextDto['linkedSubmission'] = null;
+    if (link) {
+      const workToolId = link.sourceTool.type === ToolType.WORK ? link.sourceToolId : link.targetToolId;
+      const submission = await this.prisma.userWorkSubmission.findFirst({
+        where: { workId: workToolId, projectId },
+        orderBy: { submittedAt: 'desc' },
+        select: { id: true, fileName: true },
+      });
+
+      if (submission && submission.fileName.toLowerCase().endsWith('.pdf')) {
+        linkedSubmission = {
+          workId: workToolId,
+          submissionId: submission.id,
+          fileName: submission.fileName,
+        };
+      }
+    }
+
+    return {
+      status: feedback?.status ?? GridFeedbackStatus.PENDING,
+      linkedSubmission,
+    };
   }
 }

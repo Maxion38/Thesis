@@ -31,6 +31,37 @@
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+    gap: 24px;
+
+    &--split {
+        flex-direction: row;
+        align-items: stretch;
+    }
+}
+
+.content__pdf {
+    flex: 1 1 33.333%;
+    min-width: 0;
+    height: 80vh;
+    display: flex;
+}
+
+.content__assessment {
+    flex: 1 1 66.666%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (max-width: 900px) {
+    .content--split {
+        flex-direction: column;
+    }
+
+    .content__pdf {
+        flex-basis: auto;
+        height: 55vh;
+    }
 }
 
 
@@ -96,9 +127,101 @@
 }
 
 
-.evals-btn {
-    justify-self: end;
+.header-right {
     grid-column: 3;
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 400;
+    white-space: nowrap;
+    border: solid 1px rgb(170, 170, 170);
+    color: #4a4a4a;
+
+    &__dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background-color: #a5a5a5;
+        flex-shrink: 0;
+    }
+
+    &--pending &__dot {
+        background-color: #a5a5a5;
+    }
+
+    &--correction {
+        border-color: #d9a441;
+        color: #8a6410;
+    }
+    &--correction &__dot {
+        background-color: #e8a93c;
+    }
+
+    &--published {
+        border-color: #1F4541;
+        color: #1F4541;
+    }
+    &--published &__dot {
+        background-color: #1F4541;
+    }
+
+    &--seen {
+        border-color: #3a7bd5;
+        color: #285a9e;
+    }
+    &--seen &__dot {
+        background-color: #3a7bd5;
+    }
+}
+
+.pdf-toggle-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #d9d9d9;
+    cursor: pointer;
+    user-select: none;
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition: all 0.1s ease;
+
+    &:hover {
+        background-color: #a5a5a5;
+    }
+
+    &:active {
+        background-color: #d9d9d9;
+    }
+
+    &--active {
+        background-color: #1F4541;
+        color: white;
+
+        &:hover {
+            background-color: #16332f;
+        }
+
+        &:active {
+            background-color: #1F4541;
+        }
+    }
+}
+
+.evals-btn {
     width: 40px;
     height: 40px;
     border-radius: 50%;

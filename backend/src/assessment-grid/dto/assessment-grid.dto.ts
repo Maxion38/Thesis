@@ -1,4 +1,5 @@
 import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { GridFeedbackStatus } from '@prisma/client';
 
 export class CellDto {
   description!: string;
@@ -87,4 +88,17 @@ export class CreateCriteriaDiscussionDto {
   @IsString()
   @IsNotEmpty()
   comment!: string;
+}
+
+// résumé (statut de correction + soumission liée) affiché dans l'en-tête de
+// la page d'évaluation : cf. GridFeedback.status et ToolLink (grid <-> work).
+export class LinkedWorkSubmissionDto {
+  workId!: number;
+  submissionId!: number;
+  fileName!: string;
+}
+
+export class GridContextDto {
+  status!: GridFeedbackStatus;
+  linkedSubmission!: LinkedWorkSubmissionDto | null;
 }

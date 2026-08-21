@@ -74,4 +74,13 @@ export class AssessmentGridController {
   ) {
     return this.assessmentGridService.getGridEvaluations(gridId, projectId);
   }
+
+  @Auth(RoleType.COORDINATOR, RoleType.TEACHER)
+  @Get(':gridId/context')
+  async getGridContext(
+    @Param('gridId', ParseIntPipe) gridId: number,
+    @Query('projectId', ParseIntPipe) projectId: number,
+  ) {
+    return this.assessmentGridService.getGridContext(gridId, projectId);
+  }
 }

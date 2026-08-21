@@ -82,11 +82,13 @@ const DEMO_EMAIL_DOMAIN = '@demo.thesis';
 const DEMO_PREFIX = 'DEMO ';
 const DEMO_PASSWORD = 'Demo1234!'; // même mot de passe pour tous les comptes démo
 
-const STUDENTS_PER_COURSE = 35;
-const DUOS_PER_COURSE = 4; // nombre de projets en binôme (le reste = solo)
+const STUDENTS_PER_COURSE = 20; // par promo -> 4 promos désormais (cf. section 1)
+const DUOS_PER_COURSE = 3; // nombre de projets en binôme (le reste = solo)
 const TEACHERS_COUNT = 10;
 const COORDINATORS_COUNT = 2;
 const EXTERNALS_COUNT = 5;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 // faker.seed rend le jeu de données reproductible (pratique pour des
 // captures d'écran stables dans le rapport). Retire cette ligne si tu veux
@@ -889,9 +891,14 @@ const REAL_GRIDS: RealGridDef[] = [
   },
 ];
 
-const CADRAGE_GRID_KEYS = REAL_GRIDS.filter((g) => g.module === 'cadrage').map((g) => g.key);
-const SUIVI_GRID_KEYS = REAL_GRIDS.filter((g) => g.module === 'suivi').map((g) => g.key);
-const SOUTENANCE_GRID_KEYS = REAL_GRIDS.filter((g) => g.module === 'soutenance').map((g) => g.key);
+// Répartition des grilles réelles entre les modules de la promo (identique
+// pour la structure "générique" et pour MAIN, cf. buildGenericCourseStructure
+// / buildMainCourseStructure) : le champ `module` de REAL_GRIDS n'est plus
+// utilisé pour ce placement, seulement à titre informatif/historique.
+const CADRAGE_GRID_KEYS = ['cdc', 'validationSujet', 'suiviRapporteur'];
+const ANALYSE_GRID_KEYS = ['analyse'];
+const RAPPORT_GRID_KEYS = ['rapportFinal', 'realisationPratique'];
+const DEFENSE_GRID_KEYS = ['oral'];
 const GRID_FEEDBACK_STATUSES = [
   GridFeedbackStatus.PENDING,
   GridFeedbackStatus.CORRECTION,
@@ -918,16 +925,21 @@ type GridAssets = {
   criteria: { id: number; cells: { id: number; order: number; weight: number | null }[] }[];
 };
 
-// Crée, pour un module donné, tous les Tool/AssessmentGrid/Criteria/Cell des
-// grilles réelles de REAL_GRIDS rattachées à ce module (ex. 'cadrage' porte
-// à la fois la grille "cdc" et "validationSujet").
-async function createGridsForModule(
-  moduleKey: 'cadrage' | 'suivi' | 'soutenance',
+// Crée, pour un module donné, les Tool/AssessmentGrid/Criteria/Cell des
+// grilles réelles de REAL_GRIDS dont la `key` est passée en paramètre.
+// Contrairement à la V1 (une grille était figée sur son `module` d'origine
+// dans REAL_GRIDS), l'appelant choisit librement quelles grilles rattacher à
+// quel module -> une même grille (ex. "rapportFinal") peut être rattachée à
+// des modules différents selon la promotion.
+async function createGridsForKeys(
+  keys: string[],
   moduleId: number,
   editable: boolean,
 ): Promise<Record<string, GridAssets>> {
   const result: Record<string, GridAssets> = {};
-  for (const def of REAL_GRIDS.filter((g) => g.module === moduleKey)) {
+  for (const key of keys) {
+    const def = REAL_GRIDS.find((g) => g.key === key);
+    if (!def) throw new Error(`REAL_GRIDS: clé de grille inconnue "${key}".`);
     const tool = await prisma.tool.create({
       data: { name: def.toolName, description: def.toolDescription, type: ToolType.ASSESSMENT, moduleId },
     });
@@ -991,6 +1003,8 @@ async function resetDemoData(demoTrainingCourseIds: number[]) {
   await prisma.group.deleteMany({ where: { name: { startsWith: DEMO_PREFIX } } });
   await prisma.activity.deleteMany({ where: { tool: { module: tcFilter } } });
 
+  // CriteriaDiscussion avant Criteria (référence criteriaId)
+  await prisma.criteriaDiscussion.deleteMany({ where: { project: tcFilter } });
   await prisma.cell.deleteMany({ where: { criteria: { grid: { tool: { module: tcFilter } } } } });
   await prisma.criteria.deleteMany({ where: { grid: { tool: { module: tcFilter } } } });
   await prisma.assessmentGrid.deleteMany({ where: { tool: { module: tcFilter } } });
@@ -1055,27 +1069,77 @@ async function main() {
 
   // ───────────────────────────────────────────────────────────────────────
   // 1) TRAINING COURSES
+  //    4 promotions : 2 inactives (déjà terminées, hors de la fenêtre
+  //    startDate/endDate courante -> cf. isTrainingCourseActive) et 2
+  //    actives. "MAIN" est la promo effectivement utilisée pour la démo
+  //    (structure de modules/outils sur-mesure, cf. section 3) ; "STAGE"
+  //    garde la structure générique (comme avant), tout comme les 2 promos
+  //    inactives.
   // ───────────────────────────────────────────────────────────────────────
   console.log('📚  Création des promotions...');
 
-  const courseA = await prisma.trainingCourse.create({
+  const courseQ1 = await prisma.trainingCourse.create({
     data: {
-      name: `${DEMO_PREFIX}Promotion 2024-2025`,
+      name: `${DEMO_PREFIX}TFE premier quadrimestre 2024-2025`,
       startDate: new Date('2024-09-16'),
-      endDate: new Date('2025-06-30'),
+      endDate: new Date('2025-01-31'),
     },
   });
-  const courseB = await prisma.trainingCourse.create({
+  const courseSession2 = await prisma.trainingCourse.create({
     data: {
-      name: `${DEMO_PREFIX}Promotion 2025-2026`,
-      startDate: new Date('2025-09-15'),
-      endDate: null, // promo en cours
+      name: `${DEMO_PREFIX}TFE seconde session 2025-2026`,
+      startDate: new Date('2026-06-15'),
+      endDate: new Date('2026-07-15'),
     },
   });
-  const courses = [
-    { course: courseA, label: 'A' as const, finished: true },
-    { course: courseB, label: 'B' as const, finished: false },
+  const courseMain = await prisma.trainingCourse.create({
+    data: {
+      name: `${DEMO_PREFIX}TFE second quadrimestre 2025-2026`,
+      startDate: new Date('2026-02-09'),
+      endDate: new Date('2026-09-15'),
+    },
+  });
+  const courseStage = await prisma.trainingCourse.create({
+    data: {
+      name: `${DEMO_PREFIX}Stage second quadrimestre 2025-2026`,
+      startDate: new Date('2026-02-09'),
+      endDate: new Date('2026-09-30'),
+    },
+  });
+
+  type CourseLabel = 'Q1' | 'SESSION2' | 'MAIN' | 'STAGE';
+  const MAIN_LABEL: CourseLabel = 'MAIN';
+
+  // "generic" = garde la structure de modules historique (Cadrage du sujet /
+  // Suivi de projet / Remise du mémoire / Soutenance, formulaire + activités
+  // de suivi comprises) ; seule MAIN reçoit la structure sur-mesure demandée.
+  const genericCourses: { course: typeof courseQ1; label: CourseLabel; finished: boolean }[] = [
+    { course: courseQ1, label: 'Q1', finished: true },
+    { course: courseSession2, label: 'SESSION2', finished: true },
+    { course: courseStage, label: 'STAGE', finished: false },
   ];
+  const courses: { course: typeof courseQ1; label: CourseLabel; finished: boolean }[] = [
+    ...genericCourses,
+    { course: courseMain, label: MAIN_LABEL, finished: false },
+  ];
+
+  // Fenêtre "soutenance" (planification des défenses + fenêtre temporelle des
+  // évaluations jury) commune aux deux types de structure : pour une promo
+  // déjà terminée, on la situe juste avant l'endDate ; pour une promo en
+  // cours, on la situe dans un passé récent (certains projets peuvent être
+  // "TERMINE" en avance, cf. computeStatus plus bas).
+  function soutenanceWindow(course: { endDate: Date | null }, finished: boolean) {
+    const day = finished
+      ? new Date(course.endDate!.getTime() - 10 * DAY_MS)
+      : new Date(Date.now() - 30 * DAY_MS);
+    const spanBefore = finished ? 5 : 10;
+    const spanAfter = finished ? 15 : 10;
+    return {
+      day,
+      start: new Date(day.getTime() - spanBefore * DAY_MS),
+      end: new Date(day.getTime() + spanAfter * DAY_MS),
+    };
+  }
 
   // ───────────────────────────────────────────────────────────────────────
   // 2) USERS
@@ -1124,7 +1188,12 @@ async function main() {
   // NB : la hiérarchie coordinateur/enseignant (User.supervisorId en V1)
   // n'existe plus dans le schéma V2 -> plus de bloc d'affectation ici.
 
-  const studentsByCourse: Record<'A' | 'B', SeededUser[]> = { A: [], B: [] };
+  const studentsByCourse: Record<CourseLabel, SeededUser[]> = {
+    Q1: [],
+    SESSION2: [],
+    MAIN: [],
+    STAGE: [],
+  };
   for (const { label } of courses) {
     for (let i = 0; i < STUDENTS_PER_COURSE; i++) {
       studentsByCourse[label].push(await createUser({ role: RoleType.STUDENT }));
@@ -1143,22 +1212,33 @@ async function main() {
 
   type CourseAssets = {
     tcId: number;
-    formToolId: number;
-    formId: number;
-    formDueDate: Date;
-    questions: { id: number; type: QuestionType }[];
+    courseStartDate: Date;
+    formToolId?: number;
+    formId?: number;
+    formDueDate?: Date;
+    questions?: { id: number; type: QuestionType }[];
     workToolId: number;
     workId: number;
     dueDate: Date;
-    soutenanceToolId: number; // Tool (type ACTIVITY) sous lequel on crée un créneau par soutenance
-    accessConditionValidatorId: number;
-    accessConditionId: number; // condition SUPERVISOR_VALIDATION, pour illustrer UserValidation
-    grids: Record<string, GridAssets>; // toutes les grilles réelles (REAL_GRIDS), indexées par leur "key"
+    withSoutenanceEvent: boolean; // false pour MAIN ("no event" -> pas d'Activity/Group de soutenance)
+    soutenanceToolId?: number; // Tool (type ACTIVITY) sous lequel on crée un créneau par soutenance
+    soutenanceDay: Date;
+    soutenanceWindowStart: Date;
+    soutenanceWindowEnd: Date;
+    accessConditionValidatorId?: number;
+    accessConditionId?: number; // condition SUPERVISOR_VALIDATION, pour illustrer UserValidation
+    grids: Record<string, GridAssets>; // toutes les grilles réelles (REAL_GRIDS) rattachées à cette promo, indexées par leur "key"
   };
 
-  const assetsByCourse: Record<'A' | 'B', CourseAssets> = {} as any;
+  const assetsByCourse: Record<CourseLabel, CourseAssets> = {} as any;
 
-  for (const { course, label, finished } of courses) {
+  // Structure "historique" (Cadrage du sujet / Suivi de projet / Remise du
+  // mémoire / Soutenance, formulaire + activités de suivi comprises) :
+  // utilisée pour les 3 promos qui ne sont pas la vitrine de démo.
+  async function buildGenericCourseStructure(
+    course: typeof courseQ1,
+    finished: boolean,
+  ): Promise<CourseAssets> {
     // Module 1 — Cadrage du sujet
     const moduleCadrage = await prisma.module.create({
       data: {
@@ -1210,15 +1290,16 @@ async function main() {
     });
 
     // Grilles réelles rattachées au module "Cadrage du sujet" (cf. REAL_GRIDS) :
-    // "cdc" (cahier des charges) et "validationSujet" (pertinence du sujet),
-    // toutes deux remplies par le rapporteur.
-    const cadrageGrids = await createGridsForModule('cadrage', moduleCadrage.id, false);
+    // "cdc" (cahier des charges), "validationSujet" (pertinence du sujet) et
+    // "suiviRapporteur" (assiduité/implication), toutes remplies par le
+    // rapporteur.
+    const cadrageGrids = await createGridsForKeys(CADRAGE_GRID_KEYS, moduleCadrage.id, false);
 
-    // Module 2 — Suivi de projet
-    const moduleSuivi = await prisma.module.create({
+    // Module 2 — Analyse et conception
+    const moduleAnalyse = await prisma.module.create({
       data: {
-        name: 'Suivi de projet',
-        description: 'Réunions régulières entre l’étudiant et son promoteur.',
+        name: 'Analyse et conception',
+        description: 'Analyse de la problématique et conception de la solution, avec suivi régulier du promoteur.',
         trainingCourseId: course.id,
       },
     });
@@ -1227,7 +1308,7 @@ async function main() {
         name: 'Réunions de suivi',
         description: 'Points d’avancement planifiés avec le promoteur.',
         type: ToolType.ACTIVITY,
-        moduleId: moduleSuivi.id,
+        moduleId: moduleAnalyse.id,
       },
     });
     for (let i = 0; i < 6; i++) {
@@ -1242,7 +1323,7 @@ async function main() {
               name: `Réunion de suivi #${i + 1}`,
               description: 'Point d’avancement planifié avec le promoteur.',
               type: ToolType.ACTIVITY,
-              moduleId: moduleSuivi.id,
+              moduleId: moduleAnalyse.id,
             },
           })).id : toolSuivi.id,
           startDateTime: start,
@@ -1252,15 +1333,15 @@ async function main() {
       });
     }
 
-    // Grilles réelles rattachées au module "Suivi de projet" (cf. REAL_GRIDS) :
-    // "analyse" et "suiviRapporteur", toutes deux remplies par le rapporteur.
-    const suiviGrids = await createGridsForModule('suivi', moduleSuivi.id, false);
+    // Grille réelle rattachée au module "Analyse et conception" (cf. REAL_GRIDS) :
+    // "analyse", remplie par le rapporteur.
+    const analyseGrids = await createGridsForKeys(ANALYSE_GRID_KEYS, moduleAnalyse.id, false);
 
-    // Module 3 — Remise du mémoire
-    const moduleRemise = await prisma.module.create({
+    // Module 3 — Rapport de TFE
+    const moduleRapport = await prisma.module.create({
       data: {
-        name: 'Remise du mémoire',
-        description: 'Dépôt du document final avant la soutenance.',
+        name: 'Rapport de TFE',
+        description: 'Dépôt du rapport final et évaluation de la réalisation pratique et du rapport écrit.',
         trainingCourseId: course.id,
       },
     });
@@ -1269,16 +1350,28 @@ async function main() {
         name: 'Dépôt du mémoire final',
         description: 'Fichier PDF du mémoire complet.',
         type: ToolType.WORK,
-        moduleId: moduleRemise.id,
+        moduleId: moduleRapport.id,
       },
     });
-    const dueDate = finished ? new Date('2025-06-15') : new Date('2026-09-15');
+    const dueDate = finished ? new Date(course.endDate!.getTime() - 15 * DAY_MS) : new Date(course.endDate!.getTime() - 15 * DAY_MS);
     const work = await prisma.work.create({ data: { id: toolWork.id, maxAttempts: 2, dueDate } });
 
-    // Module 4 — Soutenance
-    const moduleSoutenance = await prisma.module.create({
+    // Grilles réelles rattachées au module "Rapport de TFE" (cf. REAL_GRIDS) :
+    // "rapportFinal" et "realisationPratique", toutes deux remplies par le
+    // jury complet lors de la défense (cf. section 8).
+    const rapportGrids = await createGridsForKeys(RAPPORT_GRID_KEYS, moduleRapport.id, !finished);
+
+    // ToolLink "rapportFinal" (grille) <-> "Dépôt du mémoire final" (work) :
+    // permet à la page d'évaluation d'afficher le PDF du mémoire à côté de
+    // la grille lorsqu'il a été soumis (cf. assessment-grid.getGridContext).
+    await prisma.toolLink.create({
+      data: { sourceToolId: rapportGrids.rapportFinal.toolId, targetToolId: toolWork.id },
+    });
+
+    // Module 4 — Défense du TFE
+    const moduleDefense = await prisma.module.create({
       data: {
-        name: 'Soutenance',
+        name: 'Défense du TFE',
         description: 'Présentation orale et évaluation finale.',
         trainingCourseId: course.id,
       },
@@ -1291,20 +1384,20 @@ async function main() {
         name: 'Séance de soutenance',
         description: 'Créneau de présentation devant jury.',
         type: ToolType.ACTIVITY,
-        moduleId: moduleSoutenance.id,
+        moduleId: moduleDefense.id,
       },
     });
 
-    // Grilles réelles rattachées au module "Soutenance" (cf. REAL_GRIDS) :
-    // "oral", "realisationPratique" et "rapportFinal", toutes remplies par
-    // le jury complet lors de la défense (cf. section 8).
-    const soutenanceGrids = await createGridsForModule('soutenance', moduleSoutenance.id, !finished);
+    // Grille réelle rattachée au module "Défense du TFE" (cf. REAL_GRIDS) :
+    // "oral", remplie par le jury complet lors de la défense (cf. section 8).
+    const defenseGrids = await createGridsForKeys(DEFENSE_GRID_KEYS, moduleDefense.id, !finished);
 
-    // Condition d'accès au module Soutenance (mémoire déposé + date passée +
-    // validation par un enseignant désigné -> illustre les 3 méthodes de
-    // condition non liées à une date pure, et le modèle UserValidation).
+    // Condition d'accès au module Défense du TFE (mémoire déposé + date
+    // passée + validation par un enseignant désigné -> illustre les 3
+    // méthodes de condition non liées à une date pure, et le modèle
+    // UserValidation).
     const cgAccess = await prisma.conditionsGroup.create({
-      data: { operator: ConditionOperator.AND, moduleId: moduleSoutenance.id },
+      data: { operator: ConditionOperator.AND, moduleId: moduleDefense.id },
     });
     const csgAccess = await prisma.conditionsSubgroup.create({
       data: { operator: ConditionOperator.AND, conditionsGroupId: cgAccess.id },
@@ -1324,8 +1417,11 @@ async function main() {
       },
     });
 
-    assetsByCourse[label] = {
+    const { day, start, end } = soutenanceWindow(course, finished);
+
+    return {
       tcId: course.id,
+      courseStartDate: course.startDate!,
       formToolId: toolForm.id,
       formId: form.id,
       formDueDate,
@@ -1339,12 +1435,120 @@ async function main() {
       workToolId: toolWork.id,
       workId: work.id,
       dueDate,
+      withSoutenanceEvent: true,
       soutenanceToolId: toolSoutenanceTemplate.id,
+      soutenanceDay: day,
+      soutenanceWindowStart: start,
+      soutenanceWindowEnd: end,
       accessConditionValidatorId: validator.id,
       accessConditionId: supervisorValidationCondition.id,
-      grids: { ...cadrageGrids, ...suiviGrids, ...soutenanceGrids },
+      grids: { ...cadrageGrids, ...analyseGrids, ...rapportGrids, ...defenseGrids },
     };
   }
+
+  // Structure sur-mesure demandée pour la vitrine de démo : 4 modules, un
+  // seul outil "Work" (le rapport final), pas de formulaire ni d'activité —
+  // uniquement les grilles réelles réparties comme demandé.
+  async function buildMainCourseStructure(course: typeof courseMain, finished: boolean): Promise<CourseAssets> {
+    // Module 1 — Cadrage du sujet
+    const moduleCadrage = await prisma.module.create({
+      data: {
+        name: 'Cadrage du sujet',
+        description:
+          '## 🎯 Cadrage du sujet\n\n' +
+          "Cette étape pose les fondations de votre TFE :\n\n" +
+          '- Rédaction et validation du **cahier des charges**\n' +
+          '- Confirmation de la pertinence du **sujet** avec votre rapporteur\n' +
+          '- Suivi régulier de votre implication tout au long du quadrimestre\n\n' +
+          "> 💡 Un cahier des charges soigné évite bien des remises en question plus tard dans l'année.",
+        trainingCourseId: course.id,
+      },
+    });
+    const cadrageGrids = await createGridsForKeys(CADRAGE_GRID_KEYS, moduleCadrage.id, false);
+
+    // Module 2 — Analyse et conception
+    const moduleAnalyse = await prisma.module.create({
+      data: {
+        name: 'Analyse et conception',
+        description:
+          '## 🧠 Analyse et conception\n\n' +
+          'Place à la réflexion technique et fonctionnelle :\n\n' +
+          '- Analyse approfondie de la problématique\n' +
+          '- Choix technologiques justifiés\n' +
+          "- Conception de la solution (schémas, maquettes, UML...)\n\n" +
+          "Cette étape est évaluée par votre rapporteur en cours d'année.",
+        trainingCourseId: course.id,
+      },
+    });
+    const analyseGrids = await createGridsForKeys(ANALYSE_GRID_KEYS, moduleAnalyse.id, false);
+
+    // Module 3 — Rapport de TFE
+    const moduleRapport = await prisma.module.create({
+      data: {
+        name: 'Rapport de TFE',
+        description:
+          '## 📄 Rapport de TFE\n\n' +
+          '- Dépôt du **rapport final** (PDF) avant l’échéance\n' +
+          '- Évaluation de la **réalisation pratique**\n' +
+          '- Évaluation du **rapport écrit** par le jury\n\n' +
+          '⚠️ Le rapport doit être déposé avant la date limite pour être recevable.',
+        trainingCourseId: course.id,
+      },
+    });
+    const toolWork = await prisma.tool.create({
+      data: {
+        name: 'Dépôt du rapport final',
+        description: 'Fichier PDF du rapport de TFE complet.',
+        type: ToolType.WORK,
+        moduleId: moduleRapport.id,
+      },
+    });
+    const dueDate = new Date('2026-09-01');
+    const work = await prisma.work.create({ data: { id: toolWork.id, maxAttempts: 2, dueDate } });
+    const rapportGrids = await createGridsForKeys(RAPPORT_GRID_KEYS, moduleRapport.id, !finished);
+    // ToolLink "rapportFinal" (grille) <-> "Dépôt du rapport final" (work) :
+    // permet à la page d'évaluation d'afficher le PDF du rapport à côté de
+    // la grille lorsqu'il a été soumis (cf. assessment-grid.getGridContext).
+    await prisma.toolLink.create({
+      data: { sourceToolId: rapportGrids.rapportFinal.toolId, targetToolId: toolWork.id },
+    });
+
+    // Module 4 — Défense du TFE
+    const moduleDefense = await prisma.module.create({
+      data: {
+        name: 'Défense du TFE',
+        description:
+          '## 🎤 Défense du TFE\n\n' +
+          "L'aboutissement de votre travail : la présentation orale devant jury.\n\n" +
+          '- Préparez un support clair et professionnel\n' +
+          '- Prévoyez une démonstration de votre réalisation pratique\n' +
+          '- Soyez prêt·e à répondre aux questions du jury\n\n' +
+          'Bonne chance ! 🍀',
+        trainingCourseId: course.id,
+      },
+    });
+    const defenseGrids = await createGridsForKeys(DEFENSE_GRID_KEYS, moduleDefense.id, !finished);
+
+    const { day, start, end } = soutenanceWindow(course, finished);
+
+    return {
+      tcId: course.id,
+      courseStartDate: course.startDate!,
+      workToolId: toolWork.id,
+      workId: work.id,
+      dueDate,
+      withSoutenanceEvent: false, // pas de formulaire ni d'activité pour cette promo
+      soutenanceDay: day,
+      soutenanceWindowStart: start,
+      soutenanceWindowEnd: end,
+      grids: { ...cadrageGrids, ...analyseGrids, ...rapportGrids, ...defenseGrids },
+    };
+  }
+
+  for (const { course, label, finished } of genericCourses) {
+    assetsByCourse[label] = await buildGenericCourseStructure(course, finished);
+  }
+  assetsByCourse[MAIN_LABEL] = await buildMainCourseStructure(courseMain, false);
 
   // ───────────────────────────────────────────────────────────────────────
   // 4) PROJECTS + MEMBERS
@@ -1367,7 +1571,7 @@ async function main() {
     members: { id: number }[];
     supervisor: SeededUser;
     status: ProjectStatus;
-    courseLabel: 'A' | 'B';
+    courseLabel: CourseLabel;
   };
 
   const allProjects: CreatedProject[] = [];
@@ -1410,11 +1614,13 @@ async function main() {
   // ───────────────────────────────────────────────────────────────────────
   // 5) FORM SUBMISSIONS + RESPONSES
   //    (plus de champ status : l'existence de la soumission suffit)
+  //    MAIN n'a pas de formulaire ("no form or event") -> on saute simplement.
   // ───────────────────────────────────────────────────────────────────────
   console.log('📝  Création des soumissions de formulaire (cadrage)...');
 
   for (const project of allProjects) {
     const assets = assetsByCourse[project.courseLabel];
+    if (!assets.formId || !assets.questions) continue;
     const submitter = project.members[0];
 
     const hasSubmittedForm = project.status !== 'EN_RETARD' || Math.random() < 0.5;
@@ -1439,61 +1645,31 @@ async function main() {
       }
       await prisma.response.create({ data: { value, questionId: q.id, submissionId: submission.id } });
     }
-
-    // Évaluation des grilles "Cadrage du sujet" (cahier des charges +
-    // pertinence du sujet) par le rapporteur (le promoteur du projet, seul
-    // évaluateur sur ces grilles — cf. "Etudiant / Rapporteur" en en-tête
-    // des PDF, contrairement aux grilles de soutenance qui sont évaluées
-    // par tout le jury, cf. section 8).
-    const evalDate = randomDateBetween(assets.formDueDate, new Date(assets.formDueDate.getTime() + 14 * 24 * 60 * 60 * 1000));
-    for (const gridKey of CADRAGE_GRID_KEYS) {
-      const grid = assets.grids[gridKey];
-      for (const crit of grid.criteria) {
-        const bounds = cumulativeBounds(crit.cells);
-        const order = pickConsensusOrder(crit.cells.length);
-        const note = noteForCellIndex(bounds, order);
-        await prisma.criteriaAssessment.create({
-          data: {
-            date: evalDate,
-            commentFeedback: Math.random() < 0.6 ? faker.lorem.sentence() : null,
-            note,
-            criteriaId: crit.id,
-            teacherId: project.supervisor.id,
-            projectId: project.id,
-          },
-        });
-      }
-
-      if (Math.random() < 0.5) {
-        await prisma.gridFeedback.create({
-          data: {
-            date: evalDate,
-            comment: faker.lorem.paragraph(),
-            status: pick(GRID_FEEDBACK_STATUSES),
-            projectId: project.id,
-            gridId: grid.gridId,
-          },
-        });
-      }
-    }
   }
 
   // ───────────────────────────────────────────────────────────────────────
-  // 5bis) ÉVALUATIONS "SUIVI DE PROJET" (analyse + suivi rapporteur)
-  //    Comme le "Cadrage", ces grilles sont remplies par le seul rapporteur,
-  //    mais plus tard dans l'année (pas de date de remise associée, donc on
-  //    étale l'évaluation entre la fin du cadrage et la remise du mémoire).
+  // 5bis) ÉVALUATIONS "RAPPORTEUR" (toutes les grilles évaluées par le seul
+  //    rapporteur — cahier des charges, validation du sujet, analyse, suivi
+  //    rapporteur — quel que soit le module auquel elles sont rattachées
+  //    pour la promo courante). Étalées entre le cadrage et la remise du
+  //    rapport/mémoire.
   // ───────────────────────────────────────────────────────────────────────
-  console.log('🔎  Création des évaluations de suivi (analyse, suivi rapporteur)...');
+  console.log('🔎  Création des évaluations "rapporteur" (cadrage, analyse, suivi)...');
 
   for (const project of allProjects) {
     const assets = assetsByCourse[project.courseLabel];
-    const suiviWindowStart = new Date(assets.formDueDate.getTime() + 14 * 24 * 60 * 60 * 1000);
-    const suiviWindowEnd = new Date(Math.min(assets.dueDate.getTime(), Date.now()));
-    const evalDate = suiviWindowEnd > suiviWindowStart ? randomDateBetween(suiviWindowStart, suiviWindowEnd) : suiviWindowStart;
+    const rapporteurGrids = Object.values(assets.grids).filter((g) => g.evaluator === 'rapporteur');
+    if (rapporteurGrids.length === 0) continue;
+    if (project.status === 'EN_RETARD' && Math.random() < 0.5) continue;
 
-    for (const gridKey of SUIVI_GRID_KEYS) {
-      const grid = assets.grids[gridKey];
+    const windowStart = assets.formDueDate
+      ? new Date(assets.formDueDate.getTime() + 14 * DAY_MS)
+      : new Date(assets.courseStartDate.getTime() + 45 * DAY_MS);
+    const windowEndRaw = Math.min(assets.dueDate.getTime(), Date.now());
+    const windowEnd = new Date(Math.max(windowEndRaw, windowStart.getTime() + DAY_MS));
+
+    for (const grid of rapporteurGrids) {
+      const evalDate = randomDateBetween(windowStart, windowEnd);
       for (const crit of grid.criteria) {
         const bounds = cumulativeBounds(crit.cells);
         const order = pickConsensusOrder(crit.cells.length);
@@ -1552,6 +1728,7 @@ async function main() {
 
   for (const { label } of courses) {
     const assets = assetsByCourse[label];
+    if (!assets.accessConditionValidatorId || !assets.accessConditionId) continue; // MAIN n'a pas cette condition
     if (Math.random() < 0.8) {
       await prisma.userValidation.create({
         data: { userId: assets.accessConditionValidatorId, conditionId: assets.accessConditionId },
@@ -1582,8 +1759,10 @@ async function main() {
   }
 
   // ───────────────────────────────────────────────────────────────────────
-  // 8) SOUTENANCES : Activity + Group + jury (UserGroup / ProjectMember) +
-  //    ÉVALUATIONS (CriteriaAssessment) + GridFeedback
+  // 8) SOUTENANCES : jury (ProjectMember) + ÉVALUATIONS (CriteriaAssessment)
+  //    + GridFeedback, avec Activity/Group (créneau + salle) en plus pour
+  //    les promos "génériques" — MAIN n'a pas d'Activity ("no event") mais a
+  //    bien un jury et des évaluations sur ses grilles de type "jury".
   // ───────────────────────────────────────────────────────────────────────
   console.log('🏆  Planification des soutenances et création des évaluations...');
 
@@ -1592,26 +1771,6 @@ async function main() {
   for (const project of allProjects) {
     if (project.status !== 'TERMINE') continue;
     const assets = assetsByCourse[project.courseLabel];
-    const course = project.courseLabel === 'A' ? courseA : courseB;
-    const soutenanceDay = project.courseLabel === 'A' ? new Date('2025-06-20') : new Date('2026-09-20');
-
-    // Créneau de soutenance dédié à ce projet (Activity, sous-type de Tool)
-    const start = new Date(soutenanceDay);
-    start.setMinutes(start.getMinutes() + soutenanceSlot * 30);
-    const end = new Date(start);
-    end.setMinutes(end.getMinutes() + 25);
-    soutenanceSlot++;
-
-    const toolSlot = await prisma.tool.create({
-      data: {
-        name: `Soutenance — ${project.title.slice(0, 40)}`,
-        type: ToolType.ACTIVITY,
-        moduleId: (await prisma.tool.findUniqueOrThrow({ where: { id: assets.soutenanceToolId } })).moduleId,
-      },
-    });
-    const activity = await prisma.activity.create({
-      data: { id: toolSlot.id, startDateTime: start, endDateTime: end, location: 'Auditoire A1' },
-    });
 
     // Jury de 2 à 3 enseignants (le promoteur + 1-2 co-évaluateurs), avec
     // sous-rôles distincts pour illustrer intervenant_projet.sous_role.
@@ -1625,32 +1784,53 @@ async function main() {
     }
     const jury = [project.supervisor, ...peers];
 
-    // Group rattaché obligatoirement à cette Activity (eventId NOT NULL)
-    const group = await prisma.group.create({
-      data: {
-        name: `${DEMO_PREFIX}Jury — ${project.title.slice(0, 40)}`,
-        startDateTime: start,
-        endDateTime: end,
-        location: 'Auditoire A1',
-        eventId: activity.id,
-      },
-    });
-    for (const member of jury) {
-      await prisma.userGroup.create({ data: { userId: member.id, groupId: group.id } });
+    if (assets.withSoutenanceEvent && assets.soutenanceToolId) {
+      // Créneau de soutenance dédié à ce projet (Activity, sous-type de Tool)
+      const start = new Date(assets.soutenanceDay);
+      start.setMinutes(start.getMinutes() + soutenanceSlot * 30);
+      const end = new Date(start);
+      end.setMinutes(end.getMinutes() + 25);
+      soutenanceSlot++;
+
+      const toolSlot = await prisma.tool.create({
+        data: {
+          name: `Soutenance — ${project.title.slice(0, 40)}`,
+          type: ToolType.ACTIVITY,
+          moduleId: (await prisma.tool.findUniqueOrThrow({ where: { id: assets.soutenanceToolId } })).moduleId,
+        },
+      });
+      const activity = await prisma.activity.create({
+        data: { id: toolSlot.id, startDateTime: start, endDateTime: end, location: 'Auditoire A1' },
+      });
+
+      // Group rattaché obligatoirement à cette Activity (eventId NOT NULL)
+      const group = await prisma.group.create({
+        data: {
+          name: `${DEMO_PREFIX}Jury — ${project.title.slice(0, 40)}`,
+          startDateTime: start,
+          endDateTime: end,
+          location: 'Auditoire A1',
+          eventId: activity.id,
+        },
+      });
+      for (const member of jury) {
+        await prisma.userGroup.create({ data: { userId: member.id, groupId: group.id } });
+      }
+      await prisma.projectGroup.create({ data: { groupId: group.id, projectId: project.id } });
     }
-    await prisma.projectGroup.create({ data: { groupId: group.id, projectId: project.id } });
 
     // Évaluation par critère, au niveau du projet (plus par étudiant), pour
-    // chacune des 3 grilles réelles de soutenance (oral, réalisation
-    // pratique, rapport final) : tout le jury note chaque critère.
-    for (const gridKey of SOUTENANCE_GRID_KEYS) {
-      const grid = assets.grids[gridKey];
+    // chacune des grilles de type "jury" rattachées à cette promo (oral,
+    // réalisation pratique, rapport final — quel que soit leur module) :
+    // tout le jury note chaque critère.
+    const juryGrids = Object.values(assets.grids).filter((g) => g.evaluator === 'jury');
+    for (const grid of juryGrids) {
       for (const crit of grid.criteria) {
         const bounds = cumulativeBounds(crit.cells);
         // "consensus" de base pour ce critère (générique quel que soit le
         // nombre de niveaux du critère - certains n'en ont que 2, d'autres 4).
         const baseOrder = pickConsensusOrder(crit.cells.length);
-        const soutenanceEvalDate = randomDateBetween(new Date('2025-06-15'), new Date('2025-06-30'));
+        const soutenanceEvalDate = randomDateBetween(assets.soutenanceWindowStart, assets.soutenanceWindowEnd);
 
         // Fil de discussion interne du jury sur ce critère (jamais visible
         // étudiant), typiquement échangé juste avant que chacun ne note.
@@ -1690,7 +1870,10 @@ async function main() {
       if (Math.random() < 0.6) {
         await prisma.gridFeedback.create({
           data: {
-            date: randomDateBetween(new Date('2025-06-15'), new Date('2025-07-05')),
+            date: randomDateBetween(
+              assets.soutenanceWindowStart,
+              new Date(assets.soutenanceWindowEnd.getTime() + 5 * DAY_MS),
+            ),
             comment: faker.lorem.paragraph(),
             status: pick(GRID_FEEDBACK_STATUSES),
             projectId: project.id,
@@ -1721,7 +1904,7 @@ async function main() {
   // ───────────────────────────────────────────────────────────────────────
   console.log('🔔  Création des notifications...');
 
-  const allDemoUsers = [...coordinators, ...teachers, ...studentsByCourse.A, ...studentsByCourse.B];
+  const allDemoUsers = [...coordinators, ...teachers, ...Object.values(studentsByCourse).flat()];
   const notifTemplates: { title: string; description: string; importance: Importance }[] = [
     { title: 'Rappel de dépôt', description: 'Le dépôt du mémoire final approche à grands pas.', importance: Importance.HIGH },
     { title: 'Réunion planifiée', description: 'Une nouvelle réunion de suivi a été ajoutée à votre agenda.', importance: Importance.LOW },
@@ -1762,10 +1945,10 @@ async function main() {
   // ───────────────────────────────────────────────────────────────────────
   console.log('⭐  Création des préférences de superviseur...');
 
-  const courseBStudents = studentsByCourse.B;
-  for (const student of pickMany(courseBStudents, 25)) {
+  const mainStudents = studentsByCourse[MAIN_LABEL];
+  for (const student of pickMany(mainStudents, Math.min(25, mainStudents.length))) {
     const preferredTeachers = pickMany(teachers, 2);
-    const randomProject = pick(allProjects.filter((p) => p.courseLabel === 'B'));
+    const randomProject = pick(allProjects.filter((p) => p.courseLabel === MAIN_LABEL));
     for (const [order, teacher] of preferredTeachers.entries()) {
       await prisma.userSupervisorPreference
         .create({
@@ -1781,8 +1964,8 @@ async function main() {
   // RÉSUMÉ
   // ───────────────────────────────────────────────────────────────────────
   console.log('\n✅  Seed de démo terminé.\n');
-  console.log(`   Promotions       : 2 (${courseA.name}, ${courseB.name})`);
-  console.log(`   Étudiants        : ${studentsByCourse.A.length + studentsByCourse.B.length}`);
+  console.log(`   Promotions       : ${courses.length} (${courses.map((c) => c.course.name).join(', ')})`);
+  console.log(`   Étudiants        : ${Object.values(studentsByCourse).flat().length}`);
   console.log(`   Enseignants      : ${teachers.length}`);
   console.log(`   Coordinateurs    : ${coordinators.length}`);
   console.log(`   Externes         : ${externals.length}`);

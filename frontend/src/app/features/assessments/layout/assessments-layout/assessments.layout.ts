@@ -6,11 +6,20 @@ import { EvaluationsVisibilityService } from '../../services/evaluations-visibil
 import { ProjectWithGridsModel, GridSummaryModel } from '../../../projects/models/project-with-grids.model';
 import { DropdownComponent } from '../../../components/dropdown/dropdown.component';
 import { BackButtonComponent } from '../../../components/back-button/back-button.component';
+import { PdfViewerComponent } from '../../components/pdf-viewer/pdf-viewer.component';
+import { GridContextModel, GridFeedbackStatus } from '../../models/grid-context.model';
+
+const STATUS_LABELS: Record<GridFeedbackStatus, string> = {
+  PENDING: 'En attente',
+  CORRECTION: 'En correction',
+  PUBLISHED: 'Publiée',
+  SEEN: 'Vue par l\'étudiant',
+};
 
 @Component({
   selector: 'app-assessments-layout',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, DropdownComponent, BackButtonComponent],
+  imports: [RouterOutlet, CommonModule, DropdownComponent, BackButtonComponent, PdfViewerComponent],
   templateUrl: './assessments.layout.html',
   styleUrls: ['./assessments.layout.scss'],
 })
@@ -19,6 +28,10 @@ export class AssessmentsLayoutComponent implements OnInit {
   selectedProject?: ProjectWithGridsModel;
   selectedGrid?: GridSummaryModel;
   scope: 'mine' | 'all' = 'mine';
+
+  gridContext?: GridContextModel;
+  loadingGridContext = false;
+  showPdfViewer = false;
 
   constructor(
     private assessmentGridService: AssessmentGridService,
@@ -52,6 +65,8 @@ export class AssessmentsLayoutComponent implements OnInit {
       ) {
         this.navigateTo(this.selectedProject.id, this.selectedGrid.id, true);
       }
+
+      this.loadGridContext();
     });
   }
 
@@ -62,6 +77,8 @@ export class AssessmentsLayoutComponent implements OnInit {
     if (this.selectedGrid) {
       this.navigateTo(project.id, this.selectedGrid.id);
     }
+
+    this.loadGridContext();
   }
 
   selectGrid(grid: GridSummaryModel): void {
@@ -70,6 +87,39 @@ export class AssessmentsLayoutComponent implements OnInit {
     if (this.selectedProject) {
       this.navigateTo(this.selectedProject.id, grid.id);
     }
+
+    this.loadGridContext();
+  }
+
+  private loadGridContext(): void {
+    const projectId = this.selectedProject?.id;
+    const gridId = this.selectedGrid?.id;
+
+    this.showPdfViewer = false;
+    this.gridContext = undefined;
+
+    if (projectId === undefined || gridId === undefined) return;
+
+    this.loadingGridContext = true;
+    this.assessmentGridService.getGridContext(gridId, projectId).subscribe({
+      next: (context) => {
+        this.gridContext = context;
+        this.loadingGridContext = false;
+      },
+      error: (err) => {
+        console.error('Erreur récupération du contexte de la grille:', err);
+        this.loadingGridContext = false;
+      },
+    });
+  }
+
+  togglePdfViewer(): void {
+    if (!this.gridContext?.linkedSubmission) return;
+    this.showPdfViewer = !this.showPdfViewer;
+  }
+
+  statusLabel(status: GridFeedbackStatus): string {
+    return STATUS_LABELS[status];
   }
 
   private navigateTo(projectId: number, gridId: number, replaceUrl = false): void {
