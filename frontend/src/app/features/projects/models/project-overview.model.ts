@@ -15,6 +15,8 @@ export interface ProjectOverviewToolModel {
   submission?: ProjectOverviewSubmissionModel | null;
 
   corrected?: boolean;
+
+  linkedToolId?: number | null;
 }
 
 export interface ProjectOverviewModuleModel {

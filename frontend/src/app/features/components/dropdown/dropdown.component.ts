@@ -9,7 +9,7 @@ import { CommonModule } from '@angular/common';
   styleUrl: './dropdown.component.scss',
 })
 export class DropdownComponent {
-  @Input() align: 'left' | 'center' = 'left';
+  @Input() align: 'left' | 'center' | 'right' = 'left';
 
   open = false;
 

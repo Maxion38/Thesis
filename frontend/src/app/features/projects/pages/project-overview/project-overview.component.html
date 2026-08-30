@@ -32,43 +32,29 @@
         </div>
 
         <div class="cards-grid" *ngIf="module.tools.length > 0">
-          <div
-            *ngFor="let tool of module.tools"
-            class="tool-card"
-            [class.tool-card--assessment]="tool.type === 'ASSESSMENT'"
-            [class.tool-card--missing]="tool.type === 'WORK' && !tool.submission"
-            (click)="tool.type === 'ASSESSMENT' ? openAssessment(tool) : null"
-          >
-            <div class="tool-card__icon">
-              <span class="material-symbols-outlined">{{ tool.type === 'ASSESSMENT' ? 'box_edit' : 'upload_file' }}</span>
+          <ng-container *ngFor="let item of getModuleItems(module)">
+
+            <ng-container
+              *ngIf="item.kind === 'single'"
+              [ngTemplateOutlet]="cardTpl"
+              [ngTemplateOutletContext]="{ tool: item.tool }"
+            ></ng-container>
+
+            <div class="tool-pair" *ngIf="item.kind === 'pair'">
+              <ng-container [ngTemplateOutlet]="cardTpl" [ngTemplateOutletContext]="{ tool: item.primary }"></ng-container>
+
+              <button
+                class="tool-pair__split-btn"
+                title="Ouvrir la vue partagée (grille + remise)"
+                (click)="openSplitScreen(item.primary, $event)"
+              >
+                <span class="material-symbols-outlined">splitscreen</span>
+              </button>
+
+              <ng-container [ngTemplateOutlet]="cardTpl" [ngTemplateOutletContext]="{ tool: item.secondary }"></ng-container>
             </div>
 
-            <div class="tool-card__infos">
-              <span class="tool-card__name" [title]="tool.name">{{ tool.name }}</span>
-
-              <ng-container *ngIf="tool.type === 'ASSESSMENT'">
-                <span class="tool-card__status" [class.tool-card__status--ok]="tool.corrected">
-                  {{ tool.corrected ? 'Corrigé' : 'Non corrigé' }}
-                </span>
-              </ng-container>
-
-              <ng-container *ngIf="tool.type === 'WORK'">
-                <span class="tool-card__status" *ngIf="!tool.submission">Non soumis</span>
-                <span class="tool-card__status tool-card__status--ok" *ngIf="tool.submission">
-                  Soumis le {{ tool.submission.submittedAt | date: 'd MMMM yyyy' : '' : 'fr' }}
-                </span>
-              </ng-container>
-            </div>
-
-            <button
-              *ngIf="tool.type === 'WORK' && tool.submission"
-              class="tool-card__download"
-              title="Télécharger la remise"
-              (click)="downloadSubmission(tool); $event.stopPropagation()"
-            >
-              <span class="material-symbols-outlined">download</span>
-            </button>
-          </div>
+          </ng-container>
         </div>
       </div>
 
@@ -83,5 +69,44 @@
     </ng-template>
 
   </div>
+
+  <ng-template #cardTpl let-tool="tool">
+    <div
+      class="tool-card"
+      [class.tool-card--assessment]="tool.type === 'ASSESSMENT'"
+      [class.tool-card--missing]="tool.type === 'WORK' && !tool.submission"
+      (click)="tool.type === 'ASSESSMENT' ? openAssessment(tool) : null"
+    >
+      <div class="tool-card__icon">
+        <span class="material-symbols-outlined">{{ tool.type === 'ASSESSMENT' ? 'box_edit' : 'upload_file' }}</span>
+      </div>
+
+      <div class="tool-card__infos">
+        <span class="tool-card__name" [title]="tool.name">{{ tool.name }}</span>
+
+        <ng-container *ngIf="tool.type === 'ASSESSMENT'">
+          <span class="tool-card__status" [class.tool-card__status--ok]="tool.corrected">
+            {{ tool.corrected ? 'Corrigé' : 'Non corrigé' }}
+          </span>
+        </ng-container>
+
+        <ng-container *ngIf="tool.type === 'WORK'">
+          <span class="tool-card__status" *ngIf="!tool.submission">Non soumis</span>
+          <span class="tool-card__status tool-card__status--ok" *ngIf="tool.submission">
+            Soumis le {{ tool.submission.submittedAt | date: 'd MMMM yyyy' : '' : 'fr' }}
+          </span>
+        </ng-container>
+      </div>
+
+      <button
+        *ngIf="tool.type === 'WORK' && tool.submission"
+        class="tool-card__download"
+        title="Télécharger la remise"
+        (click)="downloadSubmission(tool); $event.stopPropagation()"
+      >
+        <span class="material-symbols-outlined">download</span>
+      </button>
+    </div>
+  </ng-template>
 
 </div>

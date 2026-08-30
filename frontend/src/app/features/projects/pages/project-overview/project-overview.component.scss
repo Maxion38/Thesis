@@ -186,6 +186,41 @@
     }
 }
 
+// A linked WORK/ASSESSMENT pair: two cards side by side spanning the
+// full grid row, with the split-screen button sitting between them.
+.tool-pair {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+
+    .tool-card {
+        flex: 1;
+        min-width: 0;
+    }
+
+    &__split-btn {
+        flex-shrink: 0;
+        align-self: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background-color: #2f7dd1;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.15);
+        transition: background-color 0.2s;
+
+        &:hover {
+            background-color: #2569b8;
+        }
+    }
+}
+
 .empty-state, .loading-state {
     color: #888;
     padding: 40px 0;

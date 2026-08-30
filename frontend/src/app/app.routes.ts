@@ -19,7 +19,6 @@ import { AllUsersComponent } from './features/users/pages/all-users/all-users.co
 import { InvitationsComponent } from './features/invitations/pages/invitations/invitations.component';
 
 import { SupervisorsComponent } from './features/pages/supervisors/supervisors.component';
-import { JuriesComponent } from './features/pages/juries/juries.component';
 import { NotificationsComponent } from './features/pages/notifications/notifications.component';
 
 import { RegisterBootstrapComponent } from './features/auth/pages/register-bootstrap/register.component';

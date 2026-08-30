@@ -1596,12 +1596,12 @@ async function main() {
           title,
           confidential: Math.random() < 0.1,
           trainingCourseId: course.id,
-          // Le "promoteur" est un ProjectMember comme les autres, sans
-          // sous-rôle (les sous-rôles SUPERVISOR/PRESIDENT/READER ne
-          // s'appliquent qu'aux membres du jury de soutenance).
+          // Le "promoteur" est un ProjectMember marqué du sous-rôle
+          // SUPERVISOR (distinct des sous-rôles PRESIDENT/READER, réservés
+          // aux autres membres du jury de soutenance).
           members: {
             create: [
-              { userId: supervisor.id },
+              { userId: supervisor.id, subRoleId: subRoleId[SubRoleType.SUPERVISOR] },
               ...members.map((m) => ({ userId: m.id })),
             ],
           },
@@ -1772,11 +1772,12 @@ async function main() {
     if (project.status !== 'TERMINE') continue;
     const assets = assetsByCourse[project.courseLabel];
 
-    // Jury de 2 à 3 enseignants (le promoteur + 1-2 co-évaluateurs), avec
-    // sous-rôles distincts pour illustrer intervenant_projet.sous_role.
+    // Jury de 2 à 3 enseignants (le promoteur, déjà SUPERVISOR, + 1-2
+    // co-évaluateurs), avec sous-rôles distincts pour illustrer
+    // intervenant_projet.sous_role.
     const juryPeers = teachers.filter((t) => t.id !== project.supervisor.id);
     const peers = pickMany(juryPeers, randomInt(1, 2));
-    const jurySubRoles: SubRoleType[] = [SubRoleType.SUPERVISOR, SubRoleType.PRESIDENT, SubRoleType.READER];
+    const jurySubRoles: SubRoleType[] = [SubRoleType.PRESIDENT, SubRoleType.READER];
     for (const [i, peer] of peers.entries()) {
       await prisma.projectMember.create({
         data: { userId: peer.id, projectId: project.id, subRoleId: subRoleId[jurySubRoles[i % jurySubRoles.length]] },

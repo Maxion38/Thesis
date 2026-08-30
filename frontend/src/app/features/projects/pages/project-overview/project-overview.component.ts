@@ -13,6 +13,10 @@ import { WorkService } from '../../../work-tool/services/work.service';
 
 export type ProjectsScope = 'mine' | 'all';
 
+export type ModuleDisplayItem =
+  | { kind: 'single'; tool: ProjectOverviewToolModel }
+  | { kind: 'pair'; primary: ProjectOverviewToolModel; secondary: ProjectOverviewToolModel };
+
 @Component({
   selector: 'app-project-overview',
   standalone: true,
@@ -75,6 +79,47 @@ export class ProjectOverviewComponent implements OnInit {
     this.router.navigate(['/teacher', 'projects', this.selectedProject.id, 'assessments', tool.id], {
       queryParams: { scope: this.scope },
     });
+  }
+
+  // Jumps straight to the assessment's split-screen (grid + linked PDF
+  // submission side by side), from either card of a linked pair.
+  openSplitScreen(tool: ProjectOverviewToolModel, event: Event): void {
+    event.stopPropagation();
+    if (!this.selectedProject) return;
+
+    const assessmentToolId = tool.type === 'ASSESSMENT' ? tool.id : tool.linkedToolId;
+    if (!assessmentToolId) return;
+
+    this.router.navigate(['/teacher', 'projects', this.selectedProject.id, 'assessments', assessmentToolId], {
+      queryParams: { scope: this.scope },
+    });
+  }
+
+  // Groups a module's tools so that a linked WORK/ASSESSMENT pair renders
+  // as adjacent cards with the split-screen button between them.
+  getModuleItems(module: ProjectOverviewModuleModel): ModuleDisplayItem[] {
+    const items: ModuleDisplayItem[] = [];
+    const paired = new Set<number>();
+
+    for (const tool of module.tools) {
+      if (paired.has(tool.id)) continue;
+
+      const linked = tool.linkedToolId
+        ? module.tools.find(candidate => candidate.id === tool.linkedToolId)
+        : undefined;
+
+      if (linked) {
+        paired.add(tool.id);
+        paired.add(linked.id);
+        const [primary, secondary] = tool.type === 'WORK' ? [tool, linked] : [linked, tool];
+        items.push({ kind: 'pair', primary, secondary });
+        continue;
+      }
+
+      items.push({ kind: 'single', tool });
+    }
+
+    return items;
   }
 
   downloadSubmission(tool: ProjectOverviewToolModel): void {

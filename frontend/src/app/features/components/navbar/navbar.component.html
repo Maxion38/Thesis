@@ -28,7 +28,12 @@
     </app-dropdown>
   </div>
   <div class="navbar__div navbar__right">
-    <!-- this button should have a drop down to route to /profile or logout -->
-    <span class="navbar__profile" (click)="logout()">{{ initials }}</span> 
+    <app-dropdown align="right">
+      <span dropdownTrigger class="navbar__profile">{{ initials }}</span>
+      <ng-container dropdownPanel>
+        <div class="navbar__profile-name">{{ user?.firstname }} {{ user?.surname }}</div>
+        <div class="dropdown-item" (click)="logout()">Se déconnecter</div>
+      </ng-container>
+    </app-dropdown>
   </div>
 </nav>

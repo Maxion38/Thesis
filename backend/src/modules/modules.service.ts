@@ -152,6 +152,8 @@ export class ModulesService {
                 },
               },
             },
+            linksAsSource: { select: { targetToolId: true } },
+            linksAsTarget: { select: { sourceToolId: true } },
           },
         },
       },
@@ -161,6 +163,9 @@ export class ModulesService {
       id: module.id,
       name: module.name,
       tools: module.tools.map((tool) => {
+        const linkedToolId =
+          tool.linksAsSource[0]?.targetToolId ?? tool.linksAsTarget[0]?.sourceToolId ?? null;
+
         if (tool.type === ToolType.WORK) {
           const submission = tool.work?.submissions[0];
           return {
@@ -177,6 +182,7 @@ export class ModulesService {
                   submittedBySurname: submission.user.surname,
                 }
               : null,
+            linkedToolId,
           };
         }
 
@@ -185,6 +191,7 @@ export class ModulesService {
           name: tool.name,
           type: 'ASSESSMENT' as const,
           corrected: (tool.assessmentGrid?.feedbacks.length ?? 0) > 0,
+          linkedToolId,
         };
       }),
     }));

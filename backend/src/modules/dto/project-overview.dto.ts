@@ -17,6 +17,9 @@ export class ProjectOverviewToolDto {
 
   // ASSESSMENT only
   corrected?: boolean;
+
+  // Paired WORK <-> ASSESSMENT tool, via ToolLink, if any
+  linkedToolId?: number | null;
 }
 
 export class ProjectOverviewModuleDto {
