@@ -1,12 +1,13 @@
 <nav class="navbar">
   
   <div class="navbar__div navbar__left">
-    <!-- <button (click)="onClick()" class="navbar__btn" [class.navbar__btn--open]="open">
+    <button (click)="onClick()" class="navbar__btn" [class.navbar__btn--open]="open">
       <span class="material-symbols-outlined navbar__icon" [class.navbar__icon--open]="open">menu</span>  
-    </button> -->
+    </button>
     <span class="navbar__div navbar__app-name">Thesis</span>
   </div>
-  <div class="navbar__div navbar__center">
+
+  <div class="navbar__div navbar__right">
     <app-dropdown class="course-selector" align="center" *ngIf="showCourseSwitcher">
       <span dropdownTrigger class="course-selector__text">
         {{ selectedCourse?.name ?? 'Aucun parcours actif' }}
@@ -26,8 +27,24 @@
         </div>
       </ng-container>
     </app-dropdown>
-  </div>
-  <div class="navbar__div navbar__right">
+
+    <app-dropdown class="course-selector" align="center" *ngIf="showRoleSwitcher">
+      <span dropdownTrigger class="course-selector__text">
+        {{ roleLabel(role!) }}
+        <span class="material-symbols-outlined course-selector__chevron">expand_more</span>
+      </span>
+      <ng-container dropdownPanel>
+        <div
+          class="dropdown-item"
+          [class.dropdown-item--active]="switchRoleOption === role"
+          *ngFor="let switchRoleOption of switchableRoles"
+          (click)="switchRole(switchRoleOption)"
+        >
+          {{ roleLabel(switchRoleOption) }}
+        </div>
+      </ng-container>
+    </app-dropdown>
+
     <app-dropdown align="right">
       <span dropdownTrigger class="navbar__profile">{{ initials }}</span>
       <ng-container dropdownPanel>

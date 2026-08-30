@@ -14,14 +14,23 @@ export class RoleGuard implements CanActivate {
 
     const allowedRoles = route.data['roles'] as string[];
 
-    const userRole = this.authService.getFirstRole(); // TODO : handle multi role users
+    const userRoles = this.authService.getRoles();
 
-    if (!userRole) {
+    if (!userRoles.length) {
       return this.router.parseUrl('/auth/login');
     }
 
-    if (!allowedRoles.includes(userRole)) {
+    if (!allowedRoles.some(role => userRoles.includes(role))) {
       return this.router.parseUrl('/');
+    }
+
+    // La section est autorisée pour ce compte : elle devient le rôle actif,
+    // pour que le reste de l'UI (navbar, menu, pages) suive la navigation
+    // même si l'utilisateur a atterri ici via un lien direct plutôt que via
+    // le bouton de switch.
+    const matchedRole = allowedRoles.find(role => userRoles.includes(role));
+    if (matchedRole) {
+      this.authService.setActiveRole(matchedRole);
     }
 
     return true;

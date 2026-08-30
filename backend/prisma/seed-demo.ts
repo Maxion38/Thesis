@@ -1178,7 +1178,14 @@ async function main() {
 
   const coordinators: SeededUser[] = [];
   for (let i = 0; i < COORDINATORS_COUNT; i++) {
-    coordinators.push(await createUser({ role: RoleType.COORDINATOR }));
+    // Le premier coordinateur porte aussi le rôle TEACHER, pour illustrer/tester
+    // le switch de rôle coordinateur <-> enseignant côté frontend.
+    coordinators.push(
+      await createUser({
+        role: RoleType.COORDINATOR,
+        secondRole: i === 0 ? RoleType.TEACHER : undefined,
+      }),
+    );
   }
 
   const teachers: SeededUser[] = [];
@@ -1187,6 +1194,26 @@ async function main() {
   }
   // NB : la hiérarchie coordinateur/enseignant (User.supervisorId en V1)
   // n'existe plus dans le schéma V2 -> plus de bloc d'affectation ici.
+
+  // Compte "vitrine" de démo : coordinateur + enseignant, nom/email fixes
+  // (pas générés par faker) pour être facilement identifiable et utilisé
+  // pour piloter les démonstrations de l'application.
+  const testorAccount = await prisma.user.create({
+    data: {
+      firstname: 'Testor',
+      surname: 'Account',
+      email: `testor.account${DEMO_EMAIL_DOMAIN}`,
+      passwordHash,
+      hoursQuota: randomInt(20, 60),
+      roles: {
+        create: [
+          { role: { connect: { id: roleId[RoleType.COORDINATOR] } } },
+          { role: { connect: { id: roleId[RoleType.TEACHER] } } },
+        ],
+      },
+    },
+  });
+  usedEmails.add(testorAccount.email);
 
   const studentsByCourse: Record<CourseLabel, SeededUser[]> = {
     Q1: [],
@@ -1612,6 +1639,72 @@ async function main() {
   }
 
   // ───────────────────────────────────────────────────────────────────────
+  // 4bis) COMPTE DÉMO "Testor Account" — participation à deux promotions
+  //    (dont la plus peuplée des promos ACTIVES), en devenant promoteur
+  //    (ProjectMember avec subRole SUPERVISOR) sur au moins 10 projets.
+  //    C'est ce sous-rôle que filtre la page "Mes projets" côté enseignant
+  //    (paramètre `rapporteur` de GET /assessment-grid/projects, cf.
+  //    AssessmentGridService) : le lot d'au moins 10 projets DOIT donc être
+  //    pris sur une promo active (finished: false), sans quoi la promo
+  //    n'apparaît plus dans le sélecteur de promo courant de la démo.
+  //    Placé juste après la création de allProjects et avant toute la suite
+  //    (évaluations, dépôts, soutenances...) pour que ces sections traitent
+  //    Testor Account comme le promoteur normal de ces projets.
+  // ───────────────────────────────────────────────────────────────────────
+  console.log('🧪  Rattachement du compte de démo "Testor Account"...');
+
+  // Toutes les promos ont le même nombre d'étudiants (STUDENTS_PER_COURSE),
+  // donc la "plus peuplée" est ici déterminée à égalité parmi les promos
+  // actives uniquement -> on départage en priorisant MAIN (la vitrine
+  // "sur-mesure" de la démo) si elle fait partie des ex-aequo, sinon la
+  // première promo active rencontrée, de façon stable et reproductible.
+  const courseLabelsOrder = Object.keys(studentsByCourse) as CourseLabel[];
+  const activeCourseLabels = courses
+    .filter((c) => !c.finished)
+    .map((c) => c.label)
+    .sort((a, b) => (a === MAIN_LABEL ? -1 : b === MAIN_LABEL ? 1 : 0));
+  if (activeCourseLabels.length === 0) {
+    throw new Error('Aucune promo active trouvée pour y rattacher le compte "Testor Account".');
+  }
+  let mostPopulatedActiveLabel: CourseLabel = activeCourseLabels[0];
+  for (const label of activeCourseLabels) {
+    if (studentsByCourse[label].length > studentsByCourse[mostPopulatedActiveLabel].length) {
+      mostPopulatedActiveLabel = label;
+    }
+  }
+  // Seconde promo : une autre promo active si possible (pour rester dans une
+  // promo consultable dans la démo), sinon n'importe quelle autre promo.
+  const secondCourseLabel: CourseLabel =
+    activeCourseLabels.find((l) => l !== mostPopulatedActiveLabel) ??
+    courseLabelsOrder.find((l) => l !== mostPopulatedActiveLabel)!;
+
+  // Remplace le promoteur d'un projet par Testor Account (clé composite
+  // ProjectMember = userId+projectId -> on supprime l'ancienne ligne avant
+  // de recréer la nouvelle) et met à jour la référence en mémoire pour que
+  // toutes les sections suivantes (évaluations, dépôts, jury...) l'utilisent.
+  async function makeTestorSupervisor(project: CreatedProject) {
+    await prisma.projectMember.deleteMany({
+      where: { userId: project.supervisor.id, projectId: project.id },
+    });
+    await prisma.projectMember.create({
+      data: { userId: testorAccount.id, projectId: project.id, subRoleId: subRoleId[SubRoleType.SUPERVISOR] },
+    });
+    project.supervisor = testorAccount;
+  }
+
+  const mostPopulatedProjects = allProjects.filter((p) => p.courseLabel === mostPopulatedActiveLabel);
+  const testorMainCount = Math.min(12, mostPopulatedProjects.length);
+  for (const project of takeRandom([...mostPopulatedProjects], testorMainCount)) {
+    await makeTestorSupervisor(project);
+  }
+
+  const secondCourseProjects = allProjects.filter((p) => p.courseLabel === secondCourseLabel);
+  const testorSecondCount = Math.min(2, secondCourseProjects.length);
+  for (const project of takeRandom([...secondCourseProjects], testorSecondCount)) {
+    await makeTestorSupervisor(project);
+  }
+
+  // ───────────────────────────────────────────────────────────────────────
   // 5) FORM SUBMISSIONS + RESPONSES
   //    (plus de champ status : l'existence de la soumission suffit)
   //    MAIN n'a pas de formulaire ("no form or event") -> on saute simplement.
@@ -1905,7 +1998,7 @@ async function main() {
   // ───────────────────────────────────────────────────────────────────────
   console.log('🔔  Création des notifications...');
 
-  const allDemoUsers = [...coordinators, ...teachers, ...Object.values(studentsByCourse).flat()];
+  const allDemoUsers = [...coordinators, ...teachers, testorAccount, ...Object.values(studentsByCourse).flat()];
   const notifTemplates: { title: string; description: string; importance: Importance }[] = [
     { title: 'Rappel de dépôt', description: 'Le dépôt du mémoire final approche à grands pas.', importance: Importance.HIGH },
     { title: 'Réunion planifiée', description: 'Une nouvelle réunion de suivi a été ajoutée à votre agenda.', importance: Importance.LOW },
@@ -1976,6 +2069,13 @@ async function main() {
   console.log(`     dont en retard : ${allProjects.filter((p) => p.status === 'EN_RETARD').length}`);
   console.log(`   Grilles réelles  : ${REAL_GRIDS.length} (${REAL_GRIDS.map((g) => g.key).join(', ')})`);
   console.log(`\n   Mot de passe pour tous les comptes de démo : ${DEMO_PASSWORD}\n`);
+  console.log(`   Compte démo "Testor Account" (coordinateur + enseignant) : ${testorAccount.email}`);
+  console.log(
+    `     - promoteur sur ${testorMainCount} projets de "${courses.find((c) => c.label === mostPopulatedActiveLabel)!.course.name}"`,
+  );
+  console.log(
+    `     - promoteur sur ${testorSecondCount} projets de "${courses.find((c) => c.label === secondCourseLabel)!.course.name}"`,
+  );
 }
 
 main()

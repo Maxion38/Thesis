@@ -13,6 +13,11 @@ export class AuthService {
   private apiUrl = `${environment.apiUrl}/auth`;;
 
   private user: any = null;
+  // Rôle sous lequel l'utilisateur navigue actuellement. Pour un compte à
+  // plusieurs rôles (ex: COORDINATOR + TEACHER), c'est ce champ - et non plus
+  // uniquement le premier rôle en DB - qui pilote la navbar/menu/gardes de
+  // route, pour que le bouton de switch change la vue sans reconnexion.
+  private activeRole: any = null;
 
   bootstrapStatus(): Observable<boolean> {
     return this.http.get<boolean>(`${this.apiUrl}/bootstrap-status`);
@@ -30,18 +35,30 @@ export class AuthService {
 
   setUser(user: any) {
     this.user = user;
+    this.activeRole = user?.roles?.[0] ?? null;
   }
 
   getUser() {
     return this.user;
   }
 
+  getRoles(): string[] {
+    return this.user?.roles ?? [];
+  }
+
   getFirstRole() {
-    return this.user?.roles[0];
+    return this.activeRole;
+  }
+
+  setActiveRole(role: string) {
+    if (this.user?.roles?.includes(role)) {
+      this.activeRole = role;
+    }
   }
 
   clearUser() {
     this.user = null;
+    this.activeRole = null;
   }
 
   loadUser(): Observable<any> {

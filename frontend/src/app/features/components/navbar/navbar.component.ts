@@ -9,6 +9,18 @@ import { UserModel } from '../../users/models/users.model';
 import { merge } from 'rxjs';
 import { DropdownComponent } from '../dropdown/dropdown.component';
 
+const ROLE_ROUTE: Partial<Record<RoleType, string>> = {
+  [RoleType.COORDINATOR]: '/coordinator',
+  [RoleType.TEACHER]: '/teacher',
+  [RoleType.STUDENT]: '/student',
+};
+
+const ROLE_LABEL: Partial<Record<RoleType, string>> = {
+  [RoleType.COORDINATOR]: 'Coordinateur',
+  [RoleType.TEACHER]: 'Enseignant',
+  [RoleType.STUDENT]: 'Étudiant',
+};
+
 @Component({
   selector: 'app-navbar',
   standalone: true,
@@ -23,6 +35,7 @@ export class NavbarComponent implements OnInit {
 
   user!: UserModel;
   role?: RoleType;
+  switchableRoles: RoleType[] = [];
 
   courses: TrainingCourseModel[] = [];
   selectedCourse: TrainingCourseModel | null = null;
@@ -36,6 +49,9 @@ export class NavbarComponent implements OnInit {
   ngOnInit(): void {
     this.user = this.authService.getUser();
     this.role = this.authService.getFirstRole();
+    this.switchableRoles = this.authService
+      .getRoles()
+      .filter((r): r is RoleType => !!ROLE_ROUTE[r as RoleType]) as RoleType[];
 
     if (this.showCourseSwitcher) {
       merge(
@@ -50,6 +66,24 @@ export class NavbarComponent implements OnInit {
 
   get showCourseSwitcher(): boolean {
     return this.role !== RoleType.COORDINATOR;
+  }
+
+  get showRoleSwitcher(): boolean {
+    return this.switchableRoles.length > 1;
+  }
+
+  roleLabel(role: RoleType): string {
+    return ROLE_LABEL[role] ?? role;
+  }
+
+  switchRole(role: RoleType): void {
+    if (role === this.role) {
+      return;
+    }
+    // Navigation client-side uniquement : le compte détient déjà les deux
+    // rôles côté JWT, RoleGuard bascule le rôle actif à l'arrivée sur la
+    // nouvelle section -> changement de layout instantané, sans déconnexion.
+    this.router.navigateByUrl(ROLE_ROUTE[role]!);
   }
 
   selectCourse(course: TrainingCourseModel): void {
