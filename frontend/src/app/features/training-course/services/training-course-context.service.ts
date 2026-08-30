@@ -16,7 +16,7 @@ export class TrainingCourseContextService {
 
   private courses: TrainingCourseModel[] = [];
   private selected: TrainingCourseModel | null = null;
-  private init$: Observable<TrainingCourseModel | null> | null = null;
+  private coursesLoaded$: Observable<TrainingCourseModel[]> | null = null;
 
   private changesSubject = new Subject<TrainingCourseModel | null>();
   readonly changes$ = this.changesSubject.asObservable();
@@ -28,20 +28,22 @@ export class TrainingCourseContextService {
       return of(null);
     }
 
-    if (!this.init$) {
-      this.init$ = this.trainingCoursesService.getMine().pipe(
+    if (!this.coursesLoaded$) {
+      this.coursesLoaded$ = this.trainingCoursesService.getMine().pipe(
         tap(courses => {
           this.courses = courses;
 
           const storedId = Number(localStorage.getItem(STORAGE_KEY));
           this.selected = courses.find(c => c.id === storedId) ?? courses[0] ?? null;
         }),
-        map(() => this.selected),
         shareReplay(1),
       );
     }
 
-    return this.init$;
+    // Map to `this.selected` on every subscription (not baked into the
+    // shared observable) so a freshly-mounted component sees the currently
+    // selected course, not whichever one was selected when courses first loaded.
+    return this.coursesLoaded$.pipe(map(() => this.selected));
   }
 
   getCourses(): TrainingCourseModel[] {
@@ -61,7 +63,7 @@ export class TrainingCourseContextService {
   reset(): void {
     this.courses = [];
     this.selected = null;
-    this.init$ = null;
+    this.coursesLoaded$ = null;
     localStorage.removeItem(STORAGE_KEY);
   }
 }
