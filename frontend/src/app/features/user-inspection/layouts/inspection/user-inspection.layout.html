@@ -1,28 +1,23 @@
 <div class="page">
 
   <div class="header">
+    <app-back-button class="header-left" [route]="backRoute"></app-back-button>
 
-    <app-back-button [route]=backRoute></app-back-button>
-    
-    <app-dropdown #userDropdown class="user-card" *ngIf="selectedUser">
-      <div dropdownTrigger class="user-card__profile">{{ getInitials(selectedUser) }}</div>
-      <div dropdownTrigger class="user-card__name">{{ selectedUser.firstname || '' }} {{ selectedUser.surname }}</div>
-      <span dropdownTrigger class="material-symbols-outlined user-card__dropdown">{{ userDropdown.open ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
-      <ng-container dropdownPanel>
-        <button
-          *ngFor="let user of users"
-          class="dropdown-item"
-          [class.dropdown-item--active]="user.id === selectedUser.id"
-          (click)="selectUser(user)">
-          {{ user.firstname }} {{ user.surname }}
-        </button>
-      </ng-container>
-    </app-dropdown>
-
-    <div class="header__tabbar-wrapper">
-      <app-tabbar class="header__tabbar" [tabs]="tabbarItems"></app-tabbar>
+    <div class="header-center">
+      <app-dropdown #userDropdown class="user-card" *ngIf="selectedUser">
+        <div dropdownTrigger class="user-card__name" [title]="getUserLabel(selectedUser)">{{ getUserLabel(selectedUser) }}</div>
+        <span dropdownTrigger class="material-symbols-outlined user-card__dropdown">{{ userDropdown.open ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
+        <ng-container dropdownPanel>
+          <button
+            *ngFor="let user of users"
+            class="dropdown-item"
+            [class.dropdown-item--active]="user.id === selectedUser.id"
+            (click)="selectUser(user)">
+            {{ getUserLabel(user) }}
+          </button>
+        </ng-container>
+      </app-dropdown>
     </div>
-
   </div>
 
   <div class="content">

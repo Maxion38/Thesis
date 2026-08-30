@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { TabbarComponent, Tabs } from '../../../components/tabbar/tabbar.component';
 import { AuthService } from '../../../auth/services/auth.service';
-import { RoleType } from '../../../entities/role.entity';
+import { RoleType, ROLE_BASE_ROUTE } from '../../../entities/role.entity';
 
 @Component({
   selector: 'app-users-layout',
@@ -27,13 +27,6 @@ export class UsersLayoutComponent implements OnInit {
   }
 
   buildTabs() {
-    const ROLE_BASE_ROUTE: Record<RoleType, string> = {
-      COORDINATOR: 'coordinator',
-      TEACHER: 'teacher',
-      STUDENT: 'student',
-      GUEST: 'guest',
-    };
-
     this.tabbarItems = [
       {
         title: 'Tous les utilisateurs',

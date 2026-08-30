@@ -38,7 +38,7 @@ import { StudentModulesComponent } from './features/modules/modules-student/page
 import { StudentModuleDescriptionComponent } from './features/modules/modules-student/pages/module/description/description.component';
 import { ModuleLayoutComponent } from './features/modules/layouts/module-layout/module.layout';
 import { UserInspectionComponent } from './features/user-inspection/layouts/inspection/user-inspection.layout';
-import { SubmissionComponent } from './features/work-tool/pages/submissions/submissions.component';
+import { UserProfileComponent } from './features/user-inspection/pages/profile/user-profile.component';
 import { AssessmentDetailComponent } from './features/assessments/pages/assessment/assessment-detail.component';
 import { AssessmentsLayoutComponent } from './features/assessments/layout/assessments-layout/assessments.layout';
 import { ProjectsLayoutComponent } from './features/projects/layouts/projects-layout/projects.layout';
@@ -130,15 +130,22 @@ export const routes: Routes = [
       // { path: 'training-courses/:trainingCourseId/modules/:moduleId/editor/description', component: ModuleDescriptionComponent},
       // { path: 'training-courses/:trainingCourseId/modules/:moduleId/editor/work/:tooId', component: WorkEditorComponent},
       // { path: 'training-courses/:trainingCourseId/modules/:moduleId/conditions', component: ModuleConditionsComponent},
-      { 
+      {
         path: 'users', component: UsersLayoutComponent,
         children: [
           {path: '', redirectTo: 'all', pathMatch: 'full'},
           {path: 'all', component: AllUsersComponent},
           {path: 'invitations', component: InvitationsComponent},
         ]
-      },  
-      { path: 'supervisors', component: SupervisorsComponent},  
+      },
+      {
+        path: 'users/:userId',
+        component: UserInspectionComponent,
+        children: [
+          { path: '', component: UserProfileComponent },
+        ]
+      },
+      { path: 'supervisors', component: SupervisorsComponent},
       { path: 'notifications', component: NotificationsComponent},
     ]
   },
@@ -163,8 +170,7 @@ export const routes: Routes = [
         path: 'users/:userId',
         component: UserInspectionComponent,
         children: [
-          { path: '', redirectTo: 'profile', pathMatch: 'full'},
-          { path: 'profile', component: SubmissionComponent},
+          { path: '', component: UserProfileComponent },
         ]
       },
 

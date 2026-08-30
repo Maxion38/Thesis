@@ -5,25 +5,21 @@
 
   display: grid;
   min-height: 150px;
-  grid-template-columns: 2fr 1fr 1fr;
-  border-collapse: collapse;
-
-  &__left, &__middle, &__right {
-    padding: 15px;
-    cursor: pointer;
-  }
+  grid-template-columns: 2fr 1fr;
 
   &__left {
     background-color: #EBEBEB;
     border-top-left-radius: 12px;
     border-bottom-left-radius: 12px;
+    padding: 15px;
+    cursor: pointer;
 
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: space-around;
     position: relative;
-    transition: all ease 0.1s;
+    transition: background-color ease 0.1s;
 
     &:hover {
       background-color: #d1d1d1;
@@ -34,11 +30,6 @@
       font-family: 'joan', serif;
     }
 
-    &__module-id {
-      font-size: 0.9rem;
-      font-weight: 300;
-    }
-
     &__edit-icon {
       position: absolute;
       right: 30px;
@@ -46,76 +37,23 @@
     }
   }
 
-  &__middle, &__right {
-    display: flex;
-    justify-content: start;
-    align-items: start;
-    gap: 5px;
-    background-color: #D7D7D7;
-    position: relative;
-    transition: all ease 0.1s;
-
-    &:hover {
-      background-color: #bebebe;
-    }
-
-    &__left {
-      flex: 1;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: start;
-      align-items: start;
-
-      &__label {
-        font-size: 1rem;
-        font-family: 'joan', serif;
-      }
-
-      &__conditions-list {
-        overflow-y: auto;
-        font-size: 0.8rem;
-        font-weight: 300;
-        text-align: left;
-      }
-    }
-
-    &__right {
-      height: 100%;
-      display: flex;
-      align-items: center;
-
-    }
-  }
-
   &__middle {
+    background-color: #D7D7D7;
     border: #FFFFFF solid;
-    border-width: 5px 0 5px 5px;
-
-  }
-
-  &__right {
-    border: #FFFFFF solid;
-    border-width: 5px 5px 5px 3px;
+    border-width: 5px 5px 5px 0;
     border-top-right-radius: 12px;
     border-bottom-right-radius: 12px;
+    padding: 15px;
   }
 
   &__empty {
     height: 100%;
     width: 100%;
-    display: flex;    
+    display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 2.5rem;
+    text-align: center;
+    font-size: 1rem;
     color: #818181;
   }
-
-  &__edit-icon {
-    color: #818181;
-  }
-}
-
-.card__empty {
-  font-size: 1rem;
 }

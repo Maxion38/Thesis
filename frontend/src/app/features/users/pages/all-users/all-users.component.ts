@@ -4,7 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { merge } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { RoleType } from '../../../entities/role.entity';
+import { RoleType, ROLE_BASE_ROUTE } from '../../../entities/role.entity';
 import { UsersService } from '../../services/users.service';
 import { UserModel } from '../../models/users.model';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -191,10 +191,10 @@ export class AllUsersComponent implements OnInit {
   }
 
   isClickable(card: UserCard): boolean {
-    return this.role === RoleType.TEACHER && card.role === RoleType.STUDENT;
+    return this.role === RoleType.TEACHER || this.role === RoleType.COORDINATOR;
   }
 
   onUserCardClick(card: UserCard): void {
-    this.router.navigate(['/teacher/users', card.user.id]);
+    this.router.navigate([`/${ROLE_BASE_ROUTE[this.role]}/users`, card.user.id]);
   }
 }
