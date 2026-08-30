@@ -1,3 +1,5 @@
+import { GridFeedbackStatus } from '../../assessments/models/grid-context.model';
+
 export interface ProjectOverviewSubmissionModel {
   id: number;
   fileName: string;
@@ -14,7 +16,7 @@ export interface ProjectOverviewToolModel {
   dueDate?: string | null;
   submission?: ProjectOverviewSubmissionModel | null;
 
-  corrected?: boolean;
+  feedbackStatus?: GridFeedbackStatus;
 
   linkedToolId?: number | null;
 }

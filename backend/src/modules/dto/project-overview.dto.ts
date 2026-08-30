@@ -1,3 +1,5 @@
+import { GridFeedbackStatus } from '@prisma/client';
+
 export class ProjectOverviewSubmissionDto {
   id!: number;
   fileName!: string;
@@ -16,7 +18,7 @@ export class ProjectOverviewToolDto {
   submission?: ProjectOverviewSubmissionDto | null;
 
   // ASSESSMENT only
-  corrected?: boolean;
+  feedbackStatus?: GridFeedbackStatus;
 
   // Paired WORK <-> ASSESSMENT tool, via ToolLink, if any
   linkedToolId?: number | null;

@@ -106,9 +106,13 @@ $hauteur: 60px;
     user-select: none;
     color: rgb(141, 141, 141);
 
-    &:hover {
+    &:hover .course-selector__label {
       text-decoration: underline;
     }
+  }
+
+  &__label {
+    text-decoration: none;
   }
 
   &__chevron {

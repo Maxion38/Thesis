@@ -7,14 +7,7 @@ import { ProjectWithGridsModel, GridSummaryModel } from '../../../projects/model
 import { DropdownComponent } from '../../../components/dropdown/dropdown.component';
 import { BackButtonComponent } from '../../../components/back-button/back-button.component';
 import { PdfViewerComponent } from '../../components/pdf-viewer/pdf-viewer.component';
-import { GridContextModel, GridFeedbackStatus } from '../../models/grid-context.model';
-
-const STATUS_LABELS: Record<GridFeedbackStatus, string> = {
-  PENDING: 'En attente',
-  CORRECTION: 'En correction',
-  PUBLISHED: 'Publiée',
-  SEEN: 'Vue par l\'étudiant',
-};
+import { GridContextModel, GridFeedbackStatus, GRID_FEEDBACK_STATUS_LABELS } from '../../models/grid-context.model';
 
 @Component({
   selector: 'app-assessments-layout',
@@ -119,7 +112,7 @@ export class AssessmentsLayoutComponent implements OnInit {
   }
 
   statusLabel(status: GridFeedbackStatus): string {
-    return STATUS_LABELS[status];
+    return GRID_FEEDBACK_STATUS_LABELS[status];
   }
 
   private navigateTo(projectId: number, gridId: number, replaceUrl = false): void {

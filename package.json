@@ -9,6 +9,7 @@
     "dev:backend": "cd backend && npm run start:dev",
     "dev:studio": "cd backend && npx prisma studio",
     "dev:frontend": "cd frontend && npx ng serve --open",
+    "predev": "kill-port 3000 4200 5555 --silent",
     "dev": "concurrently -k -n DB,BACKEND,STUDIO,FRONTEND -c blue,green,yellow,magenta \"npm:dev:db\" \"npm:dev:backend\" \"npm:dev:studio\" \"npm:dev:frontend\"",
     "prod": "docker compose -f docker-compose.prod.yml up -d --build",
     "prod:down": "docker compose -f docker-compose.prod.yml down",
@@ -27,6 +28,7 @@
   },
   "homepage": "https://github.com/Maxion38/Thesis#readme",
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "kill-port": "^2.0.1"
   }
 }

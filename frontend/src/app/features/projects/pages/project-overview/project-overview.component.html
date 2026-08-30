@@ -44,12 +44,21 @@
               <ng-container [ngTemplateOutlet]="cardTpl" [ngTemplateOutletContext]="{ tool: item.primary }"></ng-container>
 
               <button
+                *ngIf="item.primary.submission"
                 class="tool-pair__split-btn"
                 title="Ouvrir la vue partagée (grille + remise)"
                 (click)="openSplitScreen(item.primary, $event)"
               >
-                <span class="material-symbols-outlined">splitscreen</span>
+                <span class="material-symbols-outlined">link</span>
               </button>
+
+              <span
+                *ngIf="!item.primary.submission"
+                class="tool-pair__split-icon"
+                title="Remise non effectuée"
+              >
+                <span class="material-symbols-outlined">link</span>
+              </span>
 
               <ng-container [ngTemplateOutlet]="cardTpl" [ngTemplateOutletContext]="{ tool: item.secondary }"></ng-container>
             </div>
@@ -84,15 +93,20 @@
       <div class="tool-card__infos">
         <span class="tool-card__name" [title]="tool.name">{{ tool.name }}</span>
 
-        <ng-container *ngIf="tool.type === 'ASSESSMENT'">
-          <span class="tool-card__status" [class.tool-card__status--ok]="tool.corrected">
-            {{ tool.corrected ? 'Corrigé' : 'Non corrigé' }}
+        <ng-container *ngIf="tool.type === 'ASSESSMENT' && tool.feedbackStatus">
+          <span class="tool-card__status" [class]="'tool-card__status--' + tool.feedbackStatus.toLowerCase()">
+            <span class="tool-card__status-dot"></span>
+            {{ statusLabel(tool.feedbackStatus) }}
           </span>
         </ng-container>
 
         <ng-container *ngIf="tool.type === 'WORK'">
-          <span class="tool-card__status" *ngIf="!tool.submission">Non soumis</span>
+          <span class="tool-card__status tool-card__status--missing" *ngIf="!tool.submission">
+            <span class="tool-card__status-dot"></span>
+            Non soumis
+          </span>
           <span class="tool-card__status tool-card__status--ok" *ngIf="tool.submission">
+            <span class="tool-card__status-dot"></span>
             Soumis le {{ tool.submission.submittedAt | date: 'd MMMM yyyy' : '' : 'fr' }}
           </span>
         </ng-container>

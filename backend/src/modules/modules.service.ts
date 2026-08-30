@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { ToolType } from '@prisma/client';
+import { ToolType, GridFeedbackStatus } from '@prisma/client';
 import { CreateModuleDto } from './dto/create-module.dto';
 import { UpdateModuleDto } from './dto/update-module.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -147,7 +147,7 @@ export class ModulesService {
               include: {
                 feedbacks: {
                   where: { projectId },
-                  select: { id: true },
+                  select: { status: true },
                   take: 1,
                 },
               },
@@ -190,7 +190,7 @@ export class ModulesService {
           id: tool.id,
           name: tool.name,
           type: 'ASSESSMENT' as const,
-          corrected: (tool.assessmentGrid?.feedbacks.length ?? 0) > 0,
+          feedbackStatus: tool.assessmentGrid?.feedbacks[0]?.status ?? GridFeedbackStatus.PENDING,
           linkedToolId,
         };
       }),

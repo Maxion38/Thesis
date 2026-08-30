@@ -6,6 +6,7 @@ import { switchMap } from 'rxjs/operators';
 import { ProjectsService } from '../../services/projects.service';
 import { ProjectWithGridsModel } from '../../models/project-with-grids.model';
 import { ProjectOverviewModuleModel, ProjectOverviewToolModel } from '../../models/project-overview.model';
+import { GridFeedbackStatus, GRID_FEEDBACK_STATUS_LABELS } from '../../../assessments/models/grid-context.model';
 import { TrainingCourseContextService } from '../../../training-course/services/training-course-context.service';
 import { DropdownComponent } from '../../../components/dropdown/dropdown.component';
 import { BackButtonComponent } from '../../../components/back-button/back-button.component';
@@ -136,6 +137,10 @@ export class ProjectOverviewComponent implements OnInit {
       },
       error: (err) => console.error('Error downloading submission', err),
     });
+  }
+
+  statusLabel(status: GridFeedbackStatus): string {
+    return GRID_FEEDBACK_STATUS_LABELS[status];
   }
 
   get backRoute(): (string | number)[] {

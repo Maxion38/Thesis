@@ -10,7 +10,7 @@
   <div class="navbar__div navbar__right">
     <app-dropdown class="course-selector" align="center" *ngIf="showCourseSwitcher">
       <span dropdownTrigger class="course-selector__text">
-        {{ selectedCourse?.name ?? 'Aucun parcours actif' }}
+        <span class="course-selector__label">{{ selectedCourse?.name ?? 'Aucun parcours actif' }}</span>
         <span class="material-symbols-outlined course-selector__chevron">expand_more</span>
       </span>
       <ng-container dropdownPanel>
@@ -30,7 +30,7 @@
 
     <app-dropdown class="course-selector" align="center" *ngIf="showRoleSwitcher">
       <span dropdownTrigger class="course-selector__text">
-        {{ roleLabel(role!) }}
+        <span class="course-selector__label">{{ roleLabel(role!) }}</span>
         <span class="material-symbols-outlined course-selector__chevron">expand_more</span>
       </span>
       <ng-container dropdownPanel>

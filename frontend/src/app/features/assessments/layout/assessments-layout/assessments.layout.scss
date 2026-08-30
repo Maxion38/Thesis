@@ -159,26 +159,14 @@
         background-color: #a5a5a5;
     }
 
-    &--correction {
-        border-color: #d9a441;
-        color: #8a6410;
-    }
     &--correction &__dot {
         background-color: #e8a93c;
     }
 
-    &--published {
-        border-color: #1F4541;
-        color: #1F4541;
-    }
     &--published &__dot {
-        background-color: #1F4541;
+        background-color: #00bd3f;
     }
 
-    &--seen {
-        border-color: #3a7bd5;
-        color: #285a9e;
-    }
     &--seen &__dot {
         background-color: #3a7bd5;
     }
