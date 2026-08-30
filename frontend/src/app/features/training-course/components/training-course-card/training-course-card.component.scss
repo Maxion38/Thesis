@@ -15,11 +15,14 @@
     gap: 8px;
 
     &__left {
+      display: flex;
+      align-items: start;
+      gap: 8px;
       text-align: left;
       font-family: 'joan', serif;
-      font-size: 1.3rem;
+      font-size: 1.2rem;
       padding-left: 10px;
-      padding-top: 10px; 
+      padding-top: 10px;
     }
 
     &__right {
@@ -47,11 +50,22 @@
     }
   }
 
+  &__status-dot {
+    position: absolute;
+    bottom: 0.1rem;
+    right: 0.1rem;
+    flex-shrink: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
   &__infos {
     display: grid;
-    grid-template-rows: 1fr 1fr;
     align-items: center;
+    grid-template-rows: 1fr 1fr;
     padding-left: 10px;
+    position: relative;
     
     font-size: 0.9rem;
     font-weight: 300;

@@ -4,7 +4,7 @@ export const GRID_FEEDBACK_STATUS_LABELS: Record<GridFeedbackStatus, string> = {
   PENDING: 'En attente',
   CORRECTION: 'En correction',
   PUBLISHED: 'Publiée',
-  SEEN: 'Vue par l\'étudiant',
+  SEEN: 'Vu par l\'étudiant',
 };
 
 export interface LinkedWorkSubmissionModel {
