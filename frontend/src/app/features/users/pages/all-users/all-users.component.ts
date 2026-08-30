@@ -9,6 +9,7 @@ import { UsersService } from '../../services/users.service';
 import { UserModel } from '../../models/users.model';
 import { AuthService } from '../../../auth/services/auth.service';
 import { TrainingCourseContextService } from '../../../training-course/services/training-course-context.service';
+import { TrainingCoursesService } from '../../../training-course/services/training-courses.service';
 import { DropdownComponent } from '../../../components/dropdown/dropdown.component';
 
 // TODO : exclude logged user
@@ -36,13 +37,6 @@ export class AllUsersComponent implements OnInit {
   trainingCourses: trainingCourse[] = [];
   role!: RoleType;
 
-  mockTrainingCourses: trainingCourse[] = [
-    { id: 1, label: "Parcours de formation TFE Q1" },
-    { id: 2, label: "Parcours de formation TFE Q2" },
-    { id: 3, label: "Parcours de formation stage Q1" },
-    { id: 4, label: "Parcours de formation stage Q2" },
-  ]; // TODO : replace this mock with real courses and link courses with user so filter can be done. Backend.
-
   userCards: UserCard[] = [];
   filteredUsers: UserCard[] = [];
 
@@ -55,11 +49,24 @@ export class AllUsersComponent implements OnInit {
     private usersService : UsersService,
     private authService : AuthService,
     private trainingCourseContext: TrainingCourseContextService,
+    private trainingCoursesService: TrainingCoursesService,
     private router: Router,
   ) {}
 
   ngOnInit(): void {
     this.role = this.authService.getFirstRole();
+
+    if (this.role !== RoleType.TEACHER) {
+      this.trainingCoursesService.getAll().subscribe({
+        next: (courses) => {
+          this.trainingCourses = courses.map(c => ({ id: c.id, label: c.name }));
+          this.changeDetectorRef.detectChanges();
+        },
+        error: (err) => {
+          console.error('Error loading training courses', err);
+        }
+      });
+    }
 
     merge(
       this.trainingCourseContext.initIfApplicable(),
@@ -78,6 +85,20 @@ export class AllUsersComponent implements OnInit {
         console.error('Error loading users', err);
       }
     })
+  }
+
+  private loadUsers(trainingCourseId?: number): void {
+    this.usersService.getAll(trainingCourseId).subscribe({
+      next: (users) => {
+        this.users = users;
+        this.userCards = this.buildUserCards(users);
+        this.applyFilters();
+        this.changeDetectorRef.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error loading users', err);
+      }
+    });
   }
 
   private buildUserCards(users: UserModel[]): UserCard[] {
@@ -109,14 +130,6 @@ export class AllUsersComponent implements OnInit {
         ) {
           return false;
         }
-
-         // COURSE FILTER
-        // if (this.selectedCourseId !== 'ALL') {
-        //   const hasCourse = user.trainingCourses?.some(
-        //     c => c.id === this.selectedCourseId
-        //   );
-        //   if (!hasCourse) return false;
-        // }
 
         return true;
       });
@@ -182,7 +195,7 @@ export class AllUsersComponent implements OnInit {
 
   selectCourse(courseId: number | 'ALL'): void {
     this.selectedCourseId = courseId;
-    this.applyFilters();
+    this.loadUsers(courseId === 'ALL' ? undefined : courseId);
   }
 
   get selectedCourseLabel(): string {

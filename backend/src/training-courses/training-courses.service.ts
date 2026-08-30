@@ -69,12 +69,15 @@ export class TrainingCoursesService {
           .map(m => m.userId),
       ).size;
 
+      const usersCount = new Set(allMembers.map(m => m.userId)).size;
+
       const { projects, ...courseWithoutProjects } = course;
 
       return {
         ...courseWithoutProjects,
         studentsCount,
         teachersCount,
+        usersCount,
       };
     });
   }

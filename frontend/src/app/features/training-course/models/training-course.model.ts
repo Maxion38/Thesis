@@ -12,6 +12,7 @@ export interface TrainingCourseWithStats {
   endDate?: string | null;
   studentsCount: number;
   teachersCount: number;
+  usersCount: number;
 }
 
 export type TrainingCourseStatus = 'archived' | 'active' | 'planned' | 'none';
