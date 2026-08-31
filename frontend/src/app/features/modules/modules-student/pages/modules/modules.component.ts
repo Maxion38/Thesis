@@ -101,6 +101,11 @@ export class StudentModulesComponent implements OnInit {
   onModuleCardAction(event: ModuleCardActionEvent): void {
     console.log(event)
 
+    if (event.viewModule || event.toolId == null) {
+      this.router.navigate(['/student/modules', event.moduleId, 'description']);
+      return;
+    }
+
     this.router.navigate([
       '/student/modules',
       event.moduleId,

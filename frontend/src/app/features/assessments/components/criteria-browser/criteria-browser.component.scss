@@ -109,7 +109,6 @@
   &__item {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
 
     &:not(:first-child) {
       padding-top: 2rem;
@@ -120,5 +119,6 @@
   &__title {
     font-family: 'joan', serif;
     font-size: 1.1rem;
+    font-weight: 500;
   }
 }

@@ -9,6 +9,7 @@ import { AssessmentStatusDotComponent } from '../../../../assessments/components
 export interface ModuleCardActionEvent {
   moduleId: number;
   toolId?: number;
+  viewModule?: boolean;
 }
 
 @Component({
@@ -54,7 +55,7 @@ export class StudentModuleCardComponent {
     return GRID_FEEDBACK_STATUS_LABELS[this.assessmentStatus];
   }
 
-  get actionLabelAndDates(): { label: string; dateLimit?: Date; toolId: number }[] {
+  get actionLabelAndDates(): { label: string; dateLimit?: Date; toolId?: number; viewModule?: boolean }[] {
 
     const activeTools = this.card.tools.filter(tool => {
       if (tool.state === 'SUBMITTED') return false;
@@ -63,7 +64,7 @@ export class StudentModuleCardComponent {
     });
 
     if (activeTools.length === 0) {
-      return [{ label: 'Voir le module', toolId: this.card.tools[0]?.id ?? this.card.moduleId }];
+      return [{ label: 'Voir le module', viewModule: true }];
     }
 
     const rawLabels = activeTools.map(tool => this.formatActionsLabel(tool.type));
@@ -83,10 +84,11 @@ export class StudentModuleCardComponent {
     });
   }
 
-  onCtaClick(toolId: number): void {
+  onCtaClick(toolId?: number, viewModule?: boolean): void {
     this.ctaClicked.emit({
       moduleId: this.card.moduleId,
       toolId,
+      viewModule,
     });
   }
 

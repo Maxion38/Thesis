@@ -42,7 +42,7 @@
     <div class="actions">
 
       <div class="action" *ngFor="let action of actionLabelAndDates">
-        <button (click)="onCtaClick(action.toolId)">{{ action.label }}</button>
+        <button (click)="onCtaClick(action.toolId, action.viewModule)">{{ action.label }}</button>
 
         @let dateInfo = getDateLabel(action.dateLimit);
         <ng-container>

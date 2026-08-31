@@ -35,11 +35,12 @@
  *   - Project.supervisorId supprimé -> le "promoteur" est désormais un
  *     ProjectMember comme les autres (subRoleId = null). Les rôles de jury
  *     (SUPERVISOR/PRESIDENT/READER) sont portés par ProjectMember.subRoleId.
- *   - Nouveau : chaque soutenance (projet terminé) génère une Activity
- *     (créneau daté) + un Group qui lui est obligatoirement rattaché
- *     (Group.eventId), avec les enseignants du jury en UserGroup et le
- *     projet en ProjectGroup -> modélise correctement "qui siège, quand,
- *     pour quel(s) projet(s)".
+ *   - Chaque soutenance (projet terminé) constitue un jury (ProjectMember
+ *     avec sous-rôle PRESIDENT/READER en plus du SUPERVISOR) et ses
+ *     évaluations, sans créneau simulé (Activity/Group) : seuls les outils
+ *     WORK et ASSESSMENT sont supportés à ce stade, aucun Tool de type FORM
+ *     ou ACTIVITY n'est peuplé par ce script, et aucun dépôt de mémoire
+ *     factice (UserWorkSubmission) n'est simulé (pas de vrai PDF attaché).
  *   - Group.type supprimé -> seul le "name" identifie le groupe.
  *   - CriteriaAssessment.studentId supprimé -> l'évaluation par critère se
  *     fait au niveau du projet (pas par étudiant individuel au sein d'un
@@ -62,7 +63,6 @@ import {
   RoleType,
   SubRoleType,
   ToolType,
-  QuestionType,
   ConditionMethod,
   ConditionOperator,
   Importance,
@@ -228,28 +228,6 @@ const THESIS_TITLES = [
   "Outil de détection de plagiat pour travaux académiques",
   "Système domotique open-source pour la gestion énergétique du foyer",
   "Plateforme d'apprentissage en ligne avec suivi de progression personnalisé",
-];
-
-const DOMAIN_OPTIONS = [
-  'Développement Web',
-  'Intelligence Artificielle',
-  'Cybersécurité',
-  'Réseaux & Infrastructure',
-  'Science des données',
-  'Développement Mobile',
-];
-
-const TECH_OPTIONS = [
-  'Angular',
-  'React',
-  'Vue.js',
-  'NestJS',
-  'Spring Boot',
-  'Python',
-  'Java',
-  'PostgreSQL',
-  'MongoDB',
-  'Docker',
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -891,6 +869,71 @@ const REAL_GRIDS: RealGridDef[] = [
   },
 ];
 
+// ─────────────────────────────────────────────────────────────────────────
+// GRILLES "STAGE" — synthétiques (pas de PDF officiel), volontairement
+// courtes (peu de critères, peu de cellules) : le stage n'est pas le sujet
+// détaillé de la démo (contrairement au TFE, cf. REAL_GRIDS ci-dessus), mais
+// doit rester visuellement/structurellement différent d'un TFE.
+// ─────────────────────────────────────────────────────────────────────────
+const STAGE_GRIDS: RealGridDef[] = [
+  {
+    key: 'stageSuivi',
+    toolName: 'Évaluation du suivi de stage',
+    toolDescription: 'Grille utilisée par le tuteur de stage pour évaluer l’assiduité et l’implication du stagiaire.',
+    module: 'suivi',
+    evaluator: 'rapporteur',
+    criteria: [
+      {
+        name: 'Assiduité et ponctualité',
+        weight: 50,
+        cells: [
+          'Le stagiaire est souvent absent ou en retard, sans justification.',
+          'Le stagiaire est présent et ponctuel, avec de rares absences justifiées.',
+          'Le stagiaire est toujours présent, ponctuel, et prévient en cas d’imprévu.',
+        ],
+      },
+      {
+        name: 'Autonomie et implication',
+        weight: 50,
+        cells: [
+          'Le stagiaire attend des consignes précises et ne prend pas d’initiative.',
+          'Le stagiaire réalise les tâches confiées et pose des questions pertinentes.',
+          'Le stagiaire est autonome, proactif, et s’implique au-delà des tâches demandées.',
+        ],
+      },
+    ],
+  },
+  {
+    key: 'stageRapport',
+    toolName: 'Évaluation du rapport de stage',
+    toolDescription: 'Grille utilisée par le tuteur de stage pour évaluer le rapport écrit remis en fin de stage.',
+    module: 'suivi',
+    evaluator: 'rapporteur',
+    criteria: [
+      {
+        name: 'Qualité rédactionnelle',
+        weight: 40,
+        cells: [
+          'Le rapport contient de nombreuses fautes et manque de structure.',
+          'Le rapport est correctement rédigé et structuré.',
+          'Le rapport est particulièrement clair, bien structuré et agréable à lire.',
+        ],
+      },
+      {
+        name: 'Analyse réflexive du stage',
+        weight: 60,
+        cells: [
+          'Le stagiaire décrit les tâches réalisées, sans recul critique.',
+          'Le stagiaire analyse les tâches réalisées et ce qu’elles lui ont apporté.',
+          'Le stagiaire porte un regard critique sur son stage et propose des pistes d’amélioration.',
+        ],
+      },
+    ],
+  },
+];
+const STAGE_SUIVI_GRID_KEYS = ['stageSuivi'];
+const STAGE_RAPPORT_GRID_KEYS = ['stageRapport'];
+
 // Répartition des grilles réelles entre les modules de la promo (identique
 // pour la structure "générique" et pour MAIN, cf. buildGenericCourseStructure
 // / buildMainCourseStructure) : le champ `module` de REAL_GRIDS n'est plus
@@ -899,12 +942,36 @@ const CADRAGE_GRID_KEYS = ['cdc', 'validationSujet', 'suiviRapporteur'];
 const ANALYSE_GRID_KEYS = ['analyse'];
 const RAPPORT_GRID_KEYS = ['rapportFinal', 'realisationPratique'];
 const DEFENSE_GRID_KEYS = ['oral'];
-const GRID_FEEDBACK_STATUSES = [
-  GridFeedbackStatus.PENDING,
-  GridFeedbackStatus.CORRECTION,
-  GridFeedbackStatus.PUBLISHED,
-  GridFeedbackStatus.SEEN,
+
+// Discussion "réaliste" simulée sur le critère "Forme du texte" de la grille
+// "Évaluation 2 - analyse" (promos TFE uniquement, cf. section 5) : quelques
+// scripts d'échange écrits à la main entre les 3 évaluateurs (authorIndex 0 =
+// promoteur, 1 et 2 = co-évaluateurs, cf. tableau `evaluators`), un script
+// tiré au hasard par projet plutôt que du texte lorem ipsum générique.
+const FORME_DISCUSSION_SCRIPTS: { authorIndex: 0 | 1 | 2; text: string }[][] = [
+  [
+    { authorIndex: 0, text: "J'ai trouvé le texte plutôt propre, la mise en page est cohérente et les titres bien numérotés." },
+    { authorIndex: 1, text: "Je confirme, mais j'ai quand même relevé 3-4 fautes d'orthographe dans la partie analyse des besoins." },
+    { authorIndex: 2, text: 'Ça reste dans la moyenne haute alors, les illustrations sont bien légendées et appuient le propos.' },
+    { authorIndex: 0, text: 'On part sur "Bien" plutôt que "Très bien" à cause des fautes relevées ?' },
+    { authorIndex: 1, text: "Ok pour moi, je le note dans le feedback pour qu'il/elle les corrige avant la version finale." },
+  ],
+  [
+    { authorIndex: 1, text: "La structure du document est bonne, mais la mise en page manque un peu d'homogénéité entre les sections." },
+    { authorIndex: 2, text: 'Je suis d\'accord, certains titres ne sont pas numérotés de la même façon partout.' },
+    { authorIndex: 0, text: "Niveau orthographe ça reste correct par contre, moins de 5 fautes sur l'ensemble du document." },
+    { authorIndex: 2, text: 'Donc on reste sur "Suffisant", avec une remarque sur la mise en page dans le commentaire ?' },
+    { authorIndex: 1, text: 'Ça me va, je valide.' },
+  ],
+  [
+    { authorIndex: 2, text: "Perso j'ai buté sur deux-trois phrases mal tournées, mais rien de bloquant pour la compréhension." },
+    { authorIndex: 0, text: 'Les schémas sont clairs et bien intégrés au texte, ça compense largement.' },
+    { authorIndex: 1, text: "D'accord avec vous deux, et il n'y a quasiment pas de fautes d'orthographe." },
+    { authorIndex: 2, text: 'On monte à "Très bien" alors ?' },
+    { authorIndex: 0, text: 'Oui, ça me semble mérité au vu du soin apporté à la mise en page.' },
+  ],
 ];
+
 // `cellCount` niveaux (2, 3, 4peu importe). Générique et biaisé vers le
 // haut de l'échelle (les niveaux supérieurs sont un peu plus probables que
 // les niveaux inférieurs), pour représenter une promo qui s'en sort plutôt
@@ -922,7 +989,7 @@ type GridAssets = {
   toolId: number;
   gridId: number;
   evaluator: 'rapporteur' | 'jury';
-  criteria: { id: number; cells: { id: number; order: number; weight: number | null }[] }[];
+  criteria: { id: number; name: string; cells: { id: number; order: number; weight: number | null }[] }[];
 };
 
 // Crée, pour un module donné, les Tool/AssessmentGrid/Criteria/Cell des
@@ -935,18 +1002,19 @@ async function createGridsForKeys(
   keys: string[],
   moduleId: number,
   editable: boolean,
+  defs: RealGridDef[] = REAL_GRIDS,
 ): Promise<Record<string, GridAssets>> {
   const result: Record<string, GridAssets> = {};
   for (const key of keys) {
-    const def = REAL_GRIDS.find((g) => g.key === key);
-    if (!def) throw new Error(`REAL_GRIDS: clé de grille inconnue "${key}".`);
+    const def = defs.find((g) => g.key === key);
+    if (!def) throw new Error(`grilles: clé de grille inconnue "${key}".`);
     const tool = await prisma.tool.create({
       data: { name: def.toolName, description: def.toolDescription, type: ToolType.ASSESSMENT, moduleId },
     });
     // AssessmentGrid partage sa PK avec Tool -> pas d'autoincrement, on fixe id.
     const grid = await prisma.assessmentGrid.create({ data: { id: tool.id, editable } });
 
-    const criteria: { id: number; cells: { id: number; order: number; weight: number | null }[] }[] = [];
+    const criteria: { id: number; name: string; cells: { id: number; order: number; weight: number | null }[] }[] = [];
     for (const [i, critDef] of def.criteria.entries()) {
       if (critDef.cells.length < 2) {
         throw new Error(`REAL_GRIDS["${def.key}"]["${critDef.name}"] doit avoir au moins 2 cellules.`);
@@ -961,7 +1029,7 @@ async function createGridsForKeys(
         });
         cells.push({ id: cell.id, order: j, weight: 1 });
       }
-      criteria.push({ id: crit.id, cells });
+      criteria.push({ id: crit.id, name: critDef.name, cells });
     }
     result[def.key] = { toolId: tool.id, gridId: grid.id, evaluator: def.evaluator, criteria };
   }
@@ -1108,17 +1176,19 @@ async function main() {
   type CourseLabel = 'Q1' | 'SESSION2' | 'MAIN' | 'STAGE';
   const MAIN_LABEL: CourseLabel = 'MAIN';
 
-  // "generic" = garde la structure de modules historique (Cadrage du sujet /
-  // Suivi de projet / Remise du mémoire / Soutenance, formulaire + activités
-  // de suivi comprises) ; seule MAIN reçoit la structure sur-mesure demandée.
-  const genericCourses: { course: typeof courseQ1; label: CourseLabel; finished: boolean }[] = [
+  // "tfeGeneric" = garde la structure de modules historique des promos TFE
+  // (Cadrage du sujet / Analyse et conception / Rapport de TFE / Défense du
+  // TFE) ; MAIN reçoit la structure TFE sur-mesure demandée, et STAGE une
+  // structure distincte, volontairement plus légère, pour différencier un
+  // stage d'un TFE (cf. buildStageCourseStructure).
+  const tfeGenericCourses: { course: typeof courseQ1; label: CourseLabel; finished: boolean }[] = [
     { course: courseQ1, label: 'Q1', finished: true },
     { course: courseSession2, label: 'SESSION2', finished: true },
-    { course: courseStage, label: 'STAGE', finished: false },
   ];
   const courses: { course: typeof courseQ1; label: CourseLabel; finished: boolean }[] = [
-    ...genericCourses,
+    ...tfeGenericCourses,
     { course: courseMain, label: MAIN_LABEL, finished: false },
+    { course: courseStage, label: 'STAGE', finished: false },
   ];
 
   // Fenêtre "soutenance" (planification des défenses + fenêtre temporelle des
@@ -1239,16 +1309,9 @@ async function main() {
   type CourseAssets = {
     tcId: number;
     courseStartDate: Date;
-    formToolId?: number;
-    formId?: number;
-    formDueDate?: Date;
-    questions?: { id: number; type: QuestionType }[];
     workToolId: number;
     workId: number;
     dueDate: Date;
-    withSoutenanceEvent: boolean; // false pour MAIN ("no event" -> pas d'Activity/Group de soutenance)
-    soutenanceToolId?: number; // Tool (type ACTIVITY) sous lequel on crée un créneau par soutenance
-    soutenanceDay: Date;
     soutenanceWindowStart: Date;
     soutenanceWindowEnd: Date;
     accessConditionValidatorId?: number;
@@ -1258,9 +1321,9 @@ async function main() {
 
   const assetsByCourse: Record<CourseLabel, CourseAssets> = {} as any;
 
-  // Structure "historique" (Cadrage du sujet / Suivi de projet / Remise du
-  // mémoire / Soutenance, formulaire + activités de suivi comprises) :
-  // utilisée pour les 3 promos qui ne sont pas la vitrine de démo.
+  // Structure "historique" (Cadrage du sujet / Analyse et conception /
+  // Rapport de TFE / Défense du TFE) : utilisée pour les 3 promos qui ne
+  // sont pas la vitrine de démo.
   async function buildGenericCourseStructure(
     course: typeof courseQ1,
     finished: boolean,
@@ -1273,48 +1336,6 @@ async function main() {
         trainingCourseId: course.id,
       },
     });
-    const toolForm = await prisma.tool.create({
-      data: {
-        name: 'Formulaire de proposition de sujet',
-        description: 'À compléter par l’étudiant en début d’année.',
-        type: ToolType.FORM,
-        moduleId: moduleCadrage.id,
-      },
-    });
-    const formDueDate = new Date(course.startDate!);
-    formDueDate.setDate(formDueDate.getDate() + 42); // ~6 semaines après la rentrée
-    const form = await prisma.form.create({
-      data: { id: toolForm.id, maxAttempts: 1, dueDate: formDueDate },
-    });
-
-    const q1 = await prisma.question.create({
-      data: { name: 'Titre du sujet proposé', type: QuestionType.TEXT, isRequired: true, formId: form.id },
-    });
-    const q2 = await prisma.question.create({
-      data: { name: 'Domaine du TFE', type: QuestionType.SELECT, isRequired: true, formId: form.id },
-    });
-    for (const [i, opt] of DOMAIN_OPTIONS.entries()) {
-      await prisma.questionOption.create({ data: { name: opt, order: i, questionId: q2.id } });
-    }
-    const q3 = await prisma.question.create({
-      data: { name: 'Résumé du projet', type: QuestionType.TEXT, isRequired: true, formId: form.id },
-    });
-    const q4 = await prisma.question.create({
-      data: { name: 'Technologies envisagées', type: QuestionType.CHECKBOX, isRequired: false, formId: form.id },
-    });
-    for (const [i, opt] of TECH_OPTIONS.entries()) {
-      await prisma.questionOption.create({ data: { name: opt, order: i, questionId: q4.id } });
-    }
-    // Plus de QuestionType.NUMBER en V2 -> réponse numérique stockée comme un TEXT
-    const q5 = await prisma.question.create({
-      data: {
-        name: 'Charge de travail hebdomadaire estimée (heures)',
-        type: QuestionType.TEXT,
-        isRequired: true,
-        formId: form.id,
-      },
-    });
-
     // Grilles réelles rattachées au module "Cadrage du sujet" (cf. REAL_GRIDS) :
     // "cdc" (cahier des charges), "validationSujet" (pertinence du sujet) et
     // "suiviRapporteur" (assiduité/implication), toutes remplies par le
@@ -1329,36 +1350,6 @@ async function main() {
         trainingCourseId: course.id,
       },
     });
-    const toolSuivi = await prisma.tool.create({
-      data: {
-        name: 'Réunions de suivi',
-        description: 'Points d’avancement planifiés avec le promoteur.',
-        type: ToolType.ACTIVITY,
-        moduleId: moduleAnalyse.id,
-      },
-    });
-    for (let i = 0; i < 6; i++) {
-      const start = new Date(course.startDate!);
-      start.setDate(start.getDate() + i * 21 + randomInt(0, 4));
-      const end = new Date(start);
-      end.setHours(end.getHours() + 1);
-      await prisma.activity.create({
-        data: {
-          id: toolSuivi.id === toolSuivi.id ? (await prisma.tool.create({
-            data: {
-              name: `Réunion de suivi #${i + 1}`,
-              description: 'Point d’avancement planifié avec le promoteur.',
-              type: ToolType.ACTIVITY,
-              moduleId: moduleAnalyse.id,
-            },
-          })).id : toolSuivi.id,
-          startDateTime: start,
-          endDateTime: end,
-          location: pick(['Salle B204', 'Visioconférence (Teams)', 'Salle A112']),
-        },
-      });
-    }
-
     // Grille réelle rattachée au module "Analyse et conception" (cf. REAL_GRIDS) :
     // "analyse", remplie par le rapporteur.
     const analyseGrids = await createGridsForKeys(ANALYSE_GRID_KEYS, moduleAnalyse.id, false);
@@ -1383,8 +1374,9 @@ async function main() {
     const work = await prisma.work.create({ data: { id: toolWork.id, maxAttempts: 2, dueDate } });
 
     // Grilles réelles rattachées au module "Rapport de TFE" (cf. REAL_GRIDS) :
-    // "rapportFinal" et "realisationPratique", toutes deux remplies par le
-    // jury complet lors de la défense (cf. section 8).
+    // "rapportFinal" et "realisationPratique", évaluées par le jury complet
+    // lors de la défense — volontairement laissées "En attente" dans cette
+    // démo, cf. section 7 (aucune évaluation n'y est simulée pour elles).
     const rapportGrids = await createGridsForKeys(RAPPORT_GRID_KEYS, moduleRapport.id, !finished);
 
     // ToolLink "rapportFinal" (grille) <-> "Dépôt du mémoire final" (work) :
@@ -1402,20 +1394,9 @@ async function main() {
         trainingCourseId: course.id,
       },
     });
-    // On ne crée que le "gabarit" ici : un Tool par soutenance sera créé au
-    // moment de planifier chaque défense (cf. section 8), car chaque
-    // Activity/Group est propre à un projet dans le schéma V2.
-    const toolSoutenanceTemplate = await prisma.tool.create({
-      data: {
-        name: 'Séance de soutenance',
-        description: 'Créneau de présentation devant jury.',
-        type: ToolType.ACTIVITY,
-        moduleId: moduleDefense.id,
-      },
-    });
-
     // Grille réelle rattachée au module "Défense du TFE" (cf. REAL_GRIDS) :
-    // "oral", remplie par le jury complet lors de la défense (cf. section 8).
+    // "oral", évaluée par le jury complet lors de la défense — volontairement
+    // laissée "En attente" dans cette démo, cf. section 7.
     const defenseGrids = await createGridsForKeys(DEFENSE_GRID_KEYS, moduleDefense.id, !finished);
 
     // Condition d'accès au module Défense du TFE (mémoire déposé + date
@@ -1443,27 +1424,14 @@ async function main() {
       },
     });
 
-    const { day, start, end } = soutenanceWindow(course, finished);
+    const { start, end } = soutenanceWindow(course, finished);
 
     return {
       tcId: course.id,
       courseStartDate: course.startDate!,
-      formToolId: toolForm.id,
-      formId: form.id,
-      formDueDate,
-      questions: [
-        { id: q1.id, type: QuestionType.TEXT },
-        { id: q2.id, type: QuestionType.SELECT },
-        { id: q3.id, type: QuestionType.TEXT },
-        { id: q4.id, type: QuestionType.CHECKBOX },
-        { id: q5.id, type: QuestionType.TEXT },
-      ],
       workToolId: toolWork.id,
       workId: work.id,
       dueDate,
-      withSoutenanceEvent: true,
-      soutenanceToolId: toolSoutenanceTemplate.id,
-      soutenanceDay: day,
       soutenanceWindowStart: start,
       soutenanceWindowEnd: end,
       accessConditionValidatorId: validator.id,
@@ -1481,7 +1449,7 @@ async function main() {
       data: {
         name: 'Cadrage du sujet',
         description:
-          '## 🎯 Cadrage du sujet\n\n' +
+          '## Cadrage du sujet\n\n' +
           "Cette étape pose les fondations de votre TFE :\n\n" +
           '- Rédaction et validation du **cahier des charges**\n' +
           '- Confirmation de la pertinence du **sujet** avec votre rapporteur\n' +
@@ -1497,7 +1465,7 @@ async function main() {
       data: {
         name: 'Analyse et conception',
         description:
-          '## 🧠 Analyse et conception\n\n' +
+          '## Analyse et conception\n\n' +
           'Place à la réflexion technique et fonctionnelle :\n\n' +
           '- Analyse approfondie de la problématique\n' +
           '- Choix technologiques justifiés\n' +
@@ -1513,7 +1481,7 @@ async function main() {
       data: {
         name: 'Rapport de TFE',
         description:
-          '## 📄 Rapport de TFE\n\n' +
+          '## Rapport de TFE\n\n' +
           '- Dépôt du **rapport final** (PDF) avant l’échéance\n' +
           '- Évaluation de la **réalisation pratique**\n' +
           '- Évaluation du **rapport écrit** par le jury\n\n' +
@@ -1544,7 +1512,7 @@ async function main() {
       data: {
         name: 'Défense du TFE',
         description:
-          '## 🎤 Défense du TFE\n\n' +
+          '## Défense du TFE\n\n' +
           "L'aboutissement de votre travail : la présentation orale devant jury.\n\n" +
           '- Préparez un support clair et professionnel\n' +
           '- Prévoyez une démonstration de votre réalisation pratique\n' +
@@ -1555,7 +1523,7 @@ async function main() {
     });
     const defenseGrids = await createGridsForKeys(DEFENSE_GRID_KEYS, moduleDefense.id, !finished);
 
-    const { day, start, end } = soutenanceWindow(course, finished);
+    const { start, end } = soutenanceWindow(course, finished);
 
     return {
       tcId: course.id,
@@ -1563,18 +1531,71 @@ async function main() {
       workToolId: toolWork.id,
       workId: work.id,
       dueDate,
-      withSoutenanceEvent: false, // pas de formulaire ni d'activité pour cette promo
-      soutenanceDay: day,
       soutenanceWindowStart: start,
       soutenanceWindowEnd: end,
       grids: { ...cadrageGrids, ...analyseGrids, ...rapportGrids, ...defenseGrids },
     };
   }
 
-  for (const { course, label, finished } of genericCourses) {
+  // Structure "Stage" : volontairement légère (2 modules, 2 grilles à peu de
+  // critères, 1 dépôt de travail) et distincte du contenu TFE (ni cahier des
+  // charges, ni jury, ni soutenance) pour bien différencier un stage d'un TFE
+  // dans la démo. Les détails fouillés de la démo restent sur les promos TFE.
+  async function buildStageCourseStructure(course: typeof courseStage, finished: boolean): Promise<CourseAssets> {
+    // Module 1 — Suivi du stage
+    const moduleSuivi = await prisma.module.create({
+      data: {
+        name: 'Suivi du stage',
+        description: 'Suivi de l’assiduité et de l’implication du stagiaire tout au long du stage.',
+        trainingCourseId: course.id,
+      },
+    });
+    const suiviGrids = await createGridsForKeys(STAGE_SUIVI_GRID_KEYS, moduleSuivi.id, false, STAGE_GRIDS);
+
+    // Module 2 — Rapport de stage
+    const moduleRapport = await prisma.module.create({
+      data: {
+        name: 'Rapport de stage',
+        description: 'Dépôt et évaluation du rapport de stage.',
+        trainingCourseId: course.id,
+      },
+    });
+    const toolWork = await prisma.tool.create({
+      data: {
+        name: 'Dépôt du rapport de stage',
+        description: 'Fichier PDF du rapport de stage.',
+        type: ToolType.WORK,
+        moduleId: moduleRapport.id,
+      },
+    });
+    const dueDate = new Date(course.endDate!.getTime() - 10 * DAY_MS);
+    const work = await prisma.work.create({ data: { id: toolWork.id, maxAttempts: 2, dueDate } });
+    const rapportGrids = await createGridsForKeys(STAGE_RAPPORT_GRID_KEYS, moduleRapport.id, !finished, STAGE_GRIDS);
+    // ToolLink "stageRapport" (grille) <-> "Dépôt du rapport de stage" (work),
+    // même logique que pour les grilles finales des promos TFE.
+    await prisma.toolLink.create({
+      data: { sourceToolId: rapportGrids.stageRapport.toolId, targetToolId: toolWork.id },
+    });
+
+    const { start, end } = soutenanceWindow(course, finished);
+
+    return {
+      tcId: course.id,
+      courseStartDate: course.startDate!,
+      workToolId: toolWork.id,
+      workId: work.id,
+      dueDate,
+      soutenanceWindowStart: start,
+      soutenanceWindowEnd: end,
+      grids: { ...suiviGrids, ...rapportGrids },
+    };
+  }
+
+  for (const { course, label, finished } of tfeGenericCourses) {
     assetsByCourse[label] = await buildGenericCourseStructure(course, finished);
   }
   assetsByCourse[MAIN_LABEL] = await buildMainCourseStructure(courseMain, false);
+  assetsByCourse['STAGE'] = await buildStageCourseStructure(courseStage, false);
 
   // ───────────────────────────────────────────────────────────────────────
   // 4) PROJECTS + MEMBERS
@@ -1704,64 +1725,92 @@ async function main() {
   }
 
   // ───────────────────────────────────────────────────────────────────────
-  // 5) FORM SUBMISSIONS + RESPONSES
-  //    (plus de champ status : l'existence de la soumission suffit)
-  //    MAIN n'a pas de formulaire ("no form or event") -> on saute simplement.
-  // ───────────────────────────────────────────────────────────────────────
-  console.log('📝  Création des soumissions de formulaire (cadrage)...');
-
-  for (const project of allProjects) {
-    const assets = assetsByCourse[project.courseLabel];
-    if (!assets.formId || !assets.questions) continue;
-    const submitter = project.members[0];
-
-    const hasSubmittedForm = project.status !== 'EN_RETARD' || Math.random() < 0.5;
-    if (!hasSubmittedForm) continue;
-
-    const submission = await prisma.formSubmission.create({
-      data: { formId: assets.formId, userId: submitter.id, projectId: project.id },
-    });
-
-    for (const q of assets.questions) {
-      let value = '';
-      switch (q.type) {
-        case QuestionType.TEXT:
-          value = faker.lorem.sentence();
-          break;
-        case QuestionType.SELECT:
-          value = pick(DOMAIN_OPTIONS);
-          break;
-        case QuestionType.CHECKBOX:
-          value = pickMany(TECH_OPTIONS, randomInt(1, 3)).join(', ');
-          break;
-      }
-      await prisma.response.create({ data: { value, questionId: q.id, submissionId: submission.id } });
-    }
-  }
-
-  // ───────────────────────────────────────────────────────────────────────
-  // 5bis) ÉVALUATIONS "RAPPORTEUR" (toutes les grilles évaluées par le seul
+  // 5) ÉVALUATIONS "RAPPORTEUR" (toutes les grilles évaluées par le seul
   //    rapporteur — cahier des charges, validation du sujet, analyse, suivi
   //    rapporteur — quel que soit le module auquel elles sont rattachées
   //    pour la promo courante). Étalées entre le cadrage et la remise du
   //    rapport/mémoire.
+  //    Cas particulier "Évaluation 2 - analyse" (promos TFE) : au moins 2-3
+  //    évaluateurs votent chaque critère (au lieu du seul promoteur), la
+  //    grille est toujours publiée, avec commentaires/feedback. Pour toutes
+  //    les autres grilles "rapporteur" (dont les grilles STAGE), dès qu'il y
+  //    a des votes le feedback de grille porte le statut "En correction".
   // ───────────────────────────────────────────────────────────────────────
   console.log('🔎  Création des évaluations "rapporteur" (cadrage, analyse, suivi)...');
 
   for (const project of allProjects) {
     const assets = assetsByCourse[project.courseLabel];
-    const rapporteurGrids = Object.values(assets.grids).filter((g) => g.evaluator === 'rapporteur');
-    if (rapporteurGrids.length === 0) continue;
+    const rapporteurGridEntries = Object.entries(assets.grids).filter(([, g]) => g.evaluator === 'rapporteur');
+    if (rapporteurGridEntries.length === 0) continue;
     if (project.status === 'EN_RETARD' && Math.random() < 0.5) continue;
 
-    const windowStart = assets.formDueDate
-      ? new Date(assets.formDueDate.getTime() + 14 * DAY_MS)
-      : new Date(assets.courseStartDate.getTime() + 45 * DAY_MS);
+    const windowStart = new Date(assets.courseStartDate.getTime() + 45 * DAY_MS);
     const windowEndRaw = Math.min(assets.dueDate.getTime(), Date.now());
     const windowEnd = new Date(Math.max(windowEndRaw, windowStart.getTime() + DAY_MS));
 
-    for (const grid of rapporteurGrids) {
+    for (const [key, grid] of rapporteurGridEntries) {
       const evalDate = randomDateBetween(windowStart, windowEnd);
+
+      if (key === 'analyse') {
+        // 3 évaluateurs (le promoteur + 2 collègues) votent chaque critère,
+        // comme pour un jury, mais restent taggés "rapporteur".
+        const coEvaluatorPool = teachers.filter((t) => t.id !== project.supervisor.id);
+        const coEvaluators = pickMany(coEvaluatorPool, Math.min(2, coEvaluatorPool.length));
+        const evaluators = [project.supervisor, ...coEvaluators];
+
+        for (const crit of grid.criteria) {
+          const bounds = cumulativeBounds(crit.cells);
+          const baseOrder = pickConsensusOrder(crit.cells.length);
+          for (const evaluator of evaluators) {
+            const jitter = pick([-1, 0, 0, 0, 1]);
+            const order = Math.min(crit.cells.length - 1, Math.max(0, baseOrder + jitter));
+            const note = noteForCellIndex(bounds, order);
+            await prisma.criteriaAssessment.create({
+              data: {
+                date: evalDate,
+                commentFeedback: Math.random() < 0.6 ? faker.lorem.sentence() : null,
+                note,
+                criteriaId: crit.id,
+                teacherId: evaluator.id,
+                projectId: project.id,
+              },
+            });
+          }
+        }
+
+        // Discussion réaliste entre les 3 évaluateurs sur le critère "Forme
+        // du texte", échangée un peu avant que chacun ne note (cf. section 8
+        // pour le même mécanisme côté jury de soutenance).
+        const formeCriterion = grid.criteria.find((c) => c.name === 'Forme du texte');
+        if (formeCriterion && evaluators.length === 3) {
+          const script = pick(FORME_DISCUSSION_SCRIPTS);
+          let messageDate = new Date(evalDate.getTime() - 2 * 60 * 60 * 1000); // ~2h avant les notes
+          for (const line of script) {
+            messageDate = new Date(messageDate.getTime() + randomInt(5, 25) * 60 * 1000);
+            await prisma.criteriaDiscussion.create({
+              data: {
+                date: messageDate,
+                comment: line.text,
+                criteriaId: formeCriterion.id,
+                teacherId: evaluators[line.authorIndex].id,
+                projectId: project.id,
+              },
+            });
+          }
+        }
+
+        await prisma.gridFeedback.create({
+          data: {
+            date: evalDate,
+            comment: faker.lorem.paragraph(),
+            status: GridFeedbackStatus.PUBLISHED,
+            projectId: project.id,
+            gridId: grid.gridId,
+          },
+        });
+        continue;
+      }
+
       for (const crit of grid.criteria) {
         const bounds = cumulativeBounds(crit.cells);
         const order = pickConsensusOrder(crit.cells.length);
@@ -1778,45 +1827,28 @@ async function main() {
         });
       }
 
-      if (Math.random() < 0.5) {
-        await prisma.gridFeedback.create({
-          data: {
-            date: evalDate,
-            comment: faker.lorem.paragraph(),
-            status: pick(GRID_FEEDBACK_STATUSES),
-            projectId: project.id,
-            gridId: grid.gridId,
-          },
-        });
-      }
-    }
-  }
-
-  // ───────────────────────────────────────────────────────────────────────
-  // 6) DÉPÔTS DE MÉMOIRE
-  // ───────────────────────────────────────────────────────────────────────
-  console.log('📄  Création des dépôts de mémoire...');
-
-  for (const project of allProjects) {
-    if (project.status !== 'TERMINE') continue;
-    const assets = assetsByCourse[project.courseLabel];
-    for (const member of project.members) {
-      await prisma.userWorkSubmission.create({
+      // Des votes existent déjà pour cette grille -> le feedback est au
+      // moins "en correction" (jamais "en attente", ce serait incohérent).
+      await prisma.gridFeedback.create({
         data: {
-          workId: assets.workId,
-          userId: member.id,
+          date: evalDate,
+          comment: Math.random() < 0.5 ? faker.lorem.paragraph() : null,
+          status: GridFeedbackStatus.CORRECTION,
           projectId: project.id,
-          fileName: `memoire_${member.id}.pdf`,
-          filePath: `/uploads/memoires/memoire_${member.id}.pdf`,
+          gridId: grid.gridId,
         },
       });
     }
-
-    // Validation de la condition SUPERVISOR_VALIDATION : une seule fois par
-    // promo (la clé composite de UserValidation est userId+conditionId, et
-    // cette condition est au niveau du module, pas du projet — inutile/
-    // impossible de la "revalider" à chaque projet terminé).
   }
+
+  // ───────────────────────────────────────────────────────────────────────
+  // 6) VALIDATION DE LA CONDITION D'ACCÈS À LA DÉFENSE
+  //    Aucun dépôt de mémoire n'est simulé ici (pas de vrai PDF attaché à la
+  //    démo) : seule la validation SUPERVISOR_VALIDATION est illustrée, une
+  //    seule fois par promo (clé composite userId+conditionId, condition au
+  //    niveau du module, pas du projet).
+  // ───────────────────────────────────────────────────────────────────────
+  console.log('✅  Validation de la condition d\'accès à la défense...');
 
   for (const { label } of courses) {
     const assets = assetsByCourse[label];
@@ -1829,40 +1861,24 @@ async function main() {
   }
 
   // ───────────────────────────────────────────────────────────────────────
-  // 7) PONDÉRATIONS PERSONNALISÉES
+  // 7) SOUTENANCES : constitution du jury (ProjectMember) uniquement. Les
+  //    grilles de type "jury" (oral, réalisation pratique, rapport final)
+  //    restent volontairement intactes : aucun CriteriaAssessment, aucune
+  //    CriteriaDiscussion, aucun GridFeedback n'est créé pour elles -> elles
+  //    restent au statut "En attente" (l'absence de GridFeedback vaut
+  //    PENDING côté service, cf. assessment-grid.service.ts).
   // ───────────────────────────────────────────────────────────────────────
-  console.log('⚖️   Création des pondérations personnalisées...');
-
-  for (const project of allProjects) {
-    const assets = assetsByCourse[project.courseLabel];
-    // pondération personnalisée pour ~15% des projets (le reste utilise le defaultWeight)
-    if (Math.random() < 0.15) {
-      const rapportFinalCriteria = assets.grids['rapportFinal'].criteria;
-      // Redistribution arbitraire : les 3 premiers critères (forme, forme,
-      // références) perdent un peu de poids au profit des 3 suivants.
-      for (const [i, crit] of rapportFinalCriteria.entries()) {
-        const original = REAL_GRIDS.find((g) => g.key === 'rapportFinal')!.criteria[i].weight;
-        const adjusted = i < 3 ? Math.max(2, original - 2) : i < 6 ? original + 2 : original;
-        await prisma.weighting.create({
-          data: { criteriaId: crit.id, projectId: project.id, weight: adjusted },
-        });
-      }
-    }
-  }
-
-  // ───────────────────────────────────────────────────────────────────────
-  // 8) SOUTENANCES : jury (ProjectMember) + ÉVALUATIONS (CriteriaAssessment)
-  //    + GridFeedback, avec Activity/Group (créneau + salle) en plus pour
-  //    les promos "génériques" — MAIN n'a pas d'Activity ("no event") mais a
-  //    bien un jury et des évaluations sur ses grilles de type "jury".
-  // ───────────────────────────────────────────────────────────────────────
-  console.log('🏆  Planification des soutenances et création des évaluations...');
-
-  let soutenanceSlot = 0;
+  console.log('🏆  Constitution des jurys de soutenance (grilles laissées "En attente")...');
 
   for (const project of allProjects) {
     if (project.status !== 'TERMINE') continue;
     const assets = assetsByCourse[project.courseLabel];
+
+    // Aucune grille de type "jury" sur cette promo (ex. STAGE, où le tuteur
+    // évalue seul via ses grilles "rapporteur", déjà couvertes section 5) ->
+    // pas de jury à constituer ici.
+    const hasJuryGrids = Object.values(assets.grids).some((g) => g.evaluator === 'jury');
+    if (!hasJuryGrids) continue;
 
     // Jury de 2 à 3 enseignants (le promoteur, déjà SUPERVISOR, + 1-2
     // co-évaluateurs), avec sous-rôles distincts pour illustrer
@@ -1875,110 +1891,10 @@ async function main() {
         data: { userId: peer.id, projectId: project.id, subRoleId: subRoleId[jurySubRoles[i % jurySubRoles.length]] },
       });
     }
-    const jury = [project.supervisor, ...peers];
-
-    if (assets.withSoutenanceEvent && assets.soutenanceToolId) {
-      // Créneau de soutenance dédié à ce projet (Activity, sous-type de Tool)
-      const start = new Date(assets.soutenanceDay);
-      start.setMinutes(start.getMinutes() + soutenanceSlot * 30);
-      const end = new Date(start);
-      end.setMinutes(end.getMinutes() + 25);
-      soutenanceSlot++;
-
-      const toolSlot = await prisma.tool.create({
-        data: {
-          name: `Soutenance — ${project.title.slice(0, 40)}`,
-          type: ToolType.ACTIVITY,
-          moduleId: (await prisma.tool.findUniqueOrThrow({ where: { id: assets.soutenanceToolId } })).moduleId,
-        },
-      });
-      const activity = await prisma.activity.create({
-        data: { id: toolSlot.id, startDateTime: start, endDateTime: end, location: 'Auditoire A1' },
-      });
-
-      // Group rattaché obligatoirement à cette Activity (eventId NOT NULL)
-      const group = await prisma.group.create({
-        data: {
-          name: `${DEMO_PREFIX}Jury — ${project.title.slice(0, 40)}`,
-          startDateTime: start,
-          endDateTime: end,
-          location: 'Auditoire A1',
-          eventId: activity.id,
-        },
-      });
-      for (const member of jury) {
-        await prisma.userGroup.create({ data: { userId: member.id, groupId: group.id } });
-      }
-      await prisma.projectGroup.create({ data: { groupId: group.id, projectId: project.id } });
-    }
-
-    // Évaluation par critère, au niveau du projet (plus par étudiant), pour
-    // chacune des grilles de type "jury" rattachées à cette promo (oral,
-    // réalisation pratique, rapport final — quel que soit leur module) :
-    // tout le jury note chaque critère.
-    const juryGrids = Object.values(assets.grids).filter((g) => g.evaluator === 'jury');
-    for (const grid of juryGrids) {
-      for (const crit of grid.criteria) {
-        const bounds = cumulativeBounds(crit.cells);
-        // "consensus" de base pour ce critère (générique quel que soit le
-        // nombre de niveaux du critère - certains n'en ont que 2, d'autres 4).
-        const baseOrder = pickConsensusOrder(crit.cells.length);
-        const soutenanceEvalDate = randomDateBetween(assets.soutenanceWindowStart, assets.soutenanceWindowEnd);
-
-        // Fil de discussion interne du jury sur ce critère (jamais visible
-        // étudiant), typiquement échangé juste avant que chacun ne note.
-        if (jury.length > 1 && Math.random() < 0.35) {
-          const discussionAuthors = pickMany(jury, randomInt(1, Math.min(2, jury.length)));
-          for (const author of discussionAuthors) {
-            await prisma.criteriaDiscussion.create({
-              data: {
-                date: soutenanceEvalDate,
-                comment: faker.lorem.sentence(),
-                criteriaId: crit.id,
-                teacherId: author.id,
-                projectId: project.id,
-              },
-            });
-          }
-        }
-
-        for (const evaluator of jury) {
-          // chaque évaluateur peut diverger légèrement du consensus (+/-1 niveau)
-          const jitter = pick([-1, 0, 0, 0, 1]);
-          const order = Math.min(crit.cells.length - 1, Math.max(0, baseOrder + jitter));
-          const note = noteForCellIndex(bounds, order);
-          await prisma.criteriaAssessment.create({
-            data: {
-              date: soutenanceEvalDate,
-              commentFeedback: Math.random() < 0.5 ? faker.lorem.sentence() : null,
-              note,
-              criteriaId: crit.id,
-              teacherId: evaluator.id,
-              projectId: project.id,
-            },
-          });
-        }
-      }
-
-      if (Math.random() < 0.6) {
-        await prisma.gridFeedback.create({
-          data: {
-            date: randomDateBetween(
-              assets.soutenanceWindowStart,
-              new Date(assets.soutenanceWindowEnd.getTime() + 5 * DAY_MS),
-            ),
-            comment: faker.lorem.paragraph(),
-            status: pick(GRID_FEEDBACK_STATUSES),
-            projectId: project.id,
-            gridId: grid.gridId,
-          },
-        });
-      }
-    }
   }
 
   // ───────────────────────────────────────────────────────────────────────
-  // 9) NOTEBOOKS
+  // 8) NOTEBOOKS
   // ───────────────────────────────────────────────────────────────────────
   console.log('📓  Création des carnets de bord (Notebook)...');
 
@@ -1993,7 +1909,7 @@ async function main() {
   }
 
   // ───────────────────────────────────────────────────────────────────────
-  // 10) NOTIFICATIONS
+  // 9) NOTIFICATIONS
   // ───────────────────────────────────────────────────────────────────────
   console.log('🔔  Création des notifications...');
 
@@ -2012,7 +1928,7 @@ async function main() {
   }
 
   // ───────────────────────────────────────────────────────────────────────
-  // 11) INVITATIONS
+  // 10) INVITATIONS
   // ───────────────────────────────────────────────────────────────────────
   console.log('✉️   Création des invitations...');
 
@@ -2034,7 +1950,7 @@ async function main() {
   }
 
   // ───────────────────────────────────────────────────────────────────────
-  // 12) PRÉFÉRENCES DE SUPERVISEUR (avec ordre de préférence)
+  // 11) PRÉFÉRENCES DE SUPERVISEUR (avec ordre de préférence)
   // ───────────────────────────────────────────────────────────────────────
   console.log('⭐  Création des préférences de superviseur...');
 
