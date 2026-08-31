@@ -8,6 +8,7 @@ import { ProjectWithGridsModel } from '../../projects/models/project-with-grids.
 import { EvaluationModel, SetCriteriaNoteResultModel } from '../models/evaluation.model';
 import { CriteriaDiscussionModel } from '../models/discussion.model';
 import { GridContextModel } from '../models/grid-context.model';
+import { StudentAssessmentViewModel } from '../models/student-assessment-view.model';
 
 @Injectable({
   providedIn: 'root'
@@ -74,6 +75,21 @@ export class AssessmentGridService {
     return this.http.get<GridContextModel>(
       `${this.apiUrl}/${gridId}/context`,
       { params: { projectId }, withCredentials: true }
+    );
+  }
+
+  publishGrid(gridId: number, projectId: number): Observable<{ status: GridContextModel['status'] }> {
+    return this.http.patch<{ status: GridContextModel['status'] }>(
+      `${this.apiUrl}/${gridId}/publish`,
+      { projectId },
+      { withCredentials: true }
+    );
+  }
+
+  getMyAssessmentView(gridId: number): Observable<StudentAssessmentViewModel> {
+    return this.http.get<StudentAssessmentViewModel>(
+      `${this.apiUrl}/${gridId}/my-view`,
+      { withCredentials: true }
     );
   }
 }

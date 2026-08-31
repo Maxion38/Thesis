@@ -1,0 +1,158 @@
+.page {
+  width: min(100%, 1400px);
+  margin: 0 auto;
+  padding: 0 clamp(16px, 3vw, 50px) 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.status-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 400;
+  white-space: nowrap;
+  border: solid 1px rgb(170, 170, 170);
+  color: #4a4a4a;
+
+  &__dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background-color: #a5a5a5;
+    flex-shrink: 0;
+  }
+
+  &--pending &__dot {
+    background-color: #a5a5a5;
+  }
+
+  &--correction &__dot {
+    background-color: #e8a93c;
+  }
+
+  &--published &__dot {
+    background-color: #00bd3f;
+  }
+
+  &--seen &__dot {
+    background-color: #3a7bd5;
+  }
+}
+
+.cells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.cell {
+  border-radius: 12px;
+  background-color: #f0f0f0;
+  flex: 1;
+  min-width: 180px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+
+  &.cell--selected {
+    border: 1px solid #1f1f1f;
+  }
+
+  &__text {
+    flex: 1;
+    display: flex;
+    align-items: start;
+  }
+
+  &__votes {
+    height: 1.8rem;
+    display: flex;
+    gap: 0.2rem;
+  }
+}
+
+.user-vote {
+  width: 2.2em;
+  height: 2.2em;
+  background-color: #1F4541;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  cursor: default;
+}
+
+.feedback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-top: 1rem;
+
+  &__card {
+    width: 28em;
+    max-width: 100%;
+    border: 2px solid rgb(214, 214, 214);
+    border-radius: 12px;
+    padding: 1em 1.2em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__author {
+    font-weight: 500;
+    font-size: 0.85rem;
+    opacity: 0.7;
+  }
+
+  &__text {
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  &__empty {
+    color: #8a8a8a;
+    font-size: 0.9rem;
+    padding: 0.5rem 0;
+  }
+}
+
+.grades-locked {
+  color: #8a8a8a;
+  font-size: 0.9rem;
+  padding: 1.5rem 0;
+  text-align: center;
+}
+
+.loading {
+  padding: 2rem;
+  text-align: center;
+  color: #8a8a8a;
+}
+
+@media (max-width: 1200px) {
+  .page {
+    padding: 0 18px 24px;
+  }
+}
+
+@media (max-width: 900px) {
+  .page {
+    padding: 0 12px 20px;
+  }
+}

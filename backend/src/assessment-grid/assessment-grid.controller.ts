@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, Req } f
 import { AssessmentGridService } from './assessment-grid.service';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { RoleType } from '@prisma/client';
-import { SetCriteriaNoteDto, SetCriteriaFeedbackDto, CreateCriteriaDiscussionDto } from './dto/assessment-grid.dto';
+import { SetCriteriaNoteDto, SetCriteriaFeedbackDto, CreateCriteriaDiscussionDto, PublishGridDto } from './dto/assessment-grid.dto';
 
 @Controller('assessment-grid')
 export class AssessmentGridController {
@@ -80,7 +80,28 @@ export class AssessmentGridController {
   async getGridContext(
     @Param('gridId', ParseIntPipe) gridId: number,
     @Query('projectId', ParseIntPipe) projectId: number,
+    @Req() req: any,
   ) {
-    return this.assessmentGridService.getGridContext(gridId, projectId);
+    return this.assessmentGridService.getGridContext(gridId, projectId, req.user.userId);
+  }
+
+  @Auth(RoleType.COORDINATOR, RoleType.TEACHER)
+  @Patch(':gridId/publish')
+  async publishGrid(
+    @Param('gridId', ParseIntPipe) gridId: number,
+    @Body() dto: PublishGridDto,
+    @Req() req: any,
+  ) {
+    const status = await this.assessmentGridService.publishGrid(gridId, dto.projectId, req.user.userId);
+    return { status };
+  }
+
+  @Auth(RoleType.STUDENT)
+  @Get(':gridId/my-view')
+  async getMyAssessmentView(
+    @Param('gridId', ParseIntPipe) gridId: number,
+    @Req() req: any,
+  ) {
+    return this.assessmentGridService.getStudentAssessmentView(gridId, req.user.userId);
   }
 }

@@ -21,7 +21,7 @@
       </app-dropdown>
 
       <app-dropdown #gridDropdown class="user-card grid-name" *ngIf="selectedGrid">
-        <div dropdownTrigger class="user-card__icon"><span class="material-symbols-outlined">box_edit</span></div>
+        <div dropdownTrigger class="user-card__icon"><span class="material-symbols-outlined">fact_check</span></div>
         <div dropdownTrigger class="user-card__name">{{ selectedGrid.name }}</div>
         <span dropdownTrigger class="material-symbols-outlined user-card__dropdown">{{ gridDropdown.open ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
         <ng-container dropdownPanel>
@@ -39,10 +39,26 @@
 
     <div class="header-right">
 
-      <div class="status-badge" [class]="'status-badge--' + gridContext.status.toLowerCase()" *ngIf="gridContext">
-        <span class="status-badge__dot"></span>
-        {{ statusLabel(gridContext.status) }}
-      </div>
+      <app-dropdown #statusDropdown align="right" *ngIf="gridContext">
+        <div dropdownTrigger class="status-badge" [class]="'status-badge--' + gridContext.status.toLowerCase()">
+          <span class="status-badge__dot"></span>
+          {{ statusLabel(gridContext.status) }}
+          <span class="material-symbols-outlined status-badge__dropdown">{{ statusDropdown.open ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
+        </div>
+        <ng-container dropdownPanel>
+          <button
+            *ngIf="canPublish"
+            class="dropdown-item"
+            [disabled]="publishingGrid"
+            (click)="publishGrid()"
+          >Publier la grille</button>
+          <div class="dropdown-empty" *ngIf="!canPublish">
+            {{ gridContext.isSupervisor
+              ? 'Grille déjà publiée'
+              : 'Seul le rapporteur du projet peut publier cette grille' }}
+          </div>
+        </ng-container>
+      </app-dropdown>
 
       <div
         class="pdf-toggle-btn"

@@ -1,0 +1,59 @@
+<div class="page" *ngIf="grid">
+
+  <div class="status-row">
+    <div class="status-badge" [class]="'status-badge--' + grid.status.toLowerCase()">
+      <span class="status-badge__dot"></span>
+      {{ statusLabel(grid.status) }}
+    </div>
+  </div>
+
+  <app-markdown-card *ngIf="grid.description" [markdown]="grid.description"></app-markdown-card>
+
+  <app-criteria-browser
+    *ngIf="grid.criteria.length"
+    [criteria]="grid.criteria"
+    [(selectedOrder)]="selectedCriteriaOrder"
+    [(mode)]="viewMode"
+  >
+    <ng-template #criterionRow let-criteria="criteria">
+
+      <div class="cells">
+        <div
+          class="cell"
+          [class.cell--selected]="gradesVisible && votersForCell(criteria.id, cell).length > 0"
+          *ngFor="let cell of criteria.cells"
+        >
+          <div class="cell__text"><span>{{ cell.description }}</span></div>
+          <div class="cell__votes" *ngIf="gradesVisible && votersForCell(criteria.id, cell).length">
+            <div
+              class="user-vote"
+              *ngFor="let voter of votersForCell(criteria.id, cell)"
+              [title]="voter.teacherSurname + ' ' + (voter.teacherFirstname || '')"
+            >{{ initials(voter) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="feedback" *ngIf="gradesVisible; else gradesLocked">
+        <div class="feedback__card" *ngFor="let item of feedbackFor(criteria.id)">
+          <span class="feedback__author">{{ item.teacherSurname }} {{ item.teacherFirstname }}</span>
+          <span class="feedback__text">{{ item.commentFeedback }}</span>
+        </div>
+
+        <div class="feedback__empty" *ngIf="feedbackFor(criteria.id).length === 0">
+          Aucun feedback pour ce critère pour le moment.
+        </div>
+      </div>
+
+      <ng-template #gradesLocked>
+        <div class="grades-locked">
+          Les notes et feedbacks de ce critère seront visibles une fois la grille publiée.
+        </div>
+      </ng-template>
+
+    </ng-template>
+  </app-criteria-browser>
+
+</div>
+
+<div class="loading" *ngIf="loading && !grid">Chargement...</div>

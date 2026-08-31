@@ -1,206 +1,187 @@
 <div class="page">
-    <div class="criteria">
 
-        <app-dropdown class="criteria__selector">
-            <span dropdownTrigger class="criteria__text">{{ selectedCriteria?.name }}</span>
-            <ng-container dropdownPanel>
-                <div
-                    class="dropdown-item"
-                    [class.dropdown-item--active]="c.order === selectedCriteriaOrder"
-                    *ngFor="let c of criteria"
-                    (click)="selectCriteria(c.order)"
-                >
-                    {{ c.name }}
-                </div>
-            </ng-container>
-        </app-dropdown>
+  <app-criteria-browser
+    *ngIf="criteria.length"
+    [criteria]="criteria"
+    [selectedOrder]="selectedCriteriaOrder"
+    (selectedOrderChange)="onSelectedOrderChange($event)"
+    [mode]="viewMode"
+    (modeChange)="onModeChange($event)"
+  >
+    <ng-template #criterionRow let-criteria="criteria">
 
-    </div>
-
-    <div class="cells" *ngIf="selectedCriteria">
+      <div class="cells">
         <div
-            class="cell"
-            [class.cell-last]="i === selectedCriteria!.cells.length - 1"
-            [class.cell--selected]="isMyVote(cell)"
-            *ngFor="let cell of selectedCriteria!.cells; let i = index"
+          class="cell"
+          [class.cell-last]="i === criteria.cells.length - 1"
+          [class.cell--selected]="isMyVote(criteria, cell)"
+          *ngFor="let cell of criteria.cells; let i = index"
         >
-            <div class="cell__text"><span>{{ cell.description }}</span></div>
-            <div class="cell__votes" *ngIf="evaluationsVisibility.showOtherVotes()">
-                <div
-                    class="user-vote"
-                    *ngFor="let voter of votersForCell(cell)"
-                    [title]="voter.teacherSurname + ' ' + (voter.teacherFirstname || '')"
-                >{{ getVoterInitials(voter) }}</div>
-            </div>
-            <div class="cell__actions">
-                <div
-                    class="cell__actions__chose"
-                    [class.cell__actions__chose--active]="isMyVote(cell)"
-                    (click)="selectCell(cell)"
-                >
-                    <span *ngIf="isMyVote(cell); else choisirLabel" class="material-symbols-outlined check">check</span>
-                    <ng-template #choisirLabel>Choisir</ng-template>
-                </div>
-
-                <ng-container *ngIf="isMyVote(cell) && canAdjust(cell); else staticNote">
-                    <div class="cell__actions__adapt-div">
-                        <div class="arrow" (click)="adjustNote(cell, -noteStep)">
-                            <span class="material-symbols-outlined arrow__icon">chevron_left</span>
-                        </div>
-
-                        <div
-                            class="cell__actions__adapt"
-                            *ngIf="!editingNote; else editNote"
-                            (click)="startEditNote(cell)"
-                        >{{ formatNote(myNote() ?? cell.order) }}/{{ selectedCriteria!.cells.length - 1 }}</div>
-                        <ng-template #editNote>
-                            <div class="cell__actions__adapt">
-                                <input
-                                    #noteInput
-                                    class="cell__actions__adapt__input"
-                                    type="number"
-                                    step="0.01"
-                                    [min]="cellMin(cell)"
-                                    [max]="cell.order"
-                                    [(ngModel)]="editValue"
-                                    (click)="$event.stopPropagation()"
-                                    (blur)="commitEditNote(cell)"
-                                    (keydown.enter)="commitEditNote(cell)"
-                                />/{{ selectedCriteria!.cells.length - 1 }}
-                            </div>
-                        </ng-template>
-
-                        <div class="arrow" (click)="adjustNote(cell, noteStep)">
-                            <span class="material-symbols-outlined arrow__icon">chevron_right</span>
-                        </div>
-                    </div>
-                </ng-container>
-                <ng-template #staticNote>{{ cell.order }}/{{ selectedCriteria!.cells.length - 1 }}</ng-template>
-            </div>
-        </div>
-    </div>
-
-    <div class="criteria-actions">
-
-        <div class="arrow-btn" (click)="goToPreviousCriteria()">
-            <span class="material-symbols-outlined arrow-icon">chevron_left</span>
-        </div>
-
-        <div class="dots" *ngIf="criteria.length > 1">
-            <div 
-                class="dots__item"
-                [class.dots__item--active]="c.order === selectedCriteriaOrder"
-                *ngFor="let c of criteria"
-                (click)="selectCriteria(c.order)"
-            ></div>
-        </div>
-
-        <div class="arrow-btn" (click)="goToNextCriteria()">
-            <span class="material-symbols-outlined arrow-icon">chevron_right</span>
-        </div>
-
-    </div>
-
-    <ng-container *ngIf="canSeeComments(); else commentsLocked">
-        <div class="comments-tabbar">
-            <div class="comment-tabs">
-                <div
-                    class="comment-tabs__item"
-                    [class.comment-tabs__item--active]="activeCommentTab === 'discussion'"
-                    (click)="activeCommentTab = 'discussion'"
-                >Discussions</div>
-                <div
-                    class="comment-tabs__item"
-                    [class.comment-tabs__item--active]="activeCommentTab === 'feedback'"
-                    (click)="activeCommentTab = 'feedback'"
-                >Feedback</div>
-            </div>
-        </div>
-
-        <div class="discussion" *ngIf="activeCommentTab === 'discussion'">
-            <div class="discussion__messages" #discussionScroll>
-                <div class="discussion__empty" *ngIf="!loadingDiscussions && discussions.length === 0">
-                    Aucun message pour ce critère pour le moment.
-                </div>
-                <div
-                    class="discussion__bubble-row"
-                    [class.discussion__bubble-row--mine]="isMyDiscussionMessage(d)"
-                    *ngFor="let d of discussions"
-                >
-                    <div class="user-profile discussion__avatar" *ngIf="!isMyDiscussionMessage(d)">{{ getDiscussionInitials(d) }}</div>
-                    <div class="discussion__bubble">
-                        <span class="discussion__author" *ngIf="!isMyDiscussionMessage(d)">{{ d.teacherSurname }} {{ d.teacherFirstname }}</span>
-                        <span class="discussion__text">{{ d.comment }}</span>
-                        <span class="discussion__time">{{ formatDate(d.date) }} · {{ formatTime(d.date) }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="discussion__input">
-                <input
-                    type="text"
-                    placeholder="Écrire un message..."
-                    [(ngModel)]="newDiscussionMessage"
-                    (keydown.enter)="sendDiscussionMessage()"
-                    [disabled]="postingDiscussion"
-                />
-                <div class="discussion__send" (click)="sendDiscussionMessage()">
-                    <span class="material-symbols-outlined">send</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="comments" *ngIf="activeCommentTab === 'feedback'">
+          <div class="cell__text"><span>{{ cell.description }}</span></div>
+          <div class="cell__votes" *ngIf="evaluationsVisibility.showOtherVotes()">
             <div
-                class="comments__element"
-                [class.comments__element--mine]="card.teacherId === currentUserId"
-                *ngFor="let card of criteriaFeedbackCards(); trackBy: trackByTeacherId"
+              class="user-vote"
+              *ngFor="let voter of votersForCell(criteria, cell)"
+              [title]="voter.teacherSurname + ' ' + (voter.teacherFirstname || '')"
+            >{{ getVoterInitials(voter) }}</div>
+          </div>
+          <div class="cell__actions">
+            <div
+              class="cell__actions__chose"
+              [class.cell__actions__chose--active]="isMyVote(criteria, cell)"
+              (click)="selectCell(criteria, cell)"
             >
-                <ng-container *ngIf="card.teacherId === currentUserId; else readOnlyFeedback">
-                    <ng-container *ngIf="editingFeedback; else viewOwnFeedback">
-                        <textarea
-                            class="comments__input"
-                            rows="3"
-                            [(ngModel)]="feedbackDraft"
-                        ></textarea>
-                    </ng-container>
-                    <ng-template #viewOwnFeedback>
-                        <span class="comments__text">
-                            {{ card.commentFeedback || 'Ajouter un feedback...' }}
-                        </span>
-                    </ng-template>
-                </ng-container>
-                <ng-template #readOnlyFeedback>
-                    <span class="comments__text">{{ card.commentFeedback }}</span>
+              <span *ngIf="isMyVote(criteria, cell); else choisirLabel" class="material-symbols-outlined check">check</span>
+              <ng-template #choisirLabel>Choisir</ng-template>
+            </div>
+
+            <ng-container *ngIf="isMyVote(criteria, cell) && canAdjust(cell); else staticNote">
+              <div class="cell__actions__adapt-div">
+                <div class="arrow" (click)="adjustNote(criteria, cell, -noteStep)">
+                  <span class="material-symbols-outlined arrow__icon">chevron_left</span>
+                </div>
+
+                <div
+                  class="cell__actions__adapt"
+                  *ngIf="editingNoteCriteriaId !== criteria.id; else editNote"
+                  (click)="startEditNote(criteria, cell)"
+                >{{ formatNote(myNote(criteria) ?? cell.order) }}/{{ criteria.cells.length - 1 }}</div>
+                <ng-template #editNote>
+                  <div class="cell__actions__adapt">
+                    <input
+                      #noteInput
+                      class="cell__actions__adapt__input"
+                      type="number"
+                      step="0.01"
+                      [min]="cellMin(cell)"
+                      [max]="cell.order"
+                      [(ngModel)]="editValue"
+                      (click)="$event.stopPropagation()"
+                      (blur)="commitEditNote(criteria, cell)"
+                      (keydown.enter)="commitEditNote(criteria, cell)"
+                    />/{{ criteria.cells.length - 1 }}
+                  </div>
                 </ng-template>
 
-                <div class="comments__infos">
-                    <span *ngIf="card.date">{{ formatDate(card.date) }}</span>
-                    <span *ngIf="card.date">{{ formatTime(card.date) }}</span>
-
-                    <ng-container *ngIf="card.teacherId === currentUserId">
-                        <ng-container *ngIf="!editingFeedback; else feedbackEditActions">
-                            <span class="material-symbols-outlined comments__edit-icon" (click)="startEditFeedback(card)">edit</span>
-                        </ng-container>
-                        <ng-template #feedbackEditActions>
-                            <span class="material-symbols-outlined comments__edit-icon" (click)="saveFeedback()">check</span>
-                            <span class="material-symbols-outlined comments__edit-icon" (click)="cancelEditFeedback()">close</span>
-                        </ng-template>
-                    </ng-container>
-
-                    <div class="user-profile">{{ getVoterInitials(card) }}</div>
+                <div class="arrow" (click)="adjustNote(criteria, cell, noteStep)">
+                  <span class="material-symbols-outlined arrow__icon">chevron_right</span>
                 </div>
-            </div>
-
-            <div class="comments__empty" *ngIf="criteriaFeedbackCards().length === 0">
-                Aucun feedback pour ce critère pour le moment.
-            </div>
+              </div>
+            </ng-container>
+            <ng-template #staticNote>{{ cell.order }}/{{ criteria.cells.length - 1 }}</ng-template>
+          </div>
         </div>
-    </ng-container>
+      </div>
 
-    <ng-template #commentsLocked>
+      <ng-container *ngIf="canSeeComments(criteria); else commentsLocked">
+        <div class="comments-tabbar">
+          <div class="comment-tabs">
+            <div
+              class="comment-tabs__item"
+              [class.comment-tabs__item--active]="getActiveTab(criteria.id) === 'discussion'"
+              (click)="setActiveTab(criteria.id, 'discussion')"
+            >Discussions</div>
+            <div
+              class="comment-tabs__item"
+              [class.comment-tabs__item--active]="getActiveTab(criteria.id) === 'feedback'"
+              (click)="setActiveTab(criteria.id, 'feedback')"
+            >Feedback</div>
+          </div>
+        </div>
+
+        <div class="discussion" *ngIf="getActiveTab(criteria.id) === 'discussion'">
+          <div
+            class="discussion__messages"
+            [appRegisterElement]="criteria.id"
+            (elementRegistered)="onDiscussionScrollRegistered($event)"
+          >
+            <div class="discussion__empty" *ngIf="!isLoadingDiscussions(criteria.id) && getDiscussions(criteria.id).length === 0">
+              Aucun message pour ce critère pour le moment.
+            </div>
+            <div
+              class="discussion__bubble-row"
+              [class.discussion__bubble-row--mine]="isMyDiscussionMessage(d)"
+              *ngFor="let d of getDiscussions(criteria.id)"
+            >
+              <div class="user-profile discussion__avatar" *ngIf="!isMyDiscussionMessage(d)">{{ getDiscussionInitials(d) }}</div>
+              <div class="discussion__bubble">
+                <span class="discussion__author" *ngIf="!isMyDiscussionMessage(d)">{{ d.teacherSurname }} {{ d.teacherFirstname }}</span>
+                <span class="discussion__text">{{ d.comment }}</span>
+                <span class="discussion__time">{{ formatDate(d.date) }} · {{ formatTime(d.date) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="discussion__input">
+            <input
+              type="text"
+              placeholder="Écrire un message..."
+              [ngModel]="newDiscussionMessage[criteria.id] ?? ''"
+              (ngModelChange)="newDiscussionMessage[criteria.id] = $event"
+              (keydown.enter)="sendDiscussionMessage(criteria)"
+              [disabled]="postingDiscussionCriteriaId === criteria.id"
+            />
+            <div class="discussion__send" (click)="sendDiscussionMessage(criteria)">
+              <span class="material-symbols-outlined">send</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="comments" *ngIf="getActiveTab(criteria.id) === 'feedback'">
+          <div
+            class="comments__element"
+            [class.comments__element--mine]="card.teacherId === currentUserId"
+            *ngFor="let card of criteriaFeedbackCards(criteria); trackBy: trackByTeacherId"
+          >
+            <ng-container *ngIf="card.teacherId === currentUserId; else readOnlyFeedback">
+              <ng-container *ngIf="editingFeedbackCriteriaId === criteria.id; else viewOwnFeedback">
+                <textarea
+                  class="comments__input"
+                  rows="3"
+                  [(ngModel)]="feedbackDraft"
+                ></textarea>
+              </ng-container>
+              <ng-template #viewOwnFeedback>
+                <span class="comments__text">
+                  {{ card.commentFeedback || 'Ajouter un feedback...' }}
+                </span>
+              </ng-template>
+            </ng-container>
+            <ng-template #readOnlyFeedback>
+              <span class="comments__text">{{ card.commentFeedback }}</span>
+            </ng-template>
+
+            <div class="comments__infos">
+              <span *ngIf="card.date">{{ formatDate(card.date) }}</span>
+              <span *ngIf="card.date">{{ formatTime(card.date) }}</span>
+
+              <ng-container *ngIf="card.teacherId === currentUserId">
+                <ng-container *ngIf="editingFeedbackCriteriaId !== criteria.id; else feedbackEditActions">
+                  <span class="material-symbols-outlined comments__edit-icon" (click)="startEditFeedback(criteria, card)">edit</span>
+                </ng-container>
+                <ng-template #feedbackEditActions>
+                  <span class="material-symbols-outlined comments__edit-icon" (click)="saveFeedback(criteria)">check</span>
+                  <span class="material-symbols-outlined comments__edit-icon" (click)="cancelEditFeedback()">close</span>
+                </ng-template>
+              </ng-container>
+
+              <div class="user-profile">{{ getVoterInitials(card) }}</div>
+            </div>
+          </div>
+
+          <div class="comments__empty" *ngIf="criteriaFeedbackCards(criteria).length === 0">
+            Aucun feedback pour ce critère pour le moment.
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-template #commentsLocked>
         <div class="comments-locked">
-            Choisissez une note pour ce critère, ou activez l'affichage des évaluations, pour voir les discussions et le feedback.
+          Choisissez une note pour ce critère, ou activez l'affichage des évaluations, pour voir les discussions et le feedback.
         </div>
+      </ng-template>
+
     </ng-template>
+  </app-criteria-browser>
+
 </div>

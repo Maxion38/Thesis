@@ -4,4 +4,5 @@ export class ToolDto {
   description!: string | null;
   type!: string;
   moduleId!: number;
+  linkedToolId?: number | null;
 }

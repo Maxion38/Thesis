@@ -146,6 +146,11 @@
     white-space: nowrap;
     border: solid 1px rgb(170, 170, 170);
     color: #4a4a4a;
+    cursor: pointer;
+
+    &:hover {
+        background-color: #f0f0f0;
+    }
 
     &__dot {
         width: 9px;
@@ -153,6 +158,10 @@
         border-radius: 50%;
         background-color: #a5a5a5;
         flex-shrink: 0;
+    }
+
+    &__dropdown {
+        font-size: 1.1rem;
     }
 
     &--pending &__dot {

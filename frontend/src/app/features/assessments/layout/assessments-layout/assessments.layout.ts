@@ -24,6 +24,7 @@ export class AssessmentsLayoutComponent implements OnInit {
 
   gridContext?: GridContextModel;
   loadingGridContext = false;
+  publishingGrid = false;
   showPdfViewer = false;
 
   constructor(
@@ -113,6 +114,29 @@ export class AssessmentsLayoutComponent implements OnInit {
 
   statusLabel(status: GridFeedbackStatus): string {
     return GRID_FEEDBACK_STATUS_LABELS[status];
+  }
+
+  get canPublish(): boolean {
+    if (!this.gridContext?.isSupervisor) return false;
+    return this.gridContext.status === 'PENDING' || this.gridContext.status === 'CORRECTION';
+  }
+
+  publishGrid(): void {
+    const projectId = this.selectedProject?.id;
+    const gridId = this.selectedGrid?.id;
+    if (projectId === undefined || gridId === undefined || !this.canPublish || this.publishingGrid) return;
+
+    this.publishingGrid = true;
+    this.assessmentGridService.publishGrid(gridId, projectId).subscribe({
+      next: ({ status }) => {
+        if (this.gridContext) this.gridContext.status = status;
+        this.publishingGrid = false;
+      },
+      error: (err) => {
+        console.error('Erreur publication de la grille:', err);
+        this.publishingGrid = false;
+      },
+    });
   }
 
   private navigateTo(projectId: number, gridId: number, replaceUrl = false): void {

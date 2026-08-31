@@ -40,6 +40,7 @@ import { ModuleLayoutComponent } from './features/modules/layouts/module-layout/
 import { UserInspectionComponent } from './features/user-inspection/layouts/inspection/user-inspection.layout';
 import { UserProfileComponent } from './features/user-inspection/pages/profile/user-profile.component';
 import { AssessmentDetailComponent } from './features/assessments/pages/assessment/assessment-detail.component';
+import { AssessmentStudentViewComponent } from './features/assessments/pages/assessment-student-view/assessment-student-view.component';
 import { AssessmentsLayoutComponent } from './features/assessments/layout/assessments-layout/assessments.layout';
 import { ProjectsLayoutComponent } from './features/projects/layouts/projects-layout/projects.layout';
 import { AllProjectsComponent } from './features/projects/pages/all-projects/all-projects.component';
@@ -219,7 +220,7 @@ export const routes: Routes = [
           {path: '', redirectTo: 'description', pathMatch: 'full'},
           { path: 'description', component: ModuleDescriptionComponent,},
           { path: 'work/:workId', component: WorkComponent,},
-          // { path: 'assessment/:assessmentId', component: ModuleAssessmentComponent,},
+          { path: 'assessment/:assessmentId', component: AssessmentStudentViewComponent,},
           // { path: 'form/:formId', component: ModuleFormComponent,},
           // { path: 'activity/:activityId', component: ModuleActivityComponent,},
         ]

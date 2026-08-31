@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, ElementRef, ViewChild  } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ElementRef, ViewChildren, QueryList } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, forkJoin } from 'rxjs';
 import { switchMap, map, takeUntil, filter, tap } from 'rxjs/operators';
@@ -11,11 +11,12 @@ import { CellModel } from '../../models/cell.model';
 import { EvaluationModel } from '../../models/evaluation.model';
 import { CriteriaDiscussionModel } from '../../models/discussion.model';
 import { AuthService } from '../../../auth/services/auth.service';
-import { DropdownComponent } from '../../../components/dropdown/dropdown.component';
+import { CriteriaBrowserComponent, CriteriaBrowserMode } from '../../components/criteria-browser/criteria-browser.component';
+import { RegisterElementDirective } from '../../directives/register-element.directive';
 
 @Component({
   selector: 'app-assessment-detail',
-  imports: [FormsModule, CommonModule, DropdownComponent],
+  imports: [FormsModule, CommonModule, CriteriaBrowserComponent, RegisterElementDirective],
   templateUrl: './assessment-detail.component.html',
   styleUrl: './assessment-detail.component.scss',
 })
@@ -27,12 +28,15 @@ export class AssessmentDetailComponent implements OnInit, OnDestroy {
   protected evaluationsVisibility = inject(EvaluationsVisibilityService);
   private destroy$ = new Subject<void>();
 
-  @ViewChild('noteInput') noteInputRef?: ElementRef<HTMLInputElement>;
-  @ViewChild('discussionScroll') discussionScrollRef?: ElementRef<HTMLElement>;
+  // Au plus une seule ligne éditable à la fois (editingNoteCriteriaId), donc
+  // un seul #noteInput présent dans le DOM.
+  @ViewChildren('noteInput') noteInputRefs?: QueryList<ElementRef<HTMLInputElement>>;
+  private discussionScrollEls = new Map<number, HTMLElement>();
 
   criteria: CriteriaModel[] = [];
   evaluations: EvaluationModel[] = [];
   selectedCriteriaOrder: number | null = null;
+  viewMode: CriteriaBrowserMode = 'single';
   projectId!: number;
   assessmentId!: number;
   loading = false;
@@ -41,17 +45,17 @@ export class AssessmentDetailComponent implements OnInit, OnDestroy {
   // Pas d'ajustement au clic sur les chevrons ; la base stocke jusqu'à 0.01
   // (atteignable via la saisie précise).
   readonly noteStep = 0.1;
-  editingNote = false;
+  editingNoteCriteriaId: number | null = null;
   editValue: number | null = null;
 
-  activeCommentTab: 'discussion' | 'feedback' = 'discussion';
+  activeCommentTab: Record<number, 'discussion' | 'feedback'> = {};
 
-  discussions: CriteriaDiscussionModel[] = [];
-  loadingDiscussions = false;
-  newDiscussionMessage = '';
-  postingDiscussion = false;
+  discussionsByCriteria: Record<number, CriteriaDiscussionModel[]> = {};
+  loadingDiscussionsByCriteria: Record<number, boolean> = {};
+  newDiscussionMessage: Record<number, string | undefined> = {};
+  postingDiscussionCriteriaId: number | null = null;
 
-  editingFeedback = false;
+  editingFeedbackCriteriaId: number | null = null;
   feedbackDraft = '';
   savingFeedback = false;
 
@@ -83,10 +87,11 @@ export class AssessmentDetailComponent implements OnInit, OnDestroy {
 
         if (this.selectedCriteriaOrder === null && this.criteria.length > 0) {
           this.navigateToCriteria(this.criteria[0].order, true);
+          return;
         }
 
         this.loading = false;
-        this.loadDiscussions();
+        this.loadDiscussionsForCurrentView();
       },
       error: (err) => {
         console.error('Erreur récupération grille:', err);
@@ -99,30 +104,22 @@ export class AssessmentDetailComponent implements OnInit, OnDestroy {
     return this.criteria.find(c => c.order === this.selectedCriteriaOrder);
   }
 
-  get selectedCriteriaIndex(): number {
-    return this.criteria.findIndex(c => c.order === this.selectedCriteriaOrder);
+  // Critères réellement rendus à l'écran, dans l'ordre du DOM : un seul en
+  // mode "single", tous en mode "scroll". Sert à faire correspondre les
+  // QueryList (#discussionScroll, #noteInput) au bon critère.
+  visibleCriteria(): CriteriaModel[] {
+    if (this.viewMode === 'scroll') return this.criteria;
+    const sc = this.selectedCriteria;
+    return sc ? [sc] : [];
   }
 
-  goToPreviousCriteria(): void {
-    if (this.criteria.length === 0) return;
-    const index = this.selectedCriteriaIndex;
-    // wraparound : si on est au premier, on va au dernier
-    const previousIndex = index <= 0 ? this.criteria.length - 1 : index - 1;
-    this.navigateToCriteria(this.criteria[previousIndex].order);
+  onSelectedOrderChange(order: number): void {
+    this.navigateToCriteria(order);
   }
 
-  goToNextCriteria(): void {
-    if (this.criteria.length === 0) return;
-    const index = this.selectedCriteriaIndex;
-    // wraparound : si on est au dernier, on retourne au premier
-    const nextIndex = index >= this.criteria.length - 1 ? 0 : index + 1;
-    this.navigateToCriteria(this.criteria[nextIndex].order);
-  }
-
-  selectCriteria(order: number): void {
-    if (order !== this.selectedCriteriaOrder) {
-      this.navigateToCriteria(order);
-    }
+  onModeChange(mode: CriteriaBrowserMode): void {
+    this.viewMode = mode;
+    this.loadDiscussionsForCurrentView();
   }
 
   protected get currentUserId(): number | undefined {
@@ -144,15 +141,14 @@ export class AssessmentDetailComponent implements OnInit, OnDestroy {
     return String(this.round2(value));
   }
 
-  myNote(): number | null {
-    const criteriaId = this.selectedCriteria?.id;
+  myNote(criteria: CriteriaModel): number | null {
     const userId = this.currentUserId;
-    if (criteriaId === undefined || userId === undefined) return null;
-    return this.evaluations.find(e => e.criteriaId === criteriaId && e.teacherId === userId)?.note ?? null;
+    if (userId === undefined) return null;
+    return this.evaluations.find(e => e.criteriaId === criteria.id && e.teacherId === userId)?.note ?? null;
   }
 
-  canSeeComments(): boolean {
-    return this.myNote() !== null || this.evaluationsVisibility.showOtherVotes();
+  canSeeComments(criteria: CriteriaModel): boolean {
+    return this.myNote(criteria) !== null || this.evaluationsVisibility.showOtherVotes();
   }
 
   private noteInCell(note: number | null, cell: CellModel): boolean {
@@ -161,14 +157,12 @@ export class AssessmentDetailComponent implements OnInit, OnDestroy {
     return note >= this.cellMin(cell) - EPS && note <= cell.order + EPS;
   }
 
-  votersForCell(cell: CellModel): EvaluationModel[] {
-    const criteriaId = this.selectedCriteria?.id;
-    if (criteriaId === undefined) return [];
-    return this.evaluations.filter(e => e.criteriaId === criteriaId && this.noteInCell(e.note, cell));
+  votersForCell(criteria: CriteriaModel, cell: CellModel): EvaluationModel[] {
+    return this.evaluations.filter(e => e.criteriaId === criteria.id && this.noteInCell(e.note, cell));
   }
 
-  isMyVote(cell: CellModel): boolean {
-    return this.votersForCell(cell).some(v => v.teacherId === this.currentUserId);
+  isMyVote(criteria: CriteriaModel, cell: CellModel): boolean {
+    return this.votersForCell(criteria, cell).some(v => v.teacherId === this.currentUserId);
   }
 
   getVoterInitials(evaluation: EvaluationModel): string {
@@ -198,36 +192,36 @@ export class AssessmentDetailComponent implements OnInit, OnDestroy {
     return `${d.getHours()}h${String(d.getMinutes()).padStart(2, '0')}`;
   }
 
-  selectCell(cell: CellModel): void {
-    if (this.isMyVote(cell)) {
-      this.applyNote(null);
+  selectCell(criteria: CriteriaModel, cell: CellModel): void {
+    if (this.isMyVote(criteria, cell)) {
+      this.applyNote(criteria, null);
     } else {
-      this.applyNote(cell.order);
+      this.applyNote(criteria, cell.order);
     }
   }
 
-  adjustNote(cell: CellModel, delta: number): void {
-    if (!this.isMyVote(cell)) return;
-    const current = this.myNote() ?? cell.order;
+  adjustNote(criteria: CriteriaModel, cell: CellModel, delta: number): void {
+    if (!this.isMyVote(criteria, cell)) return;
+    const current = this.myNote(criteria) ?? cell.order;
     const next = this.clampNote(current + delta, cell);
     if (next !== current) {
-      this.applyNote(next);
+      this.applyNote(criteria, next);
     }
   }
 
-  startEditNote(cell: CellModel): void {
-    if (!this.isMyVote(cell) || this.votingCriteriaId !== null) return;
-    this.editValue = this.myNote() ?? cell.order;
-    this.editingNote = true;
-    setTimeout(() => this.noteInputRef?.nativeElement.focus());
+  startEditNote(criteria: CriteriaModel, cell: CellModel): void {
+    if (!this.isMyVote(criteria, cell) || this.votingCriteriaId !== null) return;
+    this.editValue = this.myNote(criteria) ?? cell.order;
+    this.editingNoteCriteriaId = criteria.id;
+    setTimeout(() => this.noteInputRefs?.first?.nativeElement.focus());
   }
 
-  commitEditNote(cell: CellModel): void {
+  commitEditNote(criteria: CriteriaModel, cell: CellModel): void {
     if (this.editValue !== null && !isNaN(this.editValue)) {
       const next = this.clampNote(this.editValue, cell);
-      this.applyNote(next);
+      this.applyNote(criteria, next);
     }
-    this.editingNote = false;
+    this.editingNoteCriteriaId = null;
     this.editValue = null;
   }
 
@@ -239,10 +233,9 @@ export class AssessmentDetailComponent implements OnInit, OnDestroy {
     return Math.min(cell.order, Math.max(this.cellMin(cell), this.round2(value)));
   }
 
-  private applyNote(note: number | null): void {
-    const criteria = this.selectedCriteria;
+  private applyNote(criteria: CriteriaModel, note: number | null): void {
     const userId = this.currentUserId;
-    if (!criteria || userId === undefined || this.votingCriteriaId !== null) return;
+    if (userId === undefined || this.votingCriteriaId !== null) return;
 
     this.votingCriteriaId = criteria.id;
     const currentUser = this.authService.getUser();
@@ -273,25 +266,47 @@ export class AssessmentDetailComponent implements OnInit, OnDestroy {
 
   // --- Discussions (chat interne, jamais visible étudiant) ---
 
-  private loadDiscussions(): void {
-    const criteriaId = this.selectedCriteria?.id;
-    if (criteriaId === undefined) {
-      this.discussions = [];
-      return;
-    }
+  getActiveTab(criteriaId: number): 'discussion' | 'feedback' {
+    return this.activeCommentTab[criteriaId] ?? 'discussion';
+  }
 
-    this.loadingDiscussions = true;
+  setActiveTab(criteriaId: number, tab: 'discussion' | 'feedback'): void {
+    this.activeCommentTab[criteriaId] = tab;
+  }
+
+  getDiscussions(criteriaId: number): CriteriaDiscussionModel[] {
+    return this.discussionsByCriteria[criteriaId] ?? [];
+  }
+
+  isLoadingDiscussions(criteriaId: number): boolean {
+    return !!this.loadingDiscussionsByCriteria[criteriaId];
+  }
+
+  onDiscussionScrollRegistered(event: { key: number; element: HTMLElement }): void {
+    this.discussionScrollEls.set(event.key, event.element);
+  }
+
+  private loadDiscussionsForCurrentView(): void {
+    for (const criteria of this.visibleCriteria()) {
+      if (this.discussionsByCriteria[criteria.id] === undefined) {
+        this.loadDiscussionsFor(criteria.id);
+      }
+    }
+  }
+
+  private loadDiscussionsFor(criteriaId: number): void {
+    this.loadingDiscussionsByCriteria[criteriaId] = true;
     this.assessmentGridService.getCriteriaDiscussions(criteriaId, this.projectId).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: (discussions) => {
-        this.discussions = discussions;
-        this.loadingDiscussions = false;
-        this.scrollDiscussionsToBottom();
+        this.discussionsByCriteria[criteriaId] = discussions;
+        this.loadingDiscussionsByCriteria[criteriaId] = false;
+        this.scrollDiscussionsToBottom(criteriaId);
       },
       error: (err) => {
         console.error('Erreur récupération des discussions:', err);
-        this.loadingDiscussions = false;
+        this.loadingDiscussionsByCriteria[criteriaId] = false;
       }
     });
   }
@@ -300,49 +315,45 @@ export class AssessmentDetailComponent implements OnInit, OnDestroy {
     return discussion.teacherId === this.currentUserId;
   }
 
-  sendDiscussionMessage(): void {
-    const comment = this.newDiscussionMessage.trim();
-    const criteriaId = this.selectedCriteria?.id;
-    if (!comment || criteriaId === undefined || this.postingDiscussion) return;
+  sendDiscussionMessage(criteria: CriteriaModel): void {
+    const comment = (this.newDiscussionMessage[criteria.id] ?? '').trim();
+    if (!comment || this.postingDiscussionCriteriaId !== null) return;
 
-    this.postingDiscussion = true;
-    this.assessmentGridService.postCriteriaDiscussion(criteriaId, this.projectId, comment).subscribe({
+    this.postingDiscussionCriteriaId = criteria.id;
+    this.assessmentGridService.postCriteriaDiscussion(criteria.id, this.projectId, comment).subscribe({
       next: (discussion) => {
-        this.discussions = [...this.discussions, discussion];
-        this.newDiscussionMessage = '';
-        this.postingDiscussion = false;
-        this.scrollDiscussionsToBottom();
+        this.discussionsByCriteria[criteria.id] = [...this.getDiscussions(criteria.id), discussion];
+        this.newDiscussionMessage[criteria.id] = '';
+        this.postingDiscussionCriteriaId = null;
+        this.scrollDiscussionsToBottom(criteria.id);
       },
       error: (err) => {
         console.error('Erreur envoi du message:', err);
-        this.postingDiscussion = false;
+        this.postingDiscussionCriteriaId = null;
       }
     });
   }
 
-  private scrollDiscussionsToBottom(): void {
+  private scrollDiscussionsToBottom(criteriaId: number): void {
     setTimeout(() => {
-      const el = this.discussionScrollRef?.nativeElement;
+      const el = this.discussionScrollEls.get(criteriaId);
       if (el) el.scrollTop = el.scrollHeight;
     });
   }
 
   // --- Feedback (commentaire par enseignant, visible étudiant une fois la grille publiée) ---
 
-  criteriaFeedbackCards(): EvaluationModel[] {
-    const criteriaId = this.selectedCriteria?.id;
+  criteriaFeedbackCards(criteria: CriteriaModel): EvaluationModel[] {
     const userId = this.currentUserId;
-    if (criteriaId === undefined) return [];
-
     const others = this.evaluations.filter(e =>
-      e.criteriaId === criteriaId && e.teacherId !== userId && !!e.commentFeedback
+      e.criteriaId === criteria.id && e.teacherId !== userId && !!e.commentFeedback
     );
 
     if (userId === undefined) return others;
 
     const currentUser = this.authService.getUser();
-    const ownCard = this.evaluations.find(e => e.criteriaId === criteriaId && e.teacherId === userId) ?? {
-      criteriaId,
+    const ownCard = this.evaluations.find(e => e.criteriaId === criteria.id && e.teacherId === userId) ?? {
+      criteriaId: criteria.id,
       teacherId: userId,
       teacherFirstname: currentUser?.firstname ?? null,
       teacherSurname: currentUser?.surname ?? '',
@@ -358,21 +369,20 @@ export class AssessmentDetailComponent implements OnInit, OnDestroy {
     return card.teacherId;
   }
 
-  startEditFeedback(card: EvaluationModel): void {
+  startEditFeedback(criteria: CriteriaModel, card: EvaluationModel): void {
     if (card.teacherId !== this.currentUserId || this.savingFeedback) return;
     this.feedbackDraft = card.commentFeedback ?? '';
-    this.editingFeedback = true;
+    this.editingFeedbackCriteriaId = criteria.id;
   }
 
   cancelEditFeedback(): void {
-    this.editingFeedback = false;
+    this.editingFeedbackCriteriaId = null;
     this.feedbackDraft = '';
   }
 
-  saveFeedback(): void {
-    const criteria = this.selectedCriteria;
+  saveFeedback(criteria: CriteriaModel): void {
     const userId = this.currentUserId;
-    if (!criteria || userId === undefined || this.savingFeedback) return;
+    if (userId === undefined || this.savingFeedback) return;
 
     const comment = this.feedbackDraft.trim();
     const existing = this.evaluations.find(e => e.criteriaId === criteria.id && e.teacherId === userId);
@@ -393,7 +403,7 @@ export class AssessmentDetailComponent implements OnInit, OnDestroy {
             date: new Date().toISOString(),
           },
         ];
-        this.editingFeedback = false;
+        this.editingFeedbackCriteriaId = null;
         this.savingFeedback = false;
       },
       error: (err) => {

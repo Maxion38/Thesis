@@ -101,4 +101,23 @@ export class LinkedWorkSubmissionDto {
 export class GridContextDto {
   status!: GridFeedbackStatus;
   linkedSubmission!: LinkedWorkSubmissionDto | null;
+  // true si l'utilisateur courant est le rapporteur (SUPERVISOR) du projet,
+  // seul habilité à publier la grille (cf. AssessmentGridService.publishGrid).
+  isSupervisor!: boolean;
+}
+
+export class PublishGridDto {
+  @IsInt()
+  projectId!: number;
+}
+
+// vue en lecture seule proposée à l'étudiant (description + grille + feedback
+// des enseignants), sans discussions internes ni actions de notation.
+export class StudentAssessmentViewDto {
+  id!: number;
+  name!: string;
+  description!: string | null;
+  status!: GridFeedbackStatus;
+  criteria!: CriteriaDto[];
+  evaluations!: EvaluationDto[];
 }

@@ -16,4 +16,5 @@ export interface LinkedWorkSubmissionModel {
 export interface GridContextModel {
   status: GridFeedbackStatus;
   linkedSubmission: LinkedWorkSubmissionModel | null;
+  isSupervisor: boolean;
 }

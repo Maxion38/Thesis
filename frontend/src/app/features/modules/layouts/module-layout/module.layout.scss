@@ -129,14 +129,31 @@
         flex-direction: column;
         align-items: center;
         padding: 10px;
-        gap: 15px;
+
+        // Spacing is margin-based (not `gap`) so it can be collapsed
+        // between a pair of linked tools (see --linked-next/--linked-prev).
+        & > *:not(:last-child) {
+            margin-bottom: 15px;
+        }
+    }
+
+    // Linked tools (e.g. a Work and its assessment grid) are rendered
+    // adjacent to each other and rendered as a single visual block.
+    &__item--linked-next {
+        margin-bottom: 0 !important;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    &__item--linked-prev {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
     }
 }
 
 .navbar.show .navbar__inner {
     transform: translateX(0);
     padding: 10px;
-    gap: 15px;
 }
 
 .menu-button {
