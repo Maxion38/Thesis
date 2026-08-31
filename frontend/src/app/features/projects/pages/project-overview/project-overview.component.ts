@@ -93,7 +93,7 @@ export class ProjectOverviewComponent implements OnInit {
     if (!assessmentToolId) return;
 
     this.router.navigate(['/teacher', 'projects', this.selectedProject.id, 'assessments', assessmentToolId], {
-      queryParams: { scope: this.scope },
+      queryParams: { scope: this.scope, pdf: 1 },
     });
   }
 

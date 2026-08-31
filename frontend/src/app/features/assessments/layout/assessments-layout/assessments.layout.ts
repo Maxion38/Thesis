@@ -26,6 +26,7 @@ export class AssessmentsLayoutComponent implements OnInit {
   loadingGridContext = false;
   publishingGrid = false;
   showPdfViewer = false;
+  private openPdfOnLoad = false;
 
   constructor(
     private assessmentGridService: AssessmentGridService,
@@ -38,6 +39,7 @@ export class AssessmentsLayoutComponent implements OnInit {
     const routeProjectId = Number(this.route.snapshot.paramMap.get('projectId'));
     const routeGridId = Number(this.route.snapshot.paramMap.get('assessmentId'));
     this.scope = this.route.snapshot.queryParamMap.get('scope') === 'all' ? 'all' : 'mine';
+    this.openPdfOnLoad = this.route.snapshot.queryParamMap.get('pdf') === '1';
 
     this.assessmentGridService.getProjectsWithGrids().subscribe(projects => {
       this.projects = projects;
@@ -99,6 +101,11 @@ export class AssessmentsLayoutComponent implements OnInit {
       next: (context) => {
         this.gridContext = context;
         this.loadingGridContext = false;
+
+        if (this.openPdfOnLoad && context.linkedSubmission) {
+          this.showPdfViewer = true;
+        }
+        this.openPdfOnLoad = false;
       },
       error: (err) => {
         console.error('Erreur récupération du contexte de la grille:', err);
