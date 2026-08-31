@@ -1,135 +1,94 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { ModuleOverviewModel, ModuleToolGroupModel, ConditionModel } from '../../model/module-overview.model';
+import { ConditionModel, ModuleToolGroupModel } from '../../model/module-overview.model';
+import { StudentToolCardModel } from '../../model/student-tool-card.model';
+import { GridFeedbackStatus, GRID_FEEDBACK_STATUS_LABELS } from '../../../../assessments/models/grid-context.model';
+import { AssessmentStatusDotComponent } from '../../../../assessments/components/assessment-status-dot/assessment-status-dot.component';
 
 export interface ModuleCardActionEvent {
   moduleId: number;
   toolId?: number;
+  viewModule?: boolean;
 }
 
 @Component({
   selector: 'app-student-module-card',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, AssessmentStatusDotComponent],
   templateUrl: './module-card.component.html',
   styleUrls: ['./module-card.component.scss']
 })
-export class StudentModuleCardComponent implements OnInit {
-  @Input({ required: true }) module!: ModuleOverviewModel;
+export class StudentModuleCardComponent {
+  @Input({ required: true }) card!: StudentToolCardModel;
   @Output() ctaClicked = new EventEmitter<ModuleCardActionEvent>();
 
-  ngOnInit(): void {
-    console.log(this.module)
+  get submissionTool(): ModuleToolGroupModel | undefined {
+    return this.card.tools.find(tool => tool.type === 'WORK' || tool.type === 'FORM');
   }
 
-
-  get toolsSummary(): string {
-    const groupTypes = this.module.groups.map(group => group.type);
-
-    const countMap = groupTypes.reduce((acc, type) => {
-      acc[type] = (acc[type] ?? 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const parts = Object.entries(countMap).map(([type, count]) => {
-      const label = this.formatLabel(type);
-      const finalLabel = count > 1 ? label + '' : label;
-      return count > 1 ? `${count} x ${finalLabel}` : finalLabel;
-    });
-
-    return parts.join(' - ');
+  get hasSubmissionTool(): boolean {
+    return !!this.submissionTool;
   }
 
-  get hasSubmitables(): boolean {
-    return this.countSubmission(this.module).submittableCount > 0;
+  get submissionKindLabel(): string {
+    return this.submissionTool?.type === 'FORM' ? 'Formulaire' : 'Travail';
   }
 
-  get submissionStats() {
-    return this.countSubmission(this.module);
+  get assessmentTool(): ModuleToolGroupModel | undefined {
+    return this.card.tools.find(tool => tool.type === 'ASSESSMENT');
   }
 
   get hasAssessment(): boolean {
-    return this.module.groups.some(group => group.type === 'ASSESSMENT');
+    return !!this.assessmentTool;
   }
 
-  get hasOnlyCorrectedAssessments(): boolean {
-    const assessments = this.module?.groups ?? [];
-
-    // only ASSESSMENT
-    const assessmentGroups = assessments.filter(
-      g => g.type === 'ASSESSMENT'
-    );
-
-    // no evals, return false
-    if (assessmentGroups.length === 0) {
-      return false;
-    }
-
-    // every have to be CORRECTED
-    return assessmentGroups.every(
-      g => g.state === 'CORRECTED'
-    );
+  get assessmentStatus(): GridFeedbackStatus {
+    return (this.assessmentTool?.state as GridFeedbackStatus) ?? 'PENDING';
   }
 
   get assessmentStateLabel(): string {
-    const assessmentGroup = this.module.groups.find(group => group.type === 'ASSESSMENT');
-
-    if (!assessmentGroup) {
+    if (!this.assessmentTool) {
       return '';
     }
 
-    return this.formatLabel(assessmentGroup.state);
+    return GRID_FEEDBACK_STATUS_LABELS[this.assessmentStatus];
   }
 
-  get progressPercentage(): number {
-    const stats = this.submissionStats;
+  get actionLabelAndDates(): { label: string; dateLimit?: Date; toolId?: number; viewModule?: boolean }[] {
 
-    if (!stats.submittableCount) {
-      return 0;
-    }
-
-    return (stats.submittedCount / stats.submittableCount) * 100;
-  }
-
-  get actionLabelAndDates(): { label: string; dateLimit?: Date; toolId: number }[] {
-
-    const activeGroups = this.module.groups.filter(group => {
-      if (group.state === 'SUBMITTED') return false;
-      if (group.type === 'ASSESSMENT' && group.state !== 'CORRECTED') return false;
+    const activeTools = this.card.tools.filter(tool => {
+      if (tool.state === 'SUBMITTED') return false;
+      if (tool.type === 'ASSESSMENT' && tool.state !== 'PUBLISHED' && tool.state !== 'SEEN') return false;
       return true;
     });
 
-    const sortedGroups = this.sortGroupsByDateLimit(activeGroups);
-    const topGroups = sortedGroups.slice(0, 2);
-
-    if (topGroups.length === 0) {
-      return [{ label: 'Voir le module', toolId: this.module.id }];
+    if (activeTools.length === 0) {
+      return [{ label: 'Voir le module', viewModule: true }];
     }
 
-    const rawLabels = topGroups.map(group => this.formatActionsLabel(group.type));
+    const rawLabels = activeTools.map(tool => this.formatActionsLabel(tool.type));
     const labelCount: Record<string, number> = {};
 
-    return topGroups.map(group => {
-      const label = this.formatActionsLabel(group.type);
+    return activeTools.map(tool => {
+      const label = this.formatActionsLabel(tool.type);
       labelCount[label] = (labelCount[label] ?? 0) + 1;
       const count = labelCount[label];
       const isDuplicate = rawLabels.filter(l => l === label).length > 1;
 
       return {
         label: isDuplicate ? `${label} ${count}` : label,
-        dateLimit: group.date,
-        toolId: group.id,   
+        dateLimit: tool.date,
+        toolId: tool.id,
       };
     });
   }
 
-  onCtaClick(toolId: number): void {
-    console.log('------------');
-    console.log(toolId);
+  onCtaClick(toolId?: number, viewModule?: boolean): void {
     this.ctaClicked.emit({
-      moduleId: this.module.id,
+      moduleId: this.card.moduleId,
       toolId,
+      viewModule,
     });
   }
 
@@ -158,40 +117,8 @@ export class StudentModuleCardComponent implements OnInit {
     return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   }
 
-  private sortGroupsByDateLimit(groups: ModuleToolGroupModel[]): ModuleToolGroupModel[] {
-
-    const typePriority: Record<string, number> = {
-      WORK: 1,
-      FORM: 2,
-      ACTIVITY: 3,
-      ASSESSMENT: 4,
-    };
-
-    return [...groups].sort((a, b) => {
-
-      const aHasDate = !!a.date;
-      const bHasDate = !!b.date;
-
-      if (aHasDate && bHasDate) {
-        return new Date(a.date!).getTime() - new Date(b.date!).getTime();
-      }
-
-      if (aHasDate && !bHasDate) return -1;
-      if (!aHasDate && bHasDate) return 1;
-
-      const priorityA = typePriority[a.type] ?? 99;
-      const priorityB = typePriority[b.type] ?? 99;
-
-      if (priorityA !== priorityB) {
-        return priorityA - priorityB;
-      }
-
-      return 0;
-    });
-  }
-
   getConditionsLabels(): string[] {
-    const conditions = this.module?.status?.lockedBy ?? [];
+    const conditions = this.card?.lockedBy ?? [];
 
     return conditions.map(c => this.formatConditionLabel(c));
   }
@@ -206,42 +133,6 @@ export class StudentModuleCardComponent implements OnInit {
     };
 
     return labelsMap[type] ?? type;
-  }
-
-  countSubmission(module: ModuleOverviewModel): {
-    submittedCount: number;
-    submittableCount: number;
-  } {
-
-    let submittedCount = 0;
-    let submittableCount = 0;
-
-    for (const group of module.groups) {
-
-      if (group.state === 'SUBMITTED') {
-        submittedCount++;
-      }
-
-      if (group.type === 'FORM' || group.type === 'WORK') {
-        submittableCount++;
-      }
-    }
-
-    return { submittedCount, submittableCount };
-  }
-
-  private formatLabel(label: string): string {
-    const labelsMap: Record<string, string> = {
-      FORM: 'Formulaire',
-      ACTIVITY: 'Activité',
-      WORK: 'Remise de travail',
-      ASSESSMENT: 'Évaluation',
-      UNTOUCHED: 'En attente',
-      SUBMITTED: 'Soumis',
-      CORRECTED: 'Corrigé',
-    };
-
-    return labelsMap[label] ?? label;
   }
 
   private formatConditionLabel(condition: ConditionModel): string {

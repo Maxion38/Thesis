@@ -2,77 +2,11 @@
 
   <div class="card__left" [routerLink]="[moduleData.id, 'description']">
     <span class="card__left__module-title">{{ moduleData.name }}</span>
-    <span class="card__left__module-id">Module {{ moduleData.id }}</span>
     <span class="material-symbols-outlined card__left__edit-icon">edit</span>  
   </div>
 
   <div class="card__middle">
     <div class="card__empty">À venir <br> (condition d'accès)</div>
   </div>
-
-  <div class="card__right">
-    <div class="card__empty">À venir <br> (condition de succès)</div>
-  </div>
-
-  <!-- <div class="card__middle" [routerLink]="[moduleData.id, 'conditions']">
-
-    <div class="card__middle__left">
-      <span class="card__middle__left__label">
-        Condition d'accès ({{ accessConditions.length }})
-      </span>
-
-      <div class="card__middle__left__conditions-list"
-           *ngIf="accessConditions.length > 0; else noAccess">
-        <ul>
-          <li *ngFor="let accessCondition of accessConditions">
-            {{ formatConditionValue(accessCondition.method) }}
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="card__middle__right">
-      <span class="material-symbols-outlined card__edit-icon"
-            *ngIf="accessConditions.length > 0">
-        edit
-      </span>  
-    </div>
-
-  </div>
-
-  <ng-template #noAccess>
-    <div class="card__empty">+</div>
-  </ng-template>
-
-
-  <div class="card__right" [routerLink]="[moduleData.id, 'conditions']">
-
-    <div class="card__right__left">
-      <span class="card__right__left__label">
-        Condition de succès ({{ successConditions.length }})
-      </span>
-
-      <div class="card__right__left__conditions-list"
-           *ngIf="successConditions.length > 0; else noSuccess">
-        <ul>
-          <li *ngFor="let successCondition of successConditions">
-            {{ formatConditionValue(successCondition.method) }}
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="card__right__right">
-      <span class="material-symbols-outlined card__edit-icon"
-            *ngIf="successConditions.length > 0">
-        edit
-      </span>  
-    </div>
-
-  </div>
-
-  <ng-template #noSuccess>
-    <div class="card__empty">+</div>
-  </ng-template> -->
 
 </div>

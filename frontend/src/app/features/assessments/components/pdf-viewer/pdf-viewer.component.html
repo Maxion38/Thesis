@@ -1,0 +1,18 @@
+<div class="pdf-viewer">
+    <div class="pdf-viewer__state" *ngIf="loading">
+        <span class="material-symbols-outlined pdf-viewer__spinner">progress_activity</span>
+        <span>Chargement du PDF...</span>
+    </div>
+
+    <div class="pdf-viewer__state pdf-viewer__state--error" *ngIf="error">
+        <span class="material-symbols-outlined">error</span>
+        <span>Impossible de charger le fichier{{ fileName ? ' ' + fileName : '' }}.</span>
+    </div>
+
+    <iframe
+        *ngIf="safeUrl && !loading && !error"
+        class="pdf-viewer__frame"
+        [src]="safeUrl"
+        [title]="fileName ?? 'Document PDF'"
+    ></iframe>
+</div>

@@ -11,6 +11,10 @@ export class ToolsService {
     const tools = await this.prisma.tool.findMany({
       where: { moduleId },
       orderBy: { id: 'asc' },
+      include: {
+        linksAsSource: { select: { targetToolId: true } },
+        linksAsTarget: { select: { sourceToolId: true } },
+      },
     });
 
     return tools.map((tool) => ({
@@ -19,6 +23,10 @@ export class ToolsService {
       description: tool.description,
       type: tool.type,
       moduleId: tool.moduleId,
+      linkedToolId:
+        tool.linksAsSource[0]?.targetToolId ??
+        tool.linksAsTarget[0]?.sourceToolId ??
+        null,
     }));
   }
 

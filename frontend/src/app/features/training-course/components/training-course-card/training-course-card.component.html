@@ -11,6 +11,12 @@
   </div>
 
   <div class="card__infos">
+    <span
+        class="card__status-dot"
+        *ngIf="status !== 'none'"
+        [style.backgroundColor]="indicatorColor"
+    ></span>
+
     <div class="card__infos__top">
       <ng-container *ngIf="course.startDate; else notPlanned">
         <div><span class="card__label">Début</span> {{ course.startDate | date:'dd-MM-yy' }} </div>
@@ -22,9 +28,9 @@
       </ng-template>
     </div>
 
-  <div class="card__infos__bottom">
-    <div><span class="card__label">Utilisateurs</span> {{ course.studentsCount }} </div>
-    <div><span class="card__label">Enseignants</span> {{ course.teachersCount }}  </div>
-  </div>
+    <div class="card__infos__bottom">
+      <div><span class="card__label">Utilisateurs</span> {{ course.usersCount }} </div>
+      <div><span class="card__label">Enseignants</span> {{ course.teachersCount }}  </div>
+    </div>
   </div>
 </div>

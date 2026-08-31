@@ -1,12 +1,12 @@
-<div class="menu">
-  <div 
+<div class="menu" [class.menu--open]="open">
+  <div
     *ngFor="let item of items"
     class="menu__element"
     routerLinkActive="active"
     [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
     [routerLink]="item.route"
   >
-    <span class="material-symbols-outlined menu__icon">{{ item.iconName }}</span>  
-    <span>{{ item.titre }}</span>
+    <span class="material-symbols-outlined menu__icon">{{ item.iconName }}</span>
+    <span class="menu__label">{{ item.titre }}</span>
   </div>
 </div>

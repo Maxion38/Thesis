@@ -3,9 +3,10 @@ import { CommonModule } from '@angular/common';
 import { ModuleDetailsModel } from '../../../model/module-details.model';
 import { ModulesService } from '../../../../services/modules.service';
 import { UsersService } from '../../../../../users/services/users.service';
-import { switchMap } from 'rxjs';
+import { merge, switchMap } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { MarkdownCardComponent } from '../../../../../components/markdown-card/markdown-card.component';
+import { TrainingCourseContextService } from '../../../../../training-course/services/training-course-context.service';
 
 
 @Component({
@@ -23,12 +24,17 @@ export class StudentModuleDescriptionComponent {
     private route: ActivatedRoute,
     private usersService: UsersService,
     private modulesService: ModulesService,
+    private trainingCourseContext: TrainingCourseContextService,
   ) {}
 
   ngOnInit(): void {
     const moduleId = Number(this.route.parent?.snapshot.paramMap.get('moduleId'));
 
-    this.usersService.getMyFirstProject().pipe(
+    merge(
+      this.trainingCourseContext.initIfApplicable(),
+      this.trainingCourseContext.changes$,
+    ).pipe(
+      switchMap(course => this.usersService.getMyFirstProject(course?.id)),
       switchMap(project => this.modulesService.getProjectModuleDetails(moduleId, project.id))
     ).subscribe({
       next: (module) => {

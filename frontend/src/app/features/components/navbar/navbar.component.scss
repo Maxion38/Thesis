@@ -23,7 +23,6 @@ $hauteur: 60px;
     width: 2.8rem;
     height: 2.8rem;
     border-radius: 2.8rem;
-    background-color: #2A5853;
     transition: all ease 0.1s;
     user-select: none;
 
@@ -32,7 +31,7 @@ $hauteur: 60px;
     justify-content: center;
 
     &:hover {
-      background-color: #3d7c75;
+      background-color: #D9D9D9;
     }
 
     &--open { 
@@ -66,6 +65,14 @@ $hauteur: 60px;
     }
   }
 
+  &__profile-name {
+    padding: 10px 16px;
+    font-weight: 600;
+    color: #1F4541;
+    white-space: nowrap;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
   &__div {
     display: flex;
     align-items: center;
@@ -76,15 +83,39 @@ $hauteur: 60px;
   &__left {
     flex: 1;
     justify-content: start;
-    padding-left: 1rem;
+    padding-left: 0.5rem;
   }
 
   &__right {
-    flex: 1;
+    flex: 10;
     justify-content: right;
   }
+}
 
-  &__center {
-    flex: 10;
+.course-selector {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  &__text {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    user-select: none;
+    color: rgb(141, 141, 141);
+
+    &:hover .course-selector__label {
+      text-decoration: underline;
+    }
+  }
+
+  &__label {
+    text-decoration: none;
+  }
+
+  &__chevron {
+    font-size: 1.2rem;
   }
 }

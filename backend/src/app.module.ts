@@ -11,9 +11,22 @@ import { AssignmentsModule } from './assignments/assignments.module';
 import { WorkSubmissionToolModule } from './work-submission/work.module';
 import { ToolsModule } from './tools/tools.module';
 import { ConfigModule } from '@nestjs/config';
+import { AssessmentGridModule } from './assessment-grid/assessment-grid.module';
 
 @Module({
-  imports: [PrismaModule, TrainingCoursesModule, ModulesModule, AuthModule, InvitationModule, UsersModule, AssignmentsModule, WorkSubmissionToolModule, ToolsModule, ConfigModule.forRoot({ isGlobal: true }),],
+  imports: [
+    PrismaModule,
+    TrainingCoursesModule,
+    ModulesModule,
+    AuthModule,
+    InvitationModule,
+    UsersModule,
+    AssignmentsModule,
+    WorkSubmissionToolModule,
+    ToolsModule,
+    ConfigModule.forRoot({ isGlobal: true }),
+    AssessmentGridModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -1,20 +1,29 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { TrainingCourseCardComponent } from '../../components/training-course-card/training-course-card.component'
+import { DropdownComponent } from '../../../components/dropdown/dropdown.component';
 import { TrainingCoursesService } from '../../services/training-courses.service';
-import { TrainingCourseWithStats } from './../../models/training-course.model';
-import { Observable } from 'rxjs';
+import { TrainingCourseWithStats, getTrainingCourseStatus } from './../../models/training-course.model';
+
+type StatusFilter = 'ALL' | 'ARCHIVED' | 'ACTIVE' | 'PLANNED';
 
 @Component({
   selector: 'app-training-courses',
   templateUrl: './training-courses.component.html',
   styleUrls: ['./training-courses.component.scss'],
-  imports: [CommonModule, RouterModule, TrainingCourseCardComponent],
+  imports: [CommonModule, RouterModule, FormsModule, TrainingCourseCardComponent, DropdownComponent],
 })
 
 export class TrainingCoursesComponent implements OnInit {
-  courses$!: Observable<TrainingCourseWithStats[]>;
+  allCourses: TrainingCourseWithStats[] = [];
+  filteredCourses: TrainingCourseWithStats[] = [];
+
+  searchText = '';
+  selectedStatus: StatusFilter = 'ALL';
+  statusFilterOptions: StatusFilter[] = ['ALL', 'ARCHIVED', 'ACTIVE', 'PLANNED'];
+
   isCreating = false;
 
   constructor(
@@ -23,7 +32,53 @@ export class TrainingCoursesComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.courses$  = this.trainingCoursesService.getAllWithDetails();
+    this.trainingCoursesService.getAllWithDetails().subscribe(courses => {
+      this.allCourses = courses;
+      this.applyFilters();
+    });
+  }
+
+  applyFilters(): void {
+    const search = this.searchText.toLowerCase().trim();
+
+    this.filteredCourses = this.allCourses.filter(course => {
+      if (this.selectedStatus !== 'ALL' && this.statusToFilter(course) !== this.selectedStatus) {
+        return false;
+      }
+
+      if (search && !course.name.toLowerCase().includes(search)) {
+        return false;
+      }
+
+      return true;
+    });
+  }
+
+  private statusToFilter(course: TrainingCourseWithStats): StatusFilter | null {
+    switch (getTrainingCourseStatus(course)) {
+      case 'archived': return 'ARCHIVED';
+      case 'active': return 'ACTIVE';
+      case 'planned': return 'PLANNED';
+      default: return null;
+    }
+  }
+
+  selectStatus(status: StatusFilter): void {
+    this.selectedStatus = status;
+    this.applyFilters();
+  }
+
+  get selectedStatusLabel(): string {
+    return this.getStatusFilterLabel(this.selectedStatus);
+  }
+
+  getStatusFilterLabel(status: StatusFilter): string {
+    switch (status) {
+      case 'ALL': return 'Tous';
+      case 'ARCHIVED': return 'Archivés';
+      case 'ACTIVE': return 'Actifs';
+      case 'PLANNED': return 'Planifiés';
+    }
   }
 
   onAdd(): void {

@@ -10,10 +10,7 @@ const mockUserWithRoles = {
   email: 'alice@test.com',
   surname: 'Dupont',
   firstname: 'Alice',
-  roles: [
-    { role: { role: 'STUDENT' } },
-    { role: { role: 'COORDINATOR' } },
-  ],
+  roles: [{ role: { role: 'STUDENT' } }, { role: { role: 'COORDINATOR' } }],
 };
 
 const mockProject = {
@@ -78,6 +75,19 @@ describe('UsersService', () => {
 
       expect(result[0].roles).toEqual([]);
     });
+
+    it('should filter by trainingCourseId when provided', async () => {
+      mockPrismaService.user.findMany.mockResolvedValue([mockUserWithRoles]);
+
+      await service.findAll(7);
+
+      expect(mockPrismaService.user.findMany).toHaveBeenCalledWith({
+        where: {
+          projectMemberships: { some: { project: { trainingCourseId: 7 } } },
+        },
+        include: expect.anything(),
+      });
+    });
   });
 
   // ── findOne ─────────────────────────────────────────────────────────────────
@@ -115,6 +125,21 @@ describe('UsersService', () => {
       const result = await service.findFirstProject(999);
 
       expect(result).toBeNull();
+    });
+
+    it('should filter by trainingCourseId when provided', async () => {
+      mockPrismaService.project.findFirst.mockResolvedValue(mockProject);
+
+      await service.findFirstProject(1, 7);
+
+      expect(mockPrismaService.project.findFirst).toHaveBeenCalledWith({
+        where: {
+          members: { some: { userId: 1 } },
+          trainingCourseId: 7,
+        },
+        select: { id: true, title: true },
+        orderBy: { createdAt: 'asc' },
+      });
     });
   });
 });

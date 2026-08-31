@@ -1,0 +1,10 @@
+<ng-content select="[dropdownTrigger]"></ng-content>
+<div
+  class="dropdown-panel"
+  [class.dropdown-panel--center]="align === 'center'"
+  [class.dropdown-panel--right]="align === 'right'"
+  *ngIf="open"
+  (click)="close(); $event.stopPropagation()"
+>
+  <ng-content select="[dropdownPanel]"></ng-content>
+</div>

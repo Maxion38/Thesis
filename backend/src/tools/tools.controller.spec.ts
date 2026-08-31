@@ -20,9 +20,7 @@ describe('ToolsController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ToolsController],
-      providers: [
-        { provide: ToolsService, useValue: mockToolsService },
-      ],
+      providers: [{ provide: ToolsService, useValue: mockToolsService }],
     }).compile();
 
     controller = module.get<ToolsController>(ToolsController);
@@ -53,7 +51,7 @@ describe('ToolsController', () => {
       const dto = { name: 'Modifié' };
       mockToolsService.updateTool.mockResolvedValue({ id: 3, ...dto });
 
-      const result = await controller.updateTool(3, dto as any);
+      const result = await controller.updateTool(3, dto);
 
       expect(mockToolsService.updateTool).toHaveBeenCalledWith(3, dto);
       expect(result).toMatchObject({ id: 3, name: 'Modifié' });

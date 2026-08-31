@@ -4,4 +4,5 @@ export class ToolModel {
   description!: string;
   type!: string;
   moduleId!: number;
+  linkedToolId?: number | null;
 }

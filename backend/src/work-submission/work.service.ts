@@ -1,8 +1,12 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateWorkDto } from './dto/create-work.dto';
 import { UpdateWorkDto } from './dto/update-work.dto';
-import { ToolType } from '@prisma/client';
+import { RoleType, ToolType } from '@prisma/client';
 import { UsersService } from 'src/users/users.service';
 import path from 'path';
 import * as fs from 'fs';
@@ -28,7 +32,6 @@ export class WorkService {
     return work;
   }
 
-
   async createWork(dto: CreateWorkDto) {
     const module = await this.prisma.module.findUnique({
       where: { id: dto.moduleId },
@@ -48,10 +51,12 @@ export class WorkService {
         },
       });
 
+      // V2 : Work partage sa PK avec Tool (héritage à clé partagée),
+      // on ne passe donc plus toolId mais id = tool.id.
       const work = await tx.work.create({
         data: {
+          id: tool.id,
           maxAttempts: dto.maxAttempts,
-          toolId: tool.id,
           ...(dto.dueDate && { dueDate: new Date(dto.dueDate) }),
         },
       });
@@ -59,7 +64,6 @@ export class WorkService {
       return { tool, work };
     });
   }
-
 
   async updateWork(workId: number, dto: UpdateWorkDto) {
     const work = await this.prisma.work.findUnique({
@@ -83,8 +87,9 @@ export class WorkService {
     }
 
     return this.prisma.$transaction(async (tx) => {
+      // work.id === work.tool.id (PK partagée) -> plus de work.toolId
       const updatedTool = await tx.tool.update({
-        where: { id: work.toolId },
+        where: { id: work.id },
         data: {
           ...(dto.name && { name: dto.name }),
           ...(dto.description && { description: dto.description }),
@@ -96,7 +101,9 @@ export class WorkService {
         where: { id: workId },
         data: {
           ...(dto.maxAttempts && { maxAttempts: dto.maxAttempts }),
-          ...(dto.dueDate !== undefined && { dueDate: dto.dueDate ? new Date(dto.dueDate) : null }),
+          ...(dto.dueDate !== undefined && {
+            dueDate: dto.dueDate ? new Date(dto.dueDate) : null,
+          }),
         },
       });
 
@@ -104,7 +111,6 @@ export class WorkService {
     });
   }
 
-  
   async submitWork(
     workId: number,
     file: any,
@@ -121,11 +127,13 @@ export class WorkService {
     const dbUser = await this.prisma.user.findUnique({
       where: { id: user.userId },
     });
-    if (!dbUser) throw new NotFoundException(`User with id ${user.userId} not found`);
+    if (!dbUser)
+      throw new NotFoundException(`User with id ${user.userId} not found`);
 
     // FETCH first project (in the futur : handle multiple projects)
     const project = await this.usersService.findFirstProject(user.userId);
-    if (!project) throw new NotFoundException(`No project found for user ${user.userId}`);
+    if (!project)
+      throw new NotFoundException(`No project found for user ${user.userId}`);
 
     // COUNT number of attemps
     const attemptCount = await this.prisma.userWorkSubmission.count({
@@ -161,7 +169,6 @@ export class WorkService {
     });
   }
 
-
   async removeSubmission(submissionId: number, userId: number) {
     const submission = await this.prisma.userWorkSubmission.findUnique({
       where: { id: submissionId },
@@ -172,7 +179,9 @@ export class WorkService {
     }
 
     if (submission.userId !== userId) {
-      throw new ForbiddenException(`You are not allowed to delete this submission`);
+      throw new ForbiddenException(
+        `You are not allowed to delete this submission`,
+      );
     }
 
     await this.prisma.userWorkSubmission.delete({
@@ -185,7 +194,6 @@ export class WorkService {
     }
   }
 
-  
   async getLatestSubmission(workId: number, userId: number) {
     return this.prisma.userWorkSubmission.findFirst({
       where: { workId, userId },
@@ -193,12 +201,28 @@ export class WorkService {
     });
   }
 
-  async getSubmissionFile(submissionId: number, res: Response) {
+  async getSubmissionFile(
+    submissionId: number,
+    user: { userId: number; roles: string[] },
+    res: Response,
+  ) {
     const submission = await this.prisma.userWorkSubmission.findUnique({
       where: { id: submissionId },
     });
 
-    if (!submission) throw new NotFoundException(`Submission ${submissionId} not found`);
+    if (!submission)
+      throw new NotFoundException(`Submission ${submissionId} not found`);
+
+    const isOwner = submission.userId === user.userId;
+    const isReviewer =
+      user.roles.includes(RoleType.TEACHER) ||
+      user.roles.includes(RoleType.COORDINATOR);
+
+    if (!isOwner && !isReviewer) {
+      throw new ForbiddenException(
+        `You are not allowed to access this submission`,
+      );
+    }
 
     const absolutePath = path.resolve(submission.filePath);
 
@@ -206,11 +230,13 @@ export class WorkService {
       throw new NotFoundException(`File not found on disk`);
     }
 
-    res.setHeader('Content-Disposition', `attachment; filename="${submission.fileName}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${submission.fileName}"`,
+    );
     res.setHeader('Content-Type', 'application/pdf');
     fs.createReadStream(absolutePath).pipe(res);
   }
-
 
   async getUserSubmissions(userId: number) {
     const user = await this.prisma.user.findUnique({

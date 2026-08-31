@@ -48,3 +48,35 @@ body {
 *::after {
   box-sizing: border-box;
 }
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  padding: 10px 16px;
+  text-align: left;
+  white-space: nowrap;
+  font-size: 0.95rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 120ms ease;
+
+  &:hover {
+    background-color: #f2f2f2;
+  }
+
+  &--active {
+    background-color: #e4e4e4;
+    font-weight: 600;
+  }
+}
+
+.dropdown-empty {
+  padding: 10px 16px;
+  color: #888;
+  font-style: italic;
+  white-space: nowrap;
+}

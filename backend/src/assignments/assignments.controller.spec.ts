@@ -63,7 +63,9 @@ describe('AssignmentsController', () => {
 
       const result = await controller.assignUsers('1', { userIds: [10, 11] });
 
-      expect(mockAssignmentsService.assignUsersToTrainingCourse).toHaveBeenCalledWith(1, [10, 11]);
+      expect(
+        mockAssignmentsService.assignUsersToTrainingCourse,
+      ).toHaveBeenCalledWith(1, [10, 11]);
       expect(result).toEqual({ created: 2, skipped: 0 });
     });
   });
@@ -76,7 +78,9 @@ describe('AssignmentsController', () => {
 
       const result = await controller.unassignUsers('1', { userIds: [10] });
 
-      expect(mockAssignmentsService.unassignUsersFromTrainingCourse).toHaveBeenCalledWith(1, [10]);
+      expect(
+        mockAssignmentsService.unassignUsersFromTrainingCourse,
+      ).toHaveBeenCalledWith(1, [10]);
       expect(result).toEqual({ removedUserIds: [10] });
     });
   });

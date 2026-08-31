@@ -1,13 +1,13 @@
 import { IsString, IsNumber, IsOptional } from 'class-validator';
 
 export class CreateModuleDto {
-    @IsString()
-    name!: string;
+  @IsString()
+  name!: string;
 
-    @IsNumber()
-    trainingCourseId!: number;
+  @IsNumber()
+  trainingCourseId!: number;
 
-    @IsString()
-    @IsOptional()
-    description?: string;
+  @IsString()
+  @IsOptional()
+  description?: string;
 }

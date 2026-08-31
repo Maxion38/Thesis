@@ -1,0 +1,38 @@
+:host {
+  display: contents;
+}
+
+.assessment-status-dot {
+  display: inline-block;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background-color: var(--dot-color, #a5a5a5);
+  border: solid 1px var(--dot-color, #a5a5a5);
+
+  &--sm {
+    width: 9px;
+    height: 9px;
+    border-width: 0;
+  }
+
+  &--md {
+    width: 18px;
+    height: 18px;
+  }
+
+  &--pending {
+    --dot-color: #a5a5a5;
+  }
+
+  &--correction {
+    --dot-color: #e8a93c;
+  }
+
+  &--published {
+    --dot-color: #00bd3f;
+  }
+
+  &--seen {
+    --dot-color: #3a7bd5;
+  }
+}

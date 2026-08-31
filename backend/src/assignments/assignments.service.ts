@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { USER_WITH_ROLES } from 'src/users/includes/users.include';
 import { toDtoUser } from 'src/users/mappers/user.mapper';
@@ -10,7 +14,6 @@ import { UserDto } from 'src/users/dto/user.dto';
 export class AssignmentsService {
   constructor(private prisma: PrismaService) {}
 
-  
   async getAssignedUsers(trainingCourseId: number): Promise<UserDto[]> {
     const course = await this.prisma.trainingCourse.findUnique({
       where: { id: trainingCourseId },
@@ -33,21 +36,16 @@ export class AssignmentsService {
       throw new NotFoundException('Training course not found');
     }
 
-    const users = course.projects.flatMap(p =>
-      p.members.map(m => m.user)
-    );
+    const users = course.projects.flatMap((p) => p.members.map((m) => m.user));
 
     const uniqueUsers = Array.from(
-      new Map(users.map(u => [u.id, u])).values()
+      new Map(users.map((u) => [u.id, u])).values(),
     );
 
     return uniqueUsers.map(toDtoUser);
   }
 
-
-  async getAssignableUsers(
-    trainingCourseId: number,
-  ): Promise<UserDto[]> {
+  async getAssignableUsers(trainingCourseId: number): Promise<UserDto[]> {
     const course = await this.prisma.trainingCourse.findUnique({
       where: { id: trainingCourseId },
       include: {
@@ -69,13 +67,11 @@ export class AssignmentsService {
       throw new NotFoundException('Training course not found');
     }
 
-    const assignedUsers = course.projects.flatMap(project =>
-      project.members.map(member => member.user),
+    const assignedUsers = course.projects.flatMap((project) =>
+      project.members.map((member) => member.user),
     );
 
-    const assignedUserIds = new Set(
-      assignedUsers.map(user => user.id),
-    );
+    const assignedUserIds = new Set(assignedUsers.map((user) => user.id));
 
     const allUsers = await this.prisma.user.findMany({
       include: USER_WITH_ROLES,
@@ -106,12 +102,13 @@ export class AssignmentsService {
     return result;
   }
 
-  
-  async assignUsersToTrainingCourse(trainingCourseId: number, userIds: number[]) {
+  async assignUsersToTrainingCourse(
+    trainingCourseId: number,
+    userIds: number[],
+  ) {
     return this.prisma.$transaction(async (tx) => {
-
       const course = await tx.trainingCourse.findUnique({
-        where: { id: trainingCourseId }
+        where: { id: trainingCourseId },
       });
 
       if (!course) {
@@ -120,8 +117,8 @@ export class AssignmentsService {
 
       const users = await tx.user.findMany({
         where: {
-          id: { in: userIds }
-        }
+          id: { in: userIds },
+        },
       });
 
       if (users.length !== userIds.length) {
@@ -140,13 +137,9 @@ export class AssignmentsService {
         },
       });
 
-      const alreadyAssignedIds = new Set(
-        alreadyAssigned.map(x => x.userId),
-      );
+      const alreadyAssignedIds = new Set(alreadyAssigned.map((x) => x.userId));
 
-      const filteredUsers = users.filter(
-        u => !alreadyAssignedIds.has(u.id),
-      );
+      const filteredUsers = users.filter((u) => !alreadyAssignedIds.has(u.id));
 
       const createdProjects = await Promise.all(
         filteredUsers.map((user) =>
@@ -171,15 +164,13 @@ export class AssignmentsService {
     });
   }
 
-
   async unassignUsersFromTrainingCourse(
     trainingCourseId: number,
-    userIds: number[]
+    userIds: number[],
   ) {
     return this.prisma.$transaction(async (tx) => {
-
       const course = await tx.trainingCourse.findUnique({
-        where: { id: trainingCourseId }
+        where: { id: trainingCourseId },
       });
 
       if (!course) {
@@ -191,20 +182,20 @@ export class AssignmentsService {
         where: {
           userId: { in: userIds },
           project: {
-            trainingCourseId
-          }
+            trainingCourseId,
+          },
         },
         select: {
-          userId: true
-        }
+          userId: true,
+        },
       });
 
-      const existingIds = existingMemberships.map(m => m.userId);
+      const existingIds = existingMemberships.map((m) => m.userId);
 
       if (existingIds.length === 0) {
         return {
           removedUserIds: [],
-          message: 'No matching assignments found'
+          message: 'No matching assignments found',
         };
       }
 
@@ -213,37 +204,37 @@ export class AssignmentsService {
         where: {
           userId: { in: existingIds },
           project: {
-            trainingCourseId
-          }
-        }
+            trainingCourseId,
+          },
+        },
       });
 
       // cleanup empty projects
       const affectedProjects = await tx.project.findMany({
         where: {
-          trainingCourseId
+          trainingCourseId,
         },
         include: {
           _count: {
             select: {
-              members: true
-            }
-          }
-        }
+              members: true,
+            },
+          },
+        },
       });
 
       await Promise.all(
         affectedProjects
-          .filter(p => p._count.members === 0)
-          .map(p =>
+          .filter((p) => p._count.members === 0)
+          .map((p) =>
             tx.project.delete({
-              where: { id: p.id }
-            })
-          )
+              where: { id: p.id },
+            }),
+          ),
       );
 
       return {
-        removedUserIds: existingIds
+        removedUserIds: existingIds,
       };
     });
   }

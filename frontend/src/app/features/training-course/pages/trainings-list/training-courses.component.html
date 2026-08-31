@@ -1,9 +1,35 @@
 <div class="page">
   <div class="page__top-bar">
 
-    <span class="page__top-bar__title">Tous les parcours</span>
-    <span 
-      class="page__top-bar__add-button" 
+    <!-- SEARCH -->
+    <div class="search-wrapper">
+      <span class="material-symbols-outlined search-icon">search</span>
+      <input
+        class="input"
+        type="text"
+        [(ngModel)]="searchText"
+        (input)="applyFilters()"
+      >
+    </div>
+
+    <!-- STATUS FILTER -->
+    <app-dropdown class="select">
+      <span dropdownTrigger class="select__label">
+        {{ selectedStatusLabel }}
+        <span class="material-symbols-outlined">expand_more</span>
+      </span>
+      <ng-container dropdownPanel>
+        <button
+          *ngFor="let status of statusFilterOptions"
+          class="dropdown-item"
+          [class.dropdown-item--active]="status === selectedStatus"
+          (click)="selectStatus(status)"
+        >{{ getStatusFilterLabel(status) }}</button>
+      </ng-container>
+    </app-dropdown>
+
+    <span
+      class="page__top-bar__add-button"
       (click)="onAdd()"
     >
       <span class="material-symbols-outlined">add</span>
@@ -14,10 +40,10 @@
   <div class="page__cards-div">
     <app-training-course-card
       class="course-card"
-      *ngFor="let course of courses$ | async"
+      *ngFor="let course of filteredCourses"
       [course]="course"
     >
     </app-training-course-card>
   </div>
-  
+
 </div>

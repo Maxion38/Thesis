@@ -1,5 +1,5 @@
 import { provideAppInitializer, ApplicationConfig, provideBrowserGlobalErrorListeners, inject, provideZoneChangeDetection } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withRouterConfig } from '@angular/router';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { routes } from './app.routes';
 import { AuthService } from './features/auth/services/auth.service';
@@ -17,7 +17,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor])),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideBrowserGlobalErrorListeners(),
-    provideRouter(routes),
+    provideRouter(routes, withRouterConfig({ paramsInheritanceStrategy: 'always' })),
     provideNativeDateAdapter(),
     { provide: LOCALE_ID, useValue: 'fr' },
     provideAppInitializer(() => {

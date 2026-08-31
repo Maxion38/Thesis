@@ -69,9 +69,10 @@ export class WorkController {
   @Auth()
   getSubmissionFile(
     @Param('submissionId', ParseIntPipe) submissionId: number,
+    @Req() req: { user: { userId: number; email: string; roles: string[] } },
     @Res() res: Response,
   ) {
-    return this.workService.getSubmissionFile(submissionId, res);
+    return this.workService.getSubmissionFile(submissionId, req.user, res);
   }
 
   @Delete(':workId/submissions/:submissionId')

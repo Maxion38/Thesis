@@ -5,9 +5,7 @@ import { Roles } from './roles.decorator';
 import { RoleType } from '@prisma/client';
 
 export function Auth(...roles: RoleType[]) {
-  const decorators = [
-    UseGuards(JwtAuthGuard, RolesGuard),
-  ];
+  const decorators = [UseGuards(JwtAuthGuard, RolesGuard)];
 
   if (roles.length > 0) {
     decorators.push(Roles(...roles));

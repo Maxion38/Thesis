@@ -1,8 +1,8 @@
 <div class="layout">
 
-  <div class="layout__tabbar">
-      <app-tabbar 
-        [tabs]="tabbarItems" 
+  <div class="layout__tabbar" *ngIf="tabbarItems.length > 1">
+      <app-tabbar
+        [tabs]="tabbarItems"
       >
       </app-tabbar>
   </div>

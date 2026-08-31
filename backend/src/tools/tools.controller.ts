@@ -23,9 +23,7 @@ export class ToolsController {
 
   @Get('module/:moduleId')
   @Auth()
-  async getToolsByModuleId(
-    @Param('moduleId', ParseIntPipe) moduleId: number,
-  ) {
+  async getToolsByModuleId(@Param('moduleId', ParseIntPipe) moduleId: number) {
     return this.toolService.getToolsByModuleId(moduleId);
   }
 
@@ -40,10 +38,7 @@ export class ToolsController {
 
   @Delete(':id')
   @Auth(RoleType.COORDINATOR)
-  async deleteTool(
-    @Param('id', ParseIntPipe) toolId: number, 
-  ) {
+  async deleteTool(@Param('id', ParseIntPipe) toolId: number) {
     return this.toolService.deleteTool(toolId);
   }
 }
-

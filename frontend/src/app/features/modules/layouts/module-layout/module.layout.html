@@ -37,30 +37,34 @@
           [active]="rlaDesc.isActive"
         />
 
-        <app-navbar-item
-          *ngFor="let tool of tools$ | async"
-          [name]="tool.name"
-          [routerLink]="[getRouteType(tool.type), tool.id]"
-          routerLinkActive
-          #rla="routerLinkActive"
-          [active]="rla.isActive"
-          icon="upload_file"
-          [isEditable]="rla.isActive && userRole === 'COORDINATOR'"
-          [isDeletable]="rla.isActive && userRole === 'COORDINATOR'"
-          (nameChange)="onToolNameChange(tool, $event)"
-          (deleted)="deleteTool(tool)"
-        />
+        <ng-container *ngIf="tools$ | async as tools">
+          <app-navbar-item
+            *ngFor="let tool of tools; let i = index"
+            [name]="tool.name"
+            [routerLink]="[getRouteType(tool.type), tool.id]"
+            routerLinkActive
+            #rla="routerLinkActive"
+            [active]="rla.isActive"
+            [icon]="getToolIcon(tool.type)"
+            [isEditable]="rla.isActive && userRole === 'COORDINATOR'"
+            [isDeletable]="rla.isActive && userRole === 'COORDINATOR'"
+            [class.navbar__item--linked-next]="isLinkedWithNext(tools, i)"
+            [class.navbar__item--linked-prev]="isLinkedWithPrevious(tools, i)"
+            (nameChange)="onToolNameChange(tool, $event)"
+            (deleted)="deleteTool(tool)"
+          />
+        </ng-container>
 
-        <div *ngIf="userRole === 'COORDINATOR'" class="add-button-wrapper">
-          <div class="add-button" (click)="toggleAddOptions()">
+        <app-dropdown *ngIf="userRole === 'COORDINATOR'" class="add-button-wrapper" align="center">
+          <div dropdownTrigger class="add-button">
             <span class="material-symbols-outlined">add</span>
           </div>
-          <div *ngIf="showAddOptions" class="add-menu">
-            <!-- <button type="button" class="add-menu__item" (click)="addForm()">Formulaire</button> -->
-            <button type="button" class="add-menu__item" (click)="addWorkSubmission()">Remise de travail</button>
-            <!-- <button type="button" class="add-menu__item" (click)="addAssessment()">Evaluation</button> -->
-          </div>
-        </div>
+          <ng-container dropdownPanel>
+            <!-- <button type="button" class="dropdown-item" (click)="addForm()">Formulaire</button> -->
+            <button type="button" class="dropdown-item" (click)="addWorkSubmission()">Remise de travail</button>
+            <!-- <button type="button" class="dropdown-item" (click)="addAssessment()">Evaluation</button> -->
+          </ng-container>
+        </app-dropdown>
 
         <span *ngIf="userRole === 'COORDINATOR'" class="delete-module" (click)="deleteModule()">Supprimer ce module</span>
 

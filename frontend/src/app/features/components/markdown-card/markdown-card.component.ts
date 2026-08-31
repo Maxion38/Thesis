@@ -1,6 +1,5 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { marked } from 'marked';
 
 @Component({
@@ -15,9 +14,7 @@ export class MarkdownCardComponent implements OnChanges {
   @Input() markdown: string = '';
   @Input() className: string = ''; // for external custom styling
 
-  html!: SafeHtml;
-
-  constructor(private sanitizer: DomSanitizer) {}
+  html: string = '';
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['markdown']) {
@@ -26,7 +23,11 @@ export class MarkdownCardComponent implements OnChanges {
   }
 
   private render() {
-    const rawHtml = marked.parse(this.markdown || '') as string;
-    this.html = this.sanitizer.bypassSecurityTrustHtml(rawHtml);
+    // Bound as a plain string (not SafeHtml) so Angular's DomSanitizer runs
+    // on it — markdown here comes from module/work descriptions, and marked
+    // passes through raw HTML embedded in the source, so an unsanitized
+    // bypassSecurityTrustHtml would let a compromised author account inject
+    // a stored XSS payload.
+    this.html = marked.parse(this.markdown || '') as string;
   }
 }

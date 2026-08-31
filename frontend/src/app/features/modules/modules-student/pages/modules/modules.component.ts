@@ -1,13 +1,21 @@
 import { Component, OnInit, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { switchMap } from 'rxjs';
+import { merge, switchMap } from 'rxjs';
 import { ModuleCardActionEvent, StudentModuleCardComponent } from '../../components/module-card/module-card.component';
+import { SimpleModuleCardComponent } from '../../components/simple-module-card/simple-module-card.component';
 import { MOCK_STUDENT_MODULES } from './modules.mock';
 import { UsersService } from '../../../../users/services/users.service';
-import { ModulesService } from '../../../services/modules.service'; 
+import { ModulesService } from '../../../services/modules.service';
 import { ModuleOverviewModel } from '../../model/module-overview.model';
+import { StudentToolCardModel } from '../../model/student-tool-card.model';
+import { TrainingCourseContextService } from '../../../../training-course/services/training-course-context.service';
+import { DropdownComponent } from '../../../../components/dropdown/dropdown.component';
+
+interface FilterOption {
+  value: string;
+  label: string;
+}
 
 export interface UserToInvite {
   id: number,
@@ -20,27 +28,44 @@ export interface UserToInvite {
   templateUrl: './modules.component.html',
   styleUrls: ['./modules.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, StudentModuleCardComponent],
+  imports: [CommonModule, RouterModule, StudentModuleCardComponent, SimpleModuleCardComponent, DropdownComponent],
 })
 export class StudentModulesComponent implements OnInit {
   @ViewChild('tasksSection') tasksSectionRef!: ElementRef<HTMLDivElement>;
-  @ViewChild('otherSection') otherSectionRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('modulesSection') modulesSectionRef!: ElementRef<HTMLDivElement>;
   canScrollRight = true;
 
   mockModules: ModuleOverviewModel[] = MOCK_STUDENT_MODULES;
   modules!: ModuleOverviewModel[];
   selectedTaskFilter: string = 'TODO';
-  selectedOtherFilter: string = 'OTHER';
+
+  readonly taskFilterOptions: FilterOption[] = [
+    { value: 'TODO', label: 'Tâches à faire' },
+    { value: 'ASSESSMENTS', label: 'Évaluations disponibles' },
+    { value: 'NO_DATE', label: 'Tâches sans dates' },
+    { value: 'ALL', label: 'Toutes les étapes' },
+    { value: 'FINISHED', label: 'Tâches terminées' },
+    { value: 'LOCKED', label: 'À venir' },
+  ];
+
+  get selectedTaskFilterLabel(): string {
+    return this.taskFilterOptions.find(o => o.value === this.selectedTaskFilter)?.label ?? '';
+  }
 
   constructor(
     private cdr: ChangeDetectorRef,
     private router: Router,
     private usersService: UsersService,
     private modulesService: ModulesService,
+    private trainingCourseContext: TrainingCourseContextService,
   ) {}
 
   ngOnInit(): void {
-    this.usersService.getMyFirstProject().pipe(
+    merge(
+      this.trainingCourseContext.initIfApplicable(),
+      this.trainingCourseContext.changes$,
+    ).pipe(
+      switchMap(course => this.usersService.getMyFirstProject(course?.id)),
       switchMap(project => this.modulesService.getProjectModulesOverview(project.id))
     ).subscribe({
       next: (modules) => {
@@ -57,24 +82,29 @@ export class StudentModulesComponent implements OnInit {
 
   ngAfterViewInit(): void {
     const tasksSection = this.tasksSectionRef?.nativeElement;
-    if (!tasksSection) return;
+    if (tasksSection) {
+      tasksSection.addEventListener('wheel', (e: WheelEvent) => {
+        e.preventDefault();
+        tasksSection.scrollLeft += e.deltaY;
+      }, { passive: false });
+    }
 
-    tasksSection.addEventListener('wheel', (e: WheelEvent) => {
-      e.preventDefault();
-      tasksSection.scrollLeft += e.deltaY;
-    }, { passive: false });
-
-    const otherSection = this.otherSectionRef?.nativeElement;
-    if (!otherSection) return;
-
-    otherSection.addEventListener('wheel', (e: WheelEvent) => {
-      e.preventDefault();
-      otherSection.scrollLeft += e.deltaY;
-    }, { passive: false });
+    const modulesSection = this.modulesSectionRef?.nativeElement;
+    if (modulesSection) {
+      modulesSection.addEventListener('wheel', (e: WheelEvent) => {
+        e.preventDefault();
+        modulesSection.scrollLeft += e.deltaY;
+      }, { passive: false });
+    }
   }
 
   onModuleCardAction(event: ModuleCardActionEvent): void {
     console.log(event)
+
+    if (event.viewModule || event.toolId == null) {
+      this.router.navigate(['/student/modules', event.moduleId, 'description']);
+      return;
+    }
 
     this.router.navigate([
       '/student/modules',
@@ -93,75 +123,99 @@ export class StudentModulesComponent implements OnInit {
     this.tasksSectionRef.nativeElement.scrollBy({ left: 400, behavior: 'smooth' });
   }
 
-  onScrollO() {
-    const el = this.tasksSectionRef.nativeElement;
-    this.canScrollRight = el.scrollLeft + el.clientWidth < el.scrollWidth - 10;
+  // Flattens modules into one card per tool, pairing linked tools (eg.
+  // a WORK linked to its grading ASSESSMENT) under a single card.
+  get cards(): StudentToolCardModel[] {
+    const result: StudentToolCardModel[] = [];
+
+    for (const module of this.modules ?? []) {
+
+      if (module.status?.locked) {
+        result.push({
+          id: `locked-${module.id}`,
+          moduleId: module.id,
+          moduleName: module.name,
+          locked: true,
+          lockedBy: module.status.lockedBy,
+          tools: [],
+        });
+        continue;
+      }
+
+      const paired = new Set<number>();
+
+      for (const tool of module.groups ?? []) {
+        if (paired.has(tool.id)) continue;
+
+        const linked = tool.linkedToolId
+          ? module.groups.find(g => g.id === tool.linkedToolId)
+          : undefined;
+
+        const tools = linked ? [tool, linked] : [tool];
+        tools.forEach(t => paired.add(t.id));
+
+        result.push({
+          id: `tool-${tool.id}`,
+          moduleId: module.id,
+          moduleName: module.name,
+          locked: false,
+          tools,
+        });
+      }
+    }
+
+    return result;
   }
 
-  scrollRightO() {
-    this.tasksSectionRef.nativeElement.scrollBy({ left: 400, behavior: 'smooth' });
-  }
-
-  get filteredModules(): ModuleOverviewModel[] {
+  get filteredCards(): StudentToolCardModel[] {
     switch (this.selectedTaskFilter) {
 
       case 'TODO':
-        return this.toDoModules;
+        return this.toDoCards;
 
       case 'ASSESSMENTS':
-        return this.availableAssessmentsModules;
+        return this.availableAssessmentsCards;
 
       case 'NO_DATE':
-        return this.noDateModules;
+        return this.noDateCards;
 
       case 'ALL':
-        return this.modules ?? [];
-
-      default:
-        return this.toDoModules;
-    }
-  }
-
-  get filteredOtherModules(): ModuleOverviewModel[] {
-    switch (this.selectedOtherFilter) {
-
-      case 'OTHER':
-        return this.othersModules;
+        return this.cards;
 
       case 'FINISHED':
-        return this.finishedModules;
+        return this.finishedCards;
 
       case 'LOCKED':
-        return this.lockedModules;
+        return this.lockedCards;
 
       default:
-        return this.othersModules;
+        return this.toDoCards;
     }
   }
 
 
-  get toDoModules(): ModuleOverviewModel[] {
-    const filtered = this.modules?.filter(module => {
+  get toDoCards(): StudentToolCardModel[] {
+    const filtered = this.cards.filter(card => {
 
-      if (module.status?.locked) return false;
+      if (card.locked) return false;
 
-      const hasPendingWorkOrForm = module.groups?.some(group =>
-        (group.type === 'WORK' || group.type === 'FORM') &&
-        group.state !== 'SUBMITTED'
+      const hasPendingWorkOrForm = card.tools.some(tool =>
+        (tool.type === 'WORK' || tool.type === 'FORM') &&
+        tool.state !== 'SUBMITTED'
       );
 
-      const hasPendingActivity = module.groups?.some(group =>
-        group.type === 'ACTIVITY' &&
-        group.date != null &&
-        new Date(group.date) >= this.today
+      const hasPendingActivity = card.tools.some(tool =>
+        tool.type === 'ACTIVITY' &&
+        tool.date != null &&
+        new Date(tool.date) >= this.today
       );
 
       return hasPendingWorkOrForm || hasPendingActivity;
-    }) ?? [];
+    });
 
     return filtered.sort((a, b) => {
-      const dateA = a.groups?.find(g => g.type === 'WORK' || g.type === 'FORM' || g.type === 'ACTIVITY')?.date;
-      const dateB = b.groups?.find(g => g.type === 'WORK' || g.type === 'FORM' || g.type === 'ACTIVITY')?.date;
+      const dateA = a.tools.find(t => t.type === 'WORK' || t.type === 'FORM' || t.type === 'ACTIVITY')?.date;
+      const dateB = b.tools.find(t => t.type === 'WORK' || t.type === 'FORM' || t.type === 'ACTIVITY')?.date;
 
       if (dateA == null && dateB == null) return 0;
       if (dateA == null) return 1;  // a sans date → à la fin
@@ -170,66 +224,57 @@ export class StudentModulesComponent implements OnInit {
       return new Date(dateA).getTime() - new Date(dateB).getTime();
     });
   }
-  
 
-  // this option should appears only if noDateModules.length > 0
-  get noDateModules(): ModuleOverviewModel[] {
-    return this.modules?.filter(module =>
-      module.groups?.every(group => group.date == null)
-    ) ?? [];
+
+  // this option should appears only if noDateCards.length > 0
+  get noDateCards(): StudentToolCardModel[] {
+    return this.cards.filter(card =>
+      !card.locked &&
+      card.tools.length > 0 &&
+      card.tools.every(tool => tool.date == null)
+    );
   }
 
-  get availableAssessmentsModules(): ModuleOverviewModel[] {
-    return this.modules?.filter(module =>
-      module.groups?.some(group =>
-        group.type === 'ASSESSMENT' &&
-        group.state === 'CORRECTED'
+  get availableAssessmentsCards(): StudentToolCardModel[] {
+    return this.cards.filter(card =>
+      card.tools.some(tool =>
+        tool.type === 'ASSESSMENT' &&
+        (tool.state === 'PUBLISHED' || tool.state === 'SEEN')
       )
-    ) ?? [];
+    );
   }
 
-  get finishedModules(): ModuleOverviewModel[] {
-    return this.modules?.filter(module => {
+  get finishedCards(): StudentToolCardModel[] {
+    return this.cards.filter(card => {
 
-      if (module.status?.locked) return false;
+      if (card.locked) return false;
 
-      const allOk = module.groups?.every(group => {
+      return card.tools.every(tool => {
 
-        switch (group.type) {
+        switch (tool.type) {
 
           case 'WORK':
           case 'FORM':
-            return group.state === 'SUBMITTED';
+            return tool.state === 'SUBMITTED';
 
           case 'ASSESSMENT':
-            return group.state === 'CORRECTED';
+            return tool.state === 'PUBLISHED' || tool.state === 'SEEN';
 
           case 'ACTIVITY':
-            return !group.date || new Date(group.date) < this.today;
+            return !tool.date || new Date(tool.date) < this.today;
 
           default:
             return true;
         }
       });
-
-      return allOk;
-    }) ?? [];
+    });
   }
 
-  get lockedModules(): ModuleOverviewModel[] {
-    return this.modules?.filter(m => m.status?.locked) ?? [];
+  get lockedCards(): StudentToolCardModel[] {
+    return this.cards.filter(c => c.locked);
   }
 
-  get othersModules(): ModuleOverviewModel[] {
-    const finishedIds = new Set(this.finishedModules.map(m => m.id));
-    const lockedIds = new Set(this.lockedModules.map(m => m.id));
-
-    return this.modules?.filter(m =>
-      finishedIds.has(m.id) || lockedIds.has(m.id)
-    ) ?? [];
-  }
-
-  // Helper to avoid time and date comparison inconsistencies 
+  // Helper to avoid time and date comparison inconsistencies
   private get today(): Date {
     const d = new Date();
     d.setHours(0, 0, 0, 0);

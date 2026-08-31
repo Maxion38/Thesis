@@ -1,5 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, ForbiddenException, GoneException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  GoneException,
+  NotFoundException,
+} from '@nestjs/common';
 import { RoleType } from '@prisma/client';
 import { InvitationService } from './invitation.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -70,21 +75,27 @@ describe('InvitationService', () => {
   // ── inviteUsers ──────────────────────────────────────────────────────────────
 
   describe('inviteUsers', () => {
-    const usersToInvite = [
-      { email: 'bob@test.com', role: RoleType.STUDENT },
-    ];
+    const usersToInvite = [{ email: 'bob@test.com', role: RoleType.STUDENT }];
 
     it('should throw ConflictException when user already exists', async () => {
-      mockPrismaService.user.findMany.mockResolvedValue([{ email: 'bob@test.com' }]);
+      mockPrismaService.user.findMany.mockResolvedValue([
+        { email: 'bob@test.com' },
+      ]);
 
-      await expect(service.inviteUsers(usersToInvite)).rejects.toThrow(ConflictException);
+      await expect(service.inviteUsers(usersToInvite)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should throw ConflictException when invitation already sent', async () => {
       mockPrismaService.user.findMany.mockResolvedValue([]);
-      mockPrismaService.invitation.findMany.mockResolvedValue([{ email: 'bob@test.com' }]);
+      mockPrismaService.invitation.findMany.mockResolvedValue([
+        { email: 'bob@test.com' },
+      ]);
 
-      await expect(service.inviteUsers(usersToInvite)).rejects.toThrow(ConflictException);
+      await expect(service.inviteUsers(usersToInvite)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should create invitation and send email for each user', async () => {
@@ -134,7 +145,9 @@ describe('InvitationService', () => {
     it('should throw NotFoundException when token does not exist', async () => {
       mockPrismaService.invitation.findUnique.mockResolvedValue(null);
 
-      await expect(service.verifyActivationLink('bad_token')).rejects.toThrow(NotFoundException);
+      await expect(service.verifyActivationLink('bad_token')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw ForbiddenException when invitation already used', async () => {
@@ -143,7 +156,9 @@ describe('InvitationService', () => {
         used: true,
       });
 
-      await expect(service.verifyActivationLink('fixed_token_hex')).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.verifyActivationLink('fixed_token_hex'),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw GoneException when invitation has expired', async () => {
@@ -152,7 +167,9 @@ describe('InvitationService', () => {
         expiresAt: new Date(Date.now() - 1000), // expiré
       });
 
-      await expect(service.verifyActivationLink('fixed_token_hex')).rejects.toThrow(GoneException);
+      await expect(
+        service.verifyActivationLink('fixed_token_hex'),
+      ).rejects.toThrow(GoneException);
     });
 
     it('should return invitation when token is valid', async () => {
@@ -178,9 +195,17 @@ describe('InvitationService', () => {
     it('should register user with invitation email and role', async () => {
       mockPrismaService.invitation.findUnique.mockResolvedValue(mockInvitation);
       mockAuthService.register.mockResolvedValue(mockUserDto);
-      mockPrismaService.invitation.update.mockResolvedValue({ ...mockInvitation, used: true });
+      mockPrismaService.invitation.update.mockResolvedValue({
+        ...mockInvitation,
+        used: true,
+      });
 
-      const result = await service.activateAccount('fixed_token_hex', 'Martin', 'pass', 'Bob');
+      const result = await service.activateAccount(
+        'fixed_token_hex',
+        'Martin',
+        'pass',
+        'Bob',
+      );
 
       expect(mockAuthService.register).toHaveBeenCalledWith(
         'bob@test.com',
@@ -195,7 +220,10 @@ describe('InvitationService', () => {
     it('should mark invitation as used after successful registration', async () => {
       mockPrismaService.invitation.findUnique.mockResolvedValue(mockInvitation);
       mockAuthService.register.mockResolvedValue(mockUserDto);
-      mockPrismaService.invitation.update.mockResolvedValue({ ...mockInvitation, used: true });
+      mockPrismaService.invitation.update.mockResolvedValue({
+        ...mockInvitation,
+        used: true,
+      });
 
       await service.activateAccount('fixed_token_hex', 'Martin', 'pass');
 

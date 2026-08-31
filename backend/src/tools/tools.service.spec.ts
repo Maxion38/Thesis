@@ -11,6 +11,8 @@ const mockTool = {
   description: 'Formulaire de présentation',
   type: 'FORM' as const,
   moduleId: 10,
+  linksAsSource: [] as { targetToolId: number }[],
+  linksAsTarget: [] as { sourceToolId: number }[],
 };
 
 // ─── Suite ───────────────────────────────────────────────────────────────────
@@ -46,6 +48,10 @@ describe('ToolsService', () => {
       expect(mockPrismaService.tool.findMany).toHaveBeenCalledWith({
         where: { moduleId: 10 },
         orderBy: { id: 'asc' },
+        include: {
+          linksAsSource: { select: { targetToolId: true } },
+          linksAsTarget: { select: { sourceToolId: true } },
+        },
       });
       expect(result).toEqual([
         {
@@ -54,8 +60,29 @@ describe('ToolsService', () => {
           description: 'Formulaire de présentation',
           type: 'FORM',
           moduleId: 10,
+          linkedToolId: null,
         },
       ]);
+    });
+
+    it('should resolve linkedToolId from an outgoing link (linksAsSource)', async () => {
+      mockPrismaService.tool.findMany.mockResolvedValue([
+        { ...mockTool, linksAsSource: [{ targetToolId: 42 }] },
+      ]);
+
+      const result = await service.getToolsByModuleId(10);
+
+      expect(result[0].linkedToolId).toBe(42);
+    });
+
+    it('should resolve linkedToolId from an incoming link (linksAsTarget)', async () => {
+      mockPrismaService.tool.findMany.mockResolvedValue([
+        { ...mockTool, linksAsTarget: [{ sourceToolId: 7 }] },
+      ]);
+
+      const result = await service.getToolsByModuleId(10);
+
+      expect(result[0].linkedToolId).toBe(7);
     });
 
     it('should return empty array when module has no tools', async () => {
@@ -84,7 +111,9 @@ describe('ToolsService', () => {
       const updated = { ...mockTool, name: 'Formulaire modifié' };
       mockPrismaService.tool.update.mockResolvedValue(updated);
 
-      const result = await service.updateTool(1, { name: 'Formulaire modifié' } as any);
+      const result = await service.updateTool(1, {
+        name: 'Formulaire modifié',
+      });
 
       expect(mockPrismaService.tool.update).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -99,9 +128,13 @@ describe('ToolsService', () => {
     });
 
     it('should propagate Prisma error when tool does not exist', async () => {
-      mockPrismaService.tool.update.mockRejectedValue(new Error('Record not found'));
+      mockPrismaService.tool.update.mockRejectedValue(
+        new Error('Record not found'),
+      );
 
-      await expect(service.updateTool(999, {} as any)).rejects.toThrow('Record not found');
+      await expect(service.updateTool(999, {} as any)).rejects.toThrow(
+        'Record not found',
+      );
     });
   });
 
@@ -113,12 +146,16 @@ describe('ToolsService', () => {
 
       const result = await service.deleteTool(1);
 
-      expect(mockPrismaService.tool.delete).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(mockPrismaService.tool.delete).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
       expect(result).toEqual(mockTool);
     });
 
     it('should propagate Prisma error when tool does not exist', async () => {
-      mockPrismaService.tool.delete.mockRejectedValue(new Error('Record not found'));
+      mockPrismaService.tool.delete.mockRejectedValue(
+        new Error('Record not found'),
+      );
 
       await expect(service.deleteTool(999)).rejects.toThrow('Record not found');
     });

@@ -23,6 +23,13 @@ export class TrainingCoursesService {
     );
   }
 
+  getMine(): Observable<TrainingCourseModel[]> {
+    return this.http.get<TrainingCourseModel[]>(
+      `${this.apiUrl}/mine`,
+      { withCredentials: true }
+    );
+  }
+
   getAllWithDetails(): Observable<TrainingCourseWithStats[]> {
     return this.http.get<TrainingCourseWithStats[]>(
       `${this.apiUrl}/details`,

@@ -19,7 +19,6 @@ import { AllUsersComponent } from './features/users/pages/all-users/all-users.co
 import { InvitationsComponent } from './features/invitations/pages/invitations/invitations.component';
 
 import { SupervisorsComponent } from './features/pages/supervisors/supervisors.component';
-import { JuriesComponent } from './features/pages/juries/juries.component';
 import { NotificationsComponent } from './features/pages/notifications/notifications.component';
 
 import { RegisterBootstrapComponent } from './features/auth/pages/register-bootstrap/register.component';
@@ -27,8 +26,8 @@ import { RegisterActivateAccountComponent } from './features/invitations/pages/r
 import { LoginComponent } from './features/auth/pages/login/login.component';
 import { AuthGuard } from './guards/auth.guard';
 import { RoleGuard } from './guards/role.guard';
-import { CoordinatorLayoutComponent } from './layouts/coordinator-layout/coordinator.layout';
-import { StudentLayoutComponent } from './layouts/student-layout/student.layout';
+import { MainLayoutComponent } from './layouts/main-layout/main.layout';
+import { MenuItem } from './features/components/menu/menu.component';
 import { EmptyComponent } from './empty.component';
 import { RootRedirectGuard } from './guards/root-redirect.guard';
 import { NoAuthGuard } from './guards/no-auth.guard';
@@ -38,9 +37,39 @@ import { StudentModuleLayoutComponent } from './features/modules/modules-student
 import { StudentModulesComponent } from './features/modules/modules-student/pages/modules/modules.component';
 import { StudentModuleDescriptionComponent } from './features/modules/modules-student/pages/module/description/description.component';
 import { ModuleLayoutComponent } from './features/modules/layouts/module-layout/module.layout';
-import { TeacherLayoutComponent } from './layouts/teacher-layout/teacher.layout';
 import { UserInspectionComponent } from './features/user-inspection/layouts/inspection/user-inspection.layout';
-import { SubmissionComponent } from './features/work-tool/pages/submissions/submissions.component';
+import { UserProfileComponent } from './features/user-inspection/pages/profile/user-profile.component';
+import { AssessmentDetailComponent } from './features/assessments/pages/assessment/assessment-detail.component';
+import { AssessmentStudentViewComponent } from './features/assessments/pages/assessment-student-view/assessment-student-view.component';
+import { AssessmentsLayoutComponent } from './features/assessments/layout/assessments-layout/assessments.layout';
+import { ProjectsLayoutComponent } from './features/projects/layouts/projects-layout/projects.layout';
+import { AllProjectsComponent } from './features/projects/pages/all-projects/all-projects.component';
+import { MyProjectsComponent } from './features/projects/pages/my-projects/my-projects.component';
+import { ProjectOverviewComponent } from './features/projects/pages/project-overview/project-overview.component';
+
+
+const coordinatorMenuItems: MenuItem[] = [
+  { titre: 'Accueil', iconName: 'home', route: '/coordinator', exact: true },
+  { titre: 'Parcours', iconName: 'school', route: '/coordinator/training-courses'},
+  { titre: 'Participants', iconName: 'groups', route: '/coordinator/users'},
+  { titre: 'Rapporteurs', iconName: 'assignment_ind', route: '/coordinator/supervisors'},
+  { titre: 'Notifications', iconName: 'notifications', route: '/coordinator/notifications'},
+];
+
+const teacherMenuItems: MenuItem[] = [
+  { titre: 'Accueil', iconName: 'home', route: '/teacher', exact: true },
+  { titre: 'Projets', iconName: 'work', route: '/teacher/projects'},
+  { titre: 'Rapportage', iconName: 'assignment_ind', route: '/teacher/supervisors'},
+  { titre: 'Utilisateurs', iconName: 'groups', route: '/teacher/users'},
+  { titre: 'Notifications', iconName: 'notifications', route: '/teacher/notifications'},
+];
+
+const studentMenuItems: MenuItem[] = [
+  { titre: 'Accueil', iconName: 'home', route: '/student', exact: true },
+  { titre: 'Modules', iconName: 'book', route: '/student/modules'},
+  { titre: 'Rapporteur', iconName: 'assignment_ind', route: '/student/supervisors'},
+  { titre: 'Notifications', iconName: 'notifications', route: '/student/notifications'},
+];
 
 export const routes: Routes = [
   {
@@ -64,9 +93,9 @@ export const routes: Routes = [
   },
   {
     path: 'coordinator',
-    component: CoordinatorLayoutComponent,
+    component: MainLayoutComponent,
     canActivate: [AuthGuard, RoleGuard],
-    data: { roles: ['COORDINATOR'] },
+    data: { roles: ['COORDINATOR'], menuItems: coordinatorMenuItems },
     children: [
       { path: '', component: DashboardComponent},
 
@@ -102,55 +131,82 @@ export const routes: Routes = [
       // { path: 'training-courses/:trainingCourseId/modules/:moduleId/editor/description', component: ModuleDescriptionComponent},
       // { path: 'training-courses/:trainingCourseId/modules/:moduleId/editor/work/:tooId', component: WorkEditorComponent},
       // { path: 'training-courses/:trainingCourseId/modules/:moduleId/conditions', component: ModuleConditionsComponent},
-      { 
+      {
         path: 'users', component: UsersLayoutComponent,
         children: [
           {path: '', redirectTo: 'all', pathMatch: 'full'},
           {path: 'all', component: AllUsersComponent},
           {path: 'invitations', component: InvitationsComponent},
         ]
-      },  
-      { path: 'supervisors', component: SupervisorsComponent},  
-      { path: 'juries', component: JuriesComponent},  
+      },
+      {
+        path: 'users/:userId',
+        component: UserInspectionComponent,
+        children: [
+          { path: '', component: UserProfileComponent },
+        ]
+      },
+      { path: 'supervisors', component: SupervisorsComponent},
       { path: 'notifications', component: NotificationsComponent},
     ]
   },
   {
     path: 'teacher',
-    component: TeacherLayoutComponent,
+    component: MainLayoutComponent,
     canActivate: [AuthGuard, RoleGuard],
-    data: { roles: ['TEACHER'] },
+    data: { roles: ['TEACHER'], menuItems: teacherMenuItems },
     children: [
       { path: '', component: DashboardComponent},
-      { 
-        path: 'users', 
+
+      // Inspection utilisateur : profil, infos générales, lien vers projet
+      {
+        path: 'users',
         component: UsersLayoutComponent,
         children: [
           { path: '', redirectTo: 'all', pathMatch: 'full'},
           { path: 'all', component: AllUsersComponent},
-          { path: 'my-users', component: AllUsersComponent}, //TODO my-users page
         ]
-      },  
-      { 
-        path: 'users/:userId', 
+      },
+      {
+        path: 'users/:userId',
         component: UserInspectionComponent,
         children: [
-          { path: '', redirectTo: 'submissions', pathMatch: 'full'},
-          { path: 'submissions', component: SubmissionComponent},
-          { path: 'training-course', component: SubmissionComponent}, //TODO training-course page
-          { path: 'profile', component: SubmissionComponent}, //TODO profile page
+          { path: '', component: UserProfileComponent },
         ]
-      },  
-      { path: 'supervisors', component: SupervisorsComponent},  
-      { path: 'juries', component: JuriesComponent},  
+      },
+
+      // Projets : soumissions, grilles d'évaluation
+      {
+        path: 'projects',
+        component: ProjectsLayoutComponent,
+        children: [
+          { path: '', redirectTo: 'myProjects', pathMatch: 'full' },
+          { path: 'myProjects', component: MyProjectsComponent },
+          { path: 'all', component: AllProjectsComponent },
+        ]
+      },
+      {
+        path: 'projects/:projectId',
+        component: ProjectOverviewComponent,
+      },
+      {
+        path: 'projects/:projectId/assessments/:assessmentId',
+        component: AssessmentsLayoutComponent,
+        children: [
+          { path: '', component: AssessmentDetailComponent },
+          { path: 'criteria/:criteriaId', component: AssessmentDetailComponent },
+        ]
+      },
+
+      { path: 'supervisors', component: SupervisorsComponent},
       { path: 'notifications', component: NotificationsComponent},
     ]
   },
   {
     path: 'student',
-    component: StudentLayoutComponent,
+    component: MainLayoutComponent,
     canActivate: [AuthGuard, RoleGuard],
-    data: { roles: ['STUDENT'] },
+    data: { roles: ['STUDENT'], menuItems: studentMenuItems },
     children: [
       { path: '', component: DashboardComponent},
       { 
@@ -164,7 +220,7 @@ export const routes: Routes = [
           {path: '', redirectTo: 'description', pathMatch: 'full'},
           { path: 'description', component: ModuleDescriptionComponent,},
           { path: 'work/:workId', component: WorkComponent,},
-          // { path: 'assessment/:assessmentId', component: ModuleAssessmentComponent,},
+          { path: 'assessment/:assessmentId', component: AssessmentStudentViewComponent,},
           // { path: 'form/:formId', component: ModuleFormComponent,},
           // { path: 'activity/:activityId', component: ModuleActivityComponent,},
         ]
@@ -177,7 +233,6 @@ export const routes: Routes = [
       //   ]
       // },  
       { path: 'supervisors', component: SupervisorsComponent},  
-      { path: 'juries', component: JuriesComponent},  
       { path: 'notifications', component: NotificationsComponent},
     ]
   },

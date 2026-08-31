@@ -28,9 +28,7 @@ describe('WorkController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [WorkController],
-      providers: [
-        { provide: WorkService, useValue: mockWorkService },
-      ],
+      providers: [{ provide: WorkService, useValue: mockWorkService }],
     }).compile();
 
     controller = module.get<WorkController>(WorkController);
@@ -62,7 +60,7 @@ describe('WorkController', () => {
     it('should call service.updateWork with workId and dto', async () => {
       const dto = { name: 'Modifié' };
       mockWorkService.updateWork.mockResolvedValue({ tool: {}, work: {} });
-      await controller.updateWork(1, dto as any);
+      await controller.updateWork(1, dto);
       expect(mockWorkService.updateWork).toHaveBeenCalledWith(1, dto);
     });
   });
@@ -70,34 +68,48 @@ describe('WorkController', () => {
   describe('submitWork', () => {
     it('should call service.submitWork with workId, file and user', async () => {
       mockWorkService.submitWork.mockResolvedValue({ id: 1 });
-      await controller.submitWork(1, mockFile, { user: mockReqUser } as any);
+      await controller.submitWork(1, mockFile, { user: mockReqUser });
       // FileInterceptor bypassé en unit test — file arrive directement
-      expect(mockWorkService.submitWork).toHaveBeenCalledWith(1, mockFile, mockReqUser);
+      expect(mockWorkService.submitWork).toHaveBeenCalledWith(
+        1,
+        mockFile,
+        mockReqUser,
+      );
     });
   });
 
   describe('getLatestSubmission', () => {
     it('should call service with workId and userId from request', async () => {
       mockWorkService.getLatestSubmission.mockResolvedValue({ id: 1 });
-      await controller.getLatestSubmission(1, { user: mockReqUser } as any);
-      expect(mockWorkService.getLatestSubmission).toHaveBeenCalledWith(1, mockReqUser.userId);
+      await controller.getLatestSubmission(1, { user: mockReqUser });
+      expect(mockWorkService.getLatestSubmission).toHaveBeenCalledWith(
+        1,
+        mockReqUser.userId,
+      );
     });
   });
 
   describe('getSubmissionFile', () => {
-    it('should call service with submissionId and res', async () => {
+    it('should call service with submissionId, user and res', async () => {
       const mockRes = { setHeader: jest.fn() } as any;
       mockWorkService.getSubmissionFile.mockResolvedValue(undefined);
-      await controller.getSubmissionFile(1, mockRes);
-      expect(mockWorkService.getSubmissionFile).toHaveBeenCalledWith(1, mockRes);
+      await controller.getSubmissionFile(1, { user: mockReqUser }, mockRes);
+      expect(mockWorkService.getSubmissionFile).toHaveBeenCalledWith(
+        1,
+        mockReqUser,
+        mockRes,
+      );
     });
   });
 
   describe('removeSubmission', () => {
     it('should call service with submissionId and userId from request', async () => {
       mockWorkService.removeSubmission.mockResolvedValue(undefined);
-      await controller.removeSubmission(1, { user: mockReqUser } as any);
-      expect(mockWorkService.removeSubmission).toHaveBeenCalledWith(1, mockReqUser.userId);
+      await controller.removeSubmission(1, { user: mockReqUser });
+      expect(mockWorkService.removeSubmission).toHaveBeenCalledWith(
+        1,
+        mockReqUser.userId,
+      );
     });
   });
 

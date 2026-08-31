@@ -12,6 +12,14 @@ const mockAuthService = {
   bootstrapRegister: jest.fn(),
   validateUser: jest.fn(),
   generateToken: jest.fn(),
+  issueRefreshToken: jest.fn(),
+  rotateRefreshToken: jest.fn(),
+  revokeRefreshToken: jest.fn(),
+};
+
+const mockRefreshIssue = {
+  token: 'mock.refresh.token',
+  expiresAt: new Date(Date.now() + 1000),
 };
 
 const mockUserDto = {
@@ -38,9 +46,7 @@ describe('AuthController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [
-        { provide: AuthService, useValue: mockAuthService },
-      ],
+      providers: [{ provide: AuthService, useValue: mockAuthService }],
     }).compile();
 
     controller = module.get<AuthController>(AuthController);
@@ -93,20 +99,32 @@ describe('AuthController', () => {
       firstname: 'Alice',
     };
 
-    it('should register, set cookie and return success message', async () => {
+    it('should register, set cookies and return success message', async () => {
       mockAuthService.bootstrapRegister.mockResolvedValue(mockUserDto);
       mockAuthService.generateToken.mockReturnValue('mock.jwt.token');
+      mockAuthService.issueRefreshToken.mockResolvedValue(mockRefreshIssue);
 
-      const result = await controller.bootStrapRegister(dto as any, mockRes as any);
+      const result = await controller.bootStrapRegister(dto, mockRes as any);
 
       expect(mockAuthService.bootstrapRegister).toHaveBeenCalledWith(
-        dto.email, dto.password, dto.surname, dto.firstname,
+        dto.email,
+        dto.password,
+        dto.surname,
+        dto.firstname,
       );
       expect(mockAuthService.generateToken).toHaveBeenCalledWith(mockUserDto);
-      // Vérifie que le cookie JWT est bien posé
+      expect(mockAuthService.issueRefreshToken).toHaveBeenCalledWith(
+        mockUserDto.id,
+      );
+      // Vérifie que les deux cookies sont bien posés
       expect(mockRes.cookie).toHaveBeenCalledWith(
         'access_token',
         'mock.jwt.token',
+        expect.objectContaining({ httpOnly: true }),
+      );
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        'refresh_token',
+        mockRefreshIssue.token,
         expect.objectContaining({ httpOnly: true }),
       );
       expect(result).toEqual({ message: 'bootstrap completed' });
@@ -126,32 +144,103 @@ describe('AuthController', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
 
-    it('should set cookie and return success message on valid credentials', async () => {
+    it('should set cookies and return success message on valid credentials', async () => {
       mockAuthService.validateUser.mockResolvedValue(mockUserDto);
       mockAuthService.generateToken.mockReturnValue('mock.jwt.token');
+      mockAuthService.issueRefreshToken.mockResolvedValue(mockRefreshIssue);
 
-      const result = await controller.login(dto as any, mockRes as any);
+      const result = await controller.login(dto, mockRes as any);
 
+      expect(mockAuthService.issueRefreshToken).toHaveBeenCalledWith(
+        mockUserDto.id,
+      );
       expect(mockRes.cookie).toHaveBeenCalledWith(
         'access_token',
         'mock.jwt.token',
+        expect.objectContaining({ httpOnly: true }),
+      );
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        'refresh_token',
+        mockRefreshIssue.token,
         expect.objectContaining({ httpOnly: true }),
       );
       expect(result).toEqual({ message: 'logged in' });
     });
   });
 
+  // ── refresh ──────────────────────────────────────────────────────────────────
+
+  describe('refresh', () => {
+    it('should throw UnauthorizedException when no refresh token cookie is present', async () => {
+      const req = { cookies: {} } as any;
+
+      await expect(controller.refresh(req, mockRes as any)).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should rotate the token, set new cookies and return success message', async () => {
+      const req = { cookies: { refresh_token: 'old.refresh.token' } } as any;
+      mockAuthService.rotateRefreshToken.mockResolvedValue({
+        user: mockUserDto,
+        accessToken: 'new.jwt.token',
+        refreshToken: 'new.refresh.token',
+        refreshTokenExpiresAt: new Date(Date.now() + 1000),
+      });
+
+      const result = await controller.refresh(req, mockRes as any);
+
+      expect(mockAuthService.rotateRefreshToken).toHaveBeenCalledWith(
+        'old.refresh.token',
+      );
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        'access_token',
+        'new.jwt.token',
+        expect.objectContaining({ httpOnly: true }),
+      );
+      expect(result).toEqual({ message: 'token refreshed' });
+    });
+
+    it('should clear cookies and rethrow when rotation fails', async () => {
+      const req = { cookies: { refresh_token: 'stolen.token' } } as any;
+      mockAuthService.rotateRefreshToken.mockRejectedValue(
+        new UnauthorizedException('reuse detected'),
+      );
+
+      await expect(controller.refresh(req, mockRes as any)).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(mockRes.clearCookie).toHaveBeenCalledWith(
+        'access_token',
+        expect.objectContaining({ httpOnly: true }),
+      );
+    });
+  });
+
   // ── logout ───────────────────────────────────────────────────────────────────
 
   describe('logout', () => {
-    it('should clear cookie and return success message', () => {
-      const result = controller.logout(mockRes as any);
+    it('should revoke the refresh token, clear cookies and return success message', async () => {
+      const req = { cookies: { refresh_token: 'mock.refresh.token' } } as any;
 
+      const result = await controller.logout(req, mockRes as any);
+
+      expect(mockAuthService.revokeRefreshToken).toHaveBeenCalledWith(
+        'mock.refresh.token',
+      );
       expect(mockRes.clearCookie).toHaveBeenCalledWith(
         'access_token',
         expect.objectContaining({ httpOnly: true }),
       );
       expect(result).toEqual({ message: 'logged out' });
+    });
+
+    it('should not attempt revocation when no refresh token cookie is present', async () => {
+      const req = { cookies: {} } as any;
+
+      await controller.logout(req, mockRes as any);
+
+      expect(mockAuthService.revokeRefreshToken).not.toHaveBeenCalled();
     });
   });
 });

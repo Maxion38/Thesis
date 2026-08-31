@@ -7,6 +7,7 @@ export function mapTool(dto: any): ToolModel {
     description: dto.description,
     type: dto.type,
     moduleId: dto.moduleId,
+    linkedToolId: dto.linkedToolId,
   };
 }
 

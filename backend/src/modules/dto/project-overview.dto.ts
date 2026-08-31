@@ -1,0 +1,31 @@
+import { GridFeedbackStatus } from '@prisma/client';
+
+export class ProjectOverviewSubmissionDto {
+  id!: number;
+  fileName!: string;
+  submittedAt!: Date;
+  submittedByFirstname!: string | null;
+  submittedBySurname!: string;
+}
+
+export class ProjectOverviewToolDto {
+  id!: number;
+  name!: string;
+  type!: 'WORK' | 'ASSESSMENT';
+
+  // WORK only
+  dueDate?: Date | null;
+  submission?: ProjectOverviewSubmissionDto | null;
+
+  // ASSESSMENT only
+  feedbackStatus?: GridFeedbackStatus;
+
+  // Paired WORK <-> ASSESSMENT tool, via ToolLink, if any
+  linkedToolId?: number | null;
+}
+
+export class ProjectOverviewModuleDto {
+  id!: number;
+  name!: string;
+  tools!: ProjectOverviewToolDto[];
+}

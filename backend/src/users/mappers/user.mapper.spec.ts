@@ -7,10 +7,7 @@ describe('toDtoUser', () => {
       email: 'alice@test.com',
       surname: 'Dupont',
       firstname: 'Alice',
-      roles: [
-        { role: { role: 'STUDENT' } },
-        { role: { role: 'COORDINATOR' } },
-      ],
+      roles: [{ role: { role: 'STUDENT' } }, { role: { role: 'COORDINATOR' } }],
     };
 
     const result = toDtoUser(user);

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, ActivatedRoute, RouterLink, RouterLinkActive, Router } from '@angular/router';
-import { Observable, switchMap } from 'rxjs';
+import { Observable, switchMap, map } from 'rxjs';
 import { TabbarComponent, Tabs } from '../../../components/tabbar/tabbar.component';
 import { ModulesService } from '../../services/modules.service';
 import { ModuleModel } from '../../modules-coordinator/models/module.model';
@@ -13,11 +13,12 @@ import { FormsModule } from '@angular/forms';
 import { NavbarItemComponent } from '../../components/navbar-item/navbar-item.component';
 import { AuthService } from '../../../auth/services/auth.service';
 import { RoleType } from '../../../entities/role.entity';
+import { DropdownComponent } from '../../../components/dropdown/dropdown.component';
 
 @Component({
   selector: 'app-module-layout',
   standalone: true,
-  imports: [TabbarComponent, RouterOutlet, CommonModule, RouterLink, RouterLinkActive, FormsModule, NavbarItemComponent],
+  imports: [TabbarComponent, RouterOutlet, CommonModule, RouterLink, RouterLinkActive, FormsModule, NavbarItemComponent, DropdownComponent],
   templateUrl: './module.layout.html',
   styleUrls: ['./module.layout.scss'],
 })
@@ -30,7 +31,6 @@ export class ModuleLayoutComponent implements OnInit {
 
   tabbarItems: Tabs[] = [];
   isVisible: boolean = true;
-  showAddOptions = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -65,7 +65,40 @@ export class ModuleLayoutComponent implements OnInit {
           Number(params.get('moduleId'))
         )
       ),
+      map(tools => this.orderWithLinkedToolsAdjacent(tools)),
     );
+  }
+
+  // Keeps a linked pair of tools (e.g. a Work and its assessment grid) next
+  // to each other in the sidebar so their gap can be visually collapsed.
+  private orderWithLinkedToolsAdjacent(tools: ToolModel[]): ToolModel[] {
+    const ordered: ToolModel[] = [];
+    const placed = new Set<number>();
+
+    for (const tool of tools) {
+      if (placed.has(tool.id)) continue;
+
+      ordered.push(tool);
+      placed.add(tool.id);
+
+      const partner = tools.find(t => t.id === tool.linkedToolId);
+      if (partner && !placed.has(partner.id)) {
+        ordered.push(partner);
+        placed.add(partner.id);
+      }
+    }
+
+    return ordered;
+  }
+
+  isLinkedWithNext(tools: ToolModel[], index: number): boolean {
+    const tool = tools[index];
+    const next = tools[index + 1];
+    return !!next && (tool.linkedToolId === next.id || next.linkedToolId === tool.id);
+  }
+
+  isLinkedWithPrevious(tools: ToolModel[], index: number): boolean {
+    return index > 0 && this.isLinkedWithNext(tools, index - 1);
   }
 
   toggleNavbar():void {
@@ -83,17 +116,25 @@ export class ModuleLayoutComponent implements OnInit {
     }
   }
 
-  toggleAddOptions(): void {
-    this.showAddOptions = !this.showAddOptions;
+  getToolIcon(type: string): string {
+    switch (type) {
+      case 'WORK':
+        return 'upload_file';
+      case 'ASSESSMENT':
+        return 'fact_check';
+      case 'FORM':
+        return 'list_alt';
+      case 'ACTIVITY':
+        return 'event';
+      default:
+        return 'upload_file';
+    }
   }
 
   addForm(): void {
-    this.showAddOptions = false;
   }
 
   addWorkSubmission(): void {
-    this.showAddOptions = false;
-
     const workData: CreateWorkModel = {
       name: "Nouvelle remise de travail",
       description: "Veuillez insérer une description.",
@@ -112,7 +153,6 @@ export class ModuleLayoutComponent implements OnInit {
   }
 
   addAssessment(): void {
-    this.showAddOptions = false;
   }
 
   onToolNameChange(tool: ToolModel, newName: string): void {

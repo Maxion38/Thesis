@@ -1,3 +1,5 @@
+import { GridFeedbackStatus } from '@prisma/client';
+
 export class ModuleOverviewDto {
   id!: number;
   name!: string;
@@ -7,13 +9,17 @@ export class ModuleOverviewDto {
 }
 
 export interface ModuleStatusDto {
-    locked: boolean
-    lockedBy?: ConditionDto[]
+  locked: boolean;
+  lockedBy?: ConditionDto[];
 }
 
 export interface ConditionDto {
   id: number;
-  method: 'USER_VALIDATION' | 'SUPERVISOR_VALIDATION' | 'TOOL_SUBMISSION' | 'DATE';
+  method:
+    | 'USER_VALIDATION'
+    | 'SUPERVISOR_VALIDATION'
+    | 'TOOL_SUBMISSION'
+    | 'DATE';
   date?: Date;
   validatorName?: string;
   toolName?: string;
@@ -23,6 +29,7 @@ export interface ModuleToolGroupDto {
   id: number;
   label?: string;
   type: 'WORK' | 'FORM' | 'ACTIVITY' | 'ASSESSMENT';
-  state: 'UNTOUCHED' | 'SUBMITTED' | 'CORRECTED'; 
+  state: 'UNTOUCHED' | 'SUBMITTED' | 'CORRECTED' | GridFeedbackStatus;
   date?: Date;
+  linkedToolId?: number;
 }

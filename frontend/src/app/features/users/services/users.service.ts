@@ -16,17 +16,23 @@ export class UsersService {
   private apiUrl = `${environment.apiUrl}/users`;
   
 
-  getAll(): Observable<UserModel[]> {
+  getAll(trainingCourseId?: number): Observable<UserModel[]> {
     return this.http.get<UserModel[]>(
       this.apiUrl,
-      { withCredentials: true }
+      {
+        withCredentials: true,
+        params: trainingCourseId ? { trainingCourseId } : {},
+      }
     );
   }
 
-  getMyFirstProject(): Observable<ProjectModel> {
+  getMyFirstProject(trainingCourseId?: number): Observable<ProjectModel> {
     return this.http.get<ProjectModel>(
       `${this.apiUrl}/my-first-project`,
-      { withCredentials: true }
+      {
+        withCredentials: true,
+        params: trainingCourseId ? { trainingCourseId } : {},
+      }
     )
   }
 }

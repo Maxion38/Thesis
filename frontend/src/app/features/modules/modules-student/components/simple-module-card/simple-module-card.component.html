@@ -1,0 +1,28 @@
+<a
+  class="card"
+  [class.card--locked]="module.status.locked"
+  [routerLink]="['/student/modules', module.id]"
+>
+  <div class="title">
+    <span class="title__text">{{ module.name }}</span>
+    <span class="material-symbols-outlined title__lock-icon" *ngIf="module.status.locked">lock</span>
+  </div>
+
+  <ng-container *ngIf="!module.status.locked">
+
+    <div class="summary" *ngIf="toolsSummary">
+      <span>{{ toolsSummary }}</span>
+    </div>
+
+    <div class="progress" *ngIf="hasSteps">
+      <div class="progress-bar">
+        <div
+          class="progress-bar__fill"
+          [style.width.%]="progressPercentage"
+        ></div>
+      </div>
+      <span class="progress__steps">{{ completedCount }}/{{ submittableCount }}</span>
+    </div>
+
+  </ng-container>
+</a>

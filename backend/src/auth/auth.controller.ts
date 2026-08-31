@@ -8,10 +8,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import type { Response } from 'express';
+import type { Request, Response } from 'express';
 import { LoginDto } from './dto/login.dto';
 import { BootStrapRegisterDto } from './dto/bootstrapRegister.dto';
 import { Auth } from './decorators/auth.decorator';
+import { setAuthCookies, clearAuthCookies } from './utils/auth-cookies.util';
 
 @Controller('auth')
 export class AuthController {
@@ -23,12 +24,10 @@ export class AuthController {
     return this.authService.getCurrentUser(req.user.userId);
   }
 
-
   @Get('bootstrap-status')
   async isBootStrapEnabled() {
     return await this.authService.isBootstrapEnabled();
   }
-
 
   @Post('bootstrap-register')
   async bootStrapRegister(
@@ -42,52 +41,68 @@ export class AuthController {
       dto.firstname,
     );
 
-    const token = this.authService.generateToken(user);
+    const accessToken = this.authService.generateToken(user);
+    const { token: refreshToken, expiresAt } =
+      await this.authService.issueRefreshToken(user.id);
 
-    res.cookie('access_token', token, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'lax',
-      maxAge: 1000 * 60 * 60 * 24,
-    });
+    setAuthCookies(res, accessToken, refreshToken, expiresAt);
 
     return { message: 'bootstrap completed' };
   }
-
 
   @Post('login')
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const user = await this.authService.validateUser(
-      dto.email,
-      dto.password,
-    );
+    const user = await this.authService.validateUser(dto.email, dto.password);
 
     if (!user) {
       throw new UnauthorizedException();
     }
 
-    const token = this.authService.generateToken(user);
+    const accessToken = this.authService.generateToken(user);
+    const { token: refreshToken, expiresAt } =
+      await this.authService.issueRefreshToken(user.id);
 
-    res.cookie('access_token', token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: false, // true in prod (HTTPS)
-      maxAge: 1000 * 60 * 60 * 24,
-    });
+    setAuthCookies(res, accessToken, refreshToken, expiresAt);
 
     return { message: 'logged in' };
   }
 
+  @Post('refresh')
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const rawToken = req.cookies?.['refresh_token'];
+
+    if (!rawToken) {
+      throw new UnauthorizedException('No refresh token');
+    }
+
+    try {
+      const { accessToken, refreshToken, refreshTokenExpiresAt } =
+        await this.authService.rotateRefreshToken(rawToken);
+
+      setAuthCookies(res, accessToken, refreshToken, refreshTokenExpiresAt);
+
+      return { message: 'token refreshed' };
+    } catch (err) {
+      clearAuthCookies(res);
+      throw err;
+    }
+  }
+
   @Post('logout')
-  logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('access_token', {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: false, // true in prod (HTTPS)
-    });
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const rawToken = req.cookies?.['refresh_token'];
+
+    if (rawToken) {
+      await this.authService.revokeRefreshToken(rawToken);
+    }
+
+    clearAuthCookies(res);
 
     return { message: 'logged out' };
   }

@@ -1,0 +1,91 @@
+<div class="page">
+
+  <div class="header">
+    <app-back-button class="header-left" [route]="backRoute" [queryParams]="backQueryParams"></app-back-button>
+
+    <div class="header-center">
+
+      <app-dropdown #projectDropdown class="user-card" *ngIf="selectedProject">
+        <div dropdownTrigger class="user-card__profile">{{ getInitials(selectedProject) }}</div>
+        <div dropdownTrigger class="user-card__name">{{ getStudentsLabel(selectedProject) }}</div>
+        <span dropdownTrigger class="material-symbols-outlined user-card__dropdown">{{ projectDropdown.open ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
+        <ng-container dropdownPanel>
+          <button
+            *ngFor="let project of projects"
+            class="dropdown-item"
+            [class.dropdown-item--active]="project.id === selectedProject.id"
+            (click)="selectProject(project)">
+            {{ getStudentsLabel(project) }}
+          </button>
+        </ng-container>
+      </app-dropdown>
+
+      <app-dropdown #gridDropdown class="user-card grid-name" *ngIf="selectedGrid">
+        <div dropdownTrigger class="user-card__icon"><span class="material-symbols-outlined">fact_check</span></div>
+        <div dropdownTrigger class="user-card__name">{{ selectedGrid.name }}</div>
+        <span dropdownTrigger class="material-symbols-outlined user-card__dropdown">{{ gridDropdown.open ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
+        <ng-container dropdownPanel>
+          <button
+            *ngFor="let grid of selectedProject?.grids"
+            class="dropdown-item"
+            [class.dropdown-item--active]="grid.id === selectedGrid.id"
+            (click)="selectGrid(grid)">
+            {{ grid.name }}
+          </button>
+        </ng-container>
+      </app-dropdown>
+
+    </div>
+
+    <div class="header-right">
+
+      <app-dropdown #statusDropdown align="right" *ngIf="gridContext">
+        <div dropdownTrigger class="status-badge" [class]="'status-badge--' + gridContext.status.toLowerCase()">
+          <span class="status-badge__dot"></span>
+          {{ statusLabel(gridContext.status) }}
+          <span class="material-symbols-outlined status-badge__dropdown">{{ statusDropdown.open ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</span>
+        </div>
+        <ng-container dropdownPanel>
+          <button
+            *ngIf="canPublish"
+            class="dropdown-item"
+            [disabled]="publishingGrid"
+            (click)="publishGrid()"
+          >Publier la grille</button>
+          <div class="dropdown-empty" *ngIf="!canPublish">
+            {{ gridContext.isSupervisor
+              ? 'Grille déjà publiée'
+              : 'Seul le rapporteur du projet peut publier cette grille' }}
+          </div>
+        </ng-container>
+      </app-dropdown>
+
+      <div
+        class="pdf-toggle-btn"
+        *ngIf="gridContext?.linkedSubmission as sub"
+        [class.pdf-toggle-btn--active]="showPdfViewer"
+        [title]="(showPdfViewer ? 'Masquer' : 'Afficher') + ' le document soumis (' + sub.fileName + ')'"
+        (click)="togglePdfViewer()"
+      ><span class="material-symbols-outlined">picture_as_pdf</span></div>
+
+      <div
+        class="evals-btn"
+        [class.evals-btn--active]="evaluationsVisibility.showOtherVotes()"
+        [title]="evaluationsVisibility.showOtherVotes() ? 'Masquer les votes des autres évaluateurs' : 'Afficher les votes des autres évaluateurs'"
+        (click)="evaluationsVisibility.toggle()"
+      ><span class="material-symbols-outlined">groups</span></div>
+
+    </div>
+
+  </div>
+
+  <div class="content" [class.content--split]="showPdfViewer && gridContext?.linkedSubmission">
+    <div class="content__pdf" *ngIf="showPdfViewer && gridContext?.linkedSubmission as sub">
+      <app-pdf-viewer [workId]="sub.workId" [submissionId]="sub.submissionId" [fileName]="sub.fileName"></app-pdf-viewer>
+    </div>
+    <div class="content__assessment">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+
+</div>

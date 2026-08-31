@@ -1,0 +1,63 @@
+<div class="browser">
+
+  <div class="browser__toolbar">
+    <app-dropdown class="criteria__selector" *ngIf="mode === 'single'">
+      <span dropdownTrigger class="criteria__text">{{ selectedCriteria?.name }}</span>
+      <ng-container dropdownPanel>
+        <div
+          class="dropdown-item"
+          [class.dropdown-item--active]="c.order === selectedOrder"
+          *ngFor="let c of criteria"
+          (click)="select(c.order)"
+        >
+          {{ c.name }}
+        </div>
+      </ng-container>
+    </app-dropdown>
+
+    <div
+      class="mode-toggle-btn"
+      [title]="mode === 'single' ? 'Voir toute la grille' : 'Voir critère par critère'"
+      (click)="toggleMode()"
+    >
+      <span class="material-symbols-outlined">{{ mode === 'single' ? 'view_agenda' : 'view_list' }}</span>
+    </div>
+  </div>
+
+  <ng-container *ngIf="mode === 'single'; else scrollAll">
+
+    <ng-container *ngIf="selectedCriteria as sc">
+      <ng-container *ngTemplateOutlet="criterionTpl; context: { criteria: sc }"></ng-container>
+    </ng-container>
+
+    <div class="criteria-actions" *ngIf="criteria.length > 1">
+      <div class="arrow-btn" (click)="goPrevious()">
+        <span class="material-symbols-outlined arrow-icon">chevron_left</span>
+      </div>
+
+      <div class="dots">
+        <div
+          class="dots__item"
+          [class.dots__item--active]="c.order === selectedOrder"
+          *ngFor="let c of criteria"
+          (click)="select(c.order)"
+        ></div>
+      </div>
+
+      <div class="arrow-btn" (click)="goNext()">
+        <span class="material-symbols-outlined arrow-icon">chevron_right</span>
+      </div>
+    </div>
+
+  </ng-container>
+
+  <ng-template #scrollAll>
+    <div class="criteria-scroll">
+      <div class="criteria-scroll__item" *ngFor="let c of criteria">
+        <h3 class="criteria-scroll__title">{{ c.name }}</h3>
+        <ng-container *ngTemplateOutlet="criterionTpl; context: { criteria: c }"></ng-container>
+      </div>
+    </div>
+  </ng-template>
+
+</div>
