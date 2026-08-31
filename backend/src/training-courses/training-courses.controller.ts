@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Req,
+} from '@nestjs/common';
 import { TrainingCoursesService } from './training-courses.service';
 import { CreateTrainingCourseDto } from './dto/create-training-course.dto';
 import { UpdateTrainingCourseDto } from './dto/update-training-course.dto';
@@ -10,7 +19,7 @@ import { Auth } from '../auth/decorators/auth.decorator';
 export class TrainingCoursesController {
   constructor(
     private readonly trainingCoursesService: TrainingCoursesService,
-    private readonly modulesService: ModulesService
+    private readonly modulesService: ModulesService,
   ) {}
 
   @Auth(RoleType.COORDINATOR)
@@ -51,7 +60,10 @@ export class TrainingCoursesController {
 
   @Auth(RoleType.COORDINATOR)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTrainingCourseDto: UpdateTrainingCourseDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateTrainingCourseDto: UpdateTrainingCourseDto,
+  ) {
     return this.trainingCoursesService.update(+id, updateTrainingCourseDto);
   }
 

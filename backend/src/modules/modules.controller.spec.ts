@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ModulesController } from './modules.controller';
 import { ModulesService } from './modules.service';
-import { mockPrismaService } from '../../prisma/prisma.service.mock'
+import { mockPrismaService } from '../../prisma/prisma.service.mock';
 
 const mockModulesService = {
   create: jest.fn(),
@@ -20,9 +20,7 @@ describe('ModulesController', () => {
     jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ModulesController],
-      providers: [
-        { provide: ModulesService, useValue: mockModulesService },
-      ],
+      providers: [{ provide: ModulesService, useValue: mockModulesService }],
     }).compile();
 
     controller = module.get<ModulesController>(ModulesController);
@@ -78,7 +76,10 @@ describe('ModulesController', () => {
 
       const result = await controller.findUserModulesOverview(req, '10');
 
-      expect(mockModulesService.findUserModulesOverview).toHaveBeenCalledWith(42, 10);
+      expect(mockModulesService.findUserModulesOverview).toHaveBeenCalledWith(
+        42,
+        10,
+      );
       expect(result).toEqual(data);
     });
   });
@@ -109,7 +110,7 @@ describe('ModulesController', () => {
 
       mockModulesService.update.mockResolvedValue(data);
 
-      const result = await controller.update('1', dto as any);
+      const result = await controller.update('1', dto);
 
       expect(mockModulesService.update).toHaveBeenCalledWith(1, dto);
       expect(result).toEqual(data);

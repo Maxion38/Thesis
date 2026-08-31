@@ -14,7 +14,19 @@ import { ConfigModule } from '@nestjs/config';
 import { AssessmentGridModule } from './assessment-grid/assessment-grid.module';
 
 @Module({
-  imports: [PrismaModule, TrainingCoursesModule, ModulesModule, AuthModule, InvitationModule, UsersModule, AssignmentsModule, WorkSubmissionToolModule, ToolsModule, ConfigModule.forRoot({ isGlobal: true }), AssessmentGridModule,],
+  imports: [
+    PrismaModule,
+    TrainingCoursesModule,
+    ModulesModule,
+    AuthModule,
+    InvitationModule,
+    UsersModule,
+    AssignmentsModule,
+    WorkSubmissionToolModule,
+    ToolsModule,
+    ConfigModule.forRoot({ isGlobal: true }),
+    AssessmentGridModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

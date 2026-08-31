@@ -1,8 +1,23 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { AssessmentGridService } from './assessment-grid.service';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { RoleType } from '@prisma/client';
-import { SetCriteriaNoteDto, SetCriteriaFeedbackDto, CreateCriteriaDiscussionDto, PublishGridDto } from './dto/assessment-grid.dto';
+import {
+  SetCriteriaNoteDto,
+  SetCriteriaFeedbackDto,
+  CreateCriteriaDiscussionDto,
+  PublishGridDto,
+} from './dto/assessment-grid.dto';
 
 @Controller('assessment-grid')
 export class AssessmentGridController {
@@ -34,7 +49,11 @@ export class AssessmentGridController {
     @Body() dto: SetCriteriaNoteDto,
     @Req() req: any,
   ) {
-    return this.assessmentGridService.setCriteriaNote(criteriaId, req.user.userId, dto);
+    return this.assessmentGridService.setCriteriaNote(
+      criteriaId,
+      req.user.userId,
+      dto,
+    );
   }
 
   @Auth(RoleType.COORDINATOR, RoleType.TEACHER)
@@ -44,7 +63,11 @@ export class AssessmentGridController {
     @Body() dto: SetCriteriaFeedbackDto,
     @Req() req: any,
   ) {
-    return this.assessmentGridService.setCriteriaFeedback(criteriaId, req.user.userId, dto);
+    return this.assessmentGridService.setCriteriaFeedback(
+      criteriaId,
+      req.user.userId,
+      dto,
+    );
   }
 
   @Auth(RoleType.COORDINATOR, RoleType.TEACHER)
@@ -53,7 +76,10 @@ export class AssessmentGridController {
     @Param('criteriaId', ParseIntPipe) criteriaId: number,
     @Query('projectId', ParseIntPipe) projectId: number,
   ) {
-    return this.assessmentGridService.getCriteriaDiscussions(criteriaId, projectId);
+    return this.assessmentGridService.getCriteriaDiscussions(
+      criteriaId,
+      projectId,
+    );
   }
 
   @Auth(RoleType.COORDINATOR, RoleType.TEACHER)
@@ -63,7 +89,11 @@ export class AssessmentGridController {
     @Body() dto: CreateCriteriaDiscussionDto,
     @Req() req: any,
   ) {
-    return this.assessmentGridService.createCriteriaDiscussion(criteriaId, req.user.userId, dto);
+    return this.assessmentGridService.createCriteriaDiscussion(
+      criteriaId,
+      req.user.userId,
+      dto,
+    );
   }
 
   @Auth(RoleType.COORDINATOR, RoleType.TEACHER)
@@ -82,7 +112,11 @@ export class AssessmentGridController {
     @Query('projectId', ParseIntPipe) projectId: number,
     @Req() req: any,
   ) {
-    return this.assessmentGridService.getGridContext(gridId, projectId, req.user.userId);
+    return this.assessmentGridService.getGridContext(
+      gridId,
+      projectId,
+      req.user.userId,
+    );
   }
 
   @Auth(RoleType.COORDINATOR, RoleType.TEACHER)
@@ -92,7 +126,11 @@ export class AssessmentGridController {
     @Body() dto: PublishGridDto,
     @Req() req: any,
   ) {
-    const status = await this.assessmentGridService.publishGrid(gridId, dto.projectId, req.user.userId);
+    const status = await this.assessmentGridService.publishGrid(
+      gridId,
+      dto.projectId,
+      req.user.userId,
+    );
     return { status };
   }
 
@@ -102,6 +140,9 @@ export class AssessmentGridController {
     @Param('gridId', ParseIntPipe) gridId: number,
     @Req() req: any,
   ) {
-    return this.assessmentGridService.getStudentAssessmentView(gridId, req.user.userId);
+    return this.assessmentGridService.getStudentAssessmentView(
+      gridId,
+      req.user.userId,
+    );
   }
 }

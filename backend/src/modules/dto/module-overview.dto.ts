@@ -9,13 +9,17 @@ export class ModuleOverviewDto {
 }
 
 export interface ModuleStatusDto {
-    locked: boolean
-    lockedBy?: ConditionDto[]
+  locked: boolean;
+  lockedBy?: ConditionDto[];
 }
 
 export interface ConditionDto {
   id: number;
-  method: 'USER_VALIDATION' | 'SUPERVISOR_VALIDATION' | 'TOOL_SUBMISSION' | 'DATE';
+  method:
+    | 'USER_VALIDATION'
+    | 'SUPERVISOR_VALIDATION'
+    | 'TOOL_SUBMISSION'
+    | 'DATE';
   date?: Date;
   validatorName?: string;
   toolName?: string;

@@ -1,14 +1,23 @@
-import { IsEmail, IsString, MinLength, MaxLength, IsOptional, IsEnum, Matches } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  MaxLength,
+  IsOptional,
+  IsEnum,
+  Matches,
+} from 'class-validator';
 
 export class ActivateAccountDto {
   @IsString()
-  token!: string
+  token!: string;
 
   @IsString()
   @MinLength(8)
   @MaxLength(64)
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/, {
-    message: 'Le mot de passe doit contenir au moins une minuscule, une majuscule et un chiffre',
+    message:
+      'Le mot de passe doit contenir au moins une minuscule, une majuscule et un chiffre',
   })
   password!: string;
 

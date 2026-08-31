@@ -1,10 +1,10 @@
 import { GridFeedbackStatus } from '@prisma/client';
 
 export class ModuleDetailsDto {
-    id!: number;
-    name!: string;
-    description!: string;
-    groups!: ModuleToolGroupDto[];
+  id!: number;
+  name!: string;
+  description!: string;
+  groups!: ModuleToolGroupDto[];
 }
 
 export interface ModuleToolGroupDto {

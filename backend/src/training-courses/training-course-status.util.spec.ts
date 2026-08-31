@@ -31,8 +31,14 @@ describe('isTrainingCourseActive', () => {
   });
 
   it('should return false when startDate or endDate is missing', () => {
-    expect(isTrainingCourseActive({ startDate: null, endDate: new Date() })).toBe(false);
-    expect(isTrainingCourseActive({ startDate: new Date(), endDate: null })).toBe(false);
-    expect(isTrainingCourseActive({ startDate: null, endDate: null })).toBe(false);
+    expect(
+      isTrainingCourseActive({ startDate: null, endDate: new Date() }),
+    ).toBe(false);
+    expect(
+      isTrainingCourseActive({ startDate: new Date(), endDate: null }),
+    ).toBe(false);
+    expect(isTrainingCourseActive({ startDate: null, endDate: null })).toBe(
+      false,
+    );
   });
 });

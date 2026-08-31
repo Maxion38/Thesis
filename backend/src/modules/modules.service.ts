@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ToolType, GridFeedbackStatus } from '@prisma/client';
 import { CreateModuleDto } from './dto/create-module.dto';
 import { UpdateModuleDto } from './dto/update-module.dto';
@@ -58,7 +62,6 @@ export class ModulesService {
     userId: number,
     projectId: number,
   ): Promise<ModuleOverviewDto[]> {
-
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       select: {
@@ -96,12 +99,14 @@ export class ModulesService {
       orderBy: { createdAt: 'asc' },
     });
 
-    return modules.map((module): ModuleOverviewDto => ({
-      id: module.id,
-      name: module.name,
-      status: { locked: false },
-      groups: module.tools.map(tool => resolveToolGroup(tool)),
-    }));
+    return modules.map(
+      (module): ModuleOverviewDto => ({
+        id: module.id,
+        name: module.name,
+        status: { locked: false },
+        groups: module.tools.map((tool) => resolveToolGroup(tool)),
+      }),
+    );
   }
 
   // ----------------------------------------------------------------
@@ -110,7 +115,9 @@ export class ModulesService {
   // the teacher-facing project overview page)
   // ----------------------------------------------------------------
 
-  async findProjectOverview(projectId: number): Promise<ProjectOverviewModuleDto[]> {
+  async findProjectOverview(
+    projectId: number,
+  ): Promise<ProjectOverviewModuleDto[]> {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       select: { trainingCourseId: true },
@@ -164,7 +171,9 @@ export class ModulesService {
       name: module.name,
       tools: module.tools.map((tool) => {
         const linkedToolId =
-          tool.linksAsSource[0]?.targetToolId ?? tool.linksAsTarget[0]?.sourceToolId ?? null;
+          tool.linksAsSource[0]?.targetToolId ??
+          tool.linksAsTarget[0]?.sourceToolId ??
+          null;
 
         if (tool.type === ToolType.WORK) {
           const submission = tool.work?.submissions[0];
@@ -190,7 +199,9 @@ export class ModulesService {
           id: tool.id,
           name: tool.name,
           type: 'ASSESSMENT' as const,
-          feedbackStatus: tool.assessmentGrid?.feedbacks[0]?.status ?? GridFeedbackStatus.PENDING,
+          feedbackStatus:
+            tool.assessmentGrid?.feedbacks[0]?.status ??
+            GridFeedbackStatus.PENDING,
           linkedToolId,
         };
       }),
@@ -206,7 +217,6 @@ export class ModulesService {
     userId: number,
     projectId: number,
   ): Promise<ModuleDetailsDto> {
-
     const module = await this.prisma.module.findUnique({
       where: { id: moduleId },
       include: buildToolsInclude(userId, projectId),
@@ -220,7 +230,7 @@ export class ModulesService {
       id: module.id,
       name: module.name,
       description: module.description ?? '',
-      groups: module.tools.map(tool => resolveToolGroup(tool)),
+      groups: module.tools.map((tool) => resolveToolGroup(tool)),
     };
   }
 }

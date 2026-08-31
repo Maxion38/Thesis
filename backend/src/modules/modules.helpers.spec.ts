@@ -4,60 +4,59 @@ const base = {
   id: 1,
   name: 'Tool',
   createdAt: new Date('2024-01-01'),
-  forms: [],
-  works: [],
-  activities: [],
-  assessmentGrids: [],
 };
 
 describe('resolveToolGroup', () => {
-
   // ───────── WORK ─────────
 
-  it('WORK sans soumission → UNTOUCHED', () => {
+  it('WORK sans soumission → UNTOUCHED + dueDate', () => {
+    const dueDate = new Date('2024-02-01');
+
     const tool = {
       ...base,
       type: 'WORK',
-      works: [{ dueDate: null, userWorkSubmissions: [] }],
+      work: { dueDate, submissions: [] },
     };
 
     const result = resolveToolGroup(tool as any);
+
     expect(result.state).toBe('UNTOUCHED');
+    expect(result.date).toEqual(dueDate);
   });
 
-  it('WORK avec soumission → SUBMITTED + date OK', () => {
+  it('WORK avec soumission → SUBMITTED + submittedAt (prioritaire sur dueDate)', () => {
     const date = new Date();
 
     const tool = {
       ...base,
       type: 'WORK',
-      works: [
-        {
-          dueDate: new Date('2024-01-10'),
-          userWorkSubmissions: [{ submittedAt: date }],
-        },
-      ],
+      work: {
+        dueDate: new Date('2024-01-10'),
+        submissions: [{ submittedAt: date }],
+      },
     };
 
     const result = resolveToolGroup(tool as any);
 
     expect(result.state).toBe('SUBMITTED');
-    expect(result.date).toEqual(new Date('2024-01-10')); // dueDate prioritaire
+    expect(result.date).toEqual(date);
   });
 
   // ───────── FORM ─────────
 
-  it('FORM sans soumission → UNTOUCHED + createdAt', () => {
+  it('FORM sans soumission → UNTOUCHED + dueDate', () => {
+    const dueDate = new Date('2024-03-01');
+
     const tool = {
       ...base,
       type: 'FORM',
-      forms: [{ submissions: [] }],
+      form: { dueDate, submissions: [] },
     };
 
     const result = resolveToolGroup(tool as any);
 
     expect(result.state).toBe('UNTOUCHED');
-    expect(result.date).toEqual(base.createdAt);
+    expect(result.date).toEqual(dueDate);
   });
 
   it('FORM avec soumission → SUBMITTED + submittedAt', () => {
@@ -66,11 +65,10 @@ describe('resolveToolGroup', () => {
     const tool = {
       ...base,
       type: 'FORM',
-      forms: [
-        {
-          submissions: [{ submittedAt }],
-        },
-      ],
+      form: {
+        dueDate: null,
+        submissions: [{ submittedAt }],
+      },
     };
 
     const result = resolveToolGroup(tool as any);
@@ -87,7 +85,7 @@ describe('resolveToolGroup', () => {
     const tool = {
       ...base,
       type: 'ACTIVITY',
-      activities: [{ startDateTime: start }],
+      activity: { startDateTime: start },
     };
 
     const result = resolveToolGroup(tool as any);
@@ -99,7 +97,7 @@ describe('resolveToolGroup', () => {
     const tool = {
       ...base,
       type: 'ACTIVITY',
-      activities: [{ startDateTime: null }],
+      activity: { startDateTime: null },
     };
 
     const result = resolveToolGroup(tool as any);
@@ -147,7 +145,7 @@ describe('resolveToolGroup', () => {
     const tool = {
       ...base,
       type: 'WORK',
-      works: [{ dueDate: null, userWorkSubmissions: [] }],
+      work: { dueDate: null, submissions: [] },
       linksAsSource: [{ targetToolId: 42 }],
       linksAsTarget: [],
     };
@@ -175,7 +173,7 @@ describe('resolveToolGroup', () => {
     const tool = {
       ...base,
       type: 'ACTIVITY',
-      activities: [{ startDateTime: null }],
+      activity: { startDateTime: null },
     };
 
     const result = resolveToolGroup(tool as any);

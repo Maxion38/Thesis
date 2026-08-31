@@ -25,9 +25,7 @@ describe('UsersController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
-      providers: [
-        { provide: UsersService, useValue: mockUsersService },
-      ],
+      providers: [{ provide: UsersService, useValue: mockUsersService }],
     }).compile();
 
     controller = module.get<UsersController>(UsersController);
@@ -50,17 +48,26 @@ describe('UsersController', () => {
 
   describe('findMyProject', () => {
     it('should call service.findFirstProject with userId from request', async () => {
-      mockUsersService.findFirstProject.mockResolvedValue({ id: 42, title: 'Mon TFE' });
+      mockUsersService.findFirstProject.mockResolvedValue({
+        id: 42,
+        title: 'Mon TFE',
+      });
 
       const result = await controller.findMyProject(mockRequest as any);
 
       // Vérifie que le userId est bien extrait de req.user
-      expect(mockUsersService.findFirstProject).toHaveBeenCalledWith(1, undefined);
+      expect(mockUsersService.findFirstProject).toHaveBeenCalledWith(
+        1,
+        undefined,
+      );
       expect(result).toEqual({ id: 42, title: 'Mon TFE' });
     });
 
     it('should forward an explicit trainingCourseId query param', async () => {
-      mockUsersService.findFirstProject.mockResolvedValue({ id: 42, title: 'Mon TFE' });
+      mockUsersService.findFirstProject.mockResolvedValue({
+        id: 42,
+        title: 'Mon TFE',
+      });
 
       await controller.findMyProject(mockRequest as any, '7');
 

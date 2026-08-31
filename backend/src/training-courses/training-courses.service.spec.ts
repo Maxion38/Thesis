@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
+import { RoleType } from '@prisma/client';
 import { TrainingCoursesService } from './training-courses.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { mockPrismaService } from '../../prisma/prisma.service.mock';
@@ -12,21 +13,24 @@ const mockCourse = {
   createdAt: new Date('2024-01-01'),
 };
 
+const withRoles = (userId: number, roles: RoleType[]) => ({
+  userId,
+  user: { roles: roles.map((role) => ({ role: { role } })) },
+});
+
 const mockCourseWithRelations = {
   ...mockCourse,
   projects: [
     {
-      supervisorId: 10,
       members: [
-        { userId: 100 },
-        { userId: 101 },
+        withRoles(100, [RoleType.STUDENT]),
+        withRoles(200, [RoleType.TEACHER]),
       ],
     },
     {
-      supervisorId: 11,
       members: [
-        { userId: 101 }, // doublon voulu — doit être dédupliqué
-        { userId: 102 },
+        withRoles(101, [RoleType.STUDENT]),
+        withRoles(200, [RoleType.TEACHER]), // doublon voulu — doit être dédupliqué
       ],
     },
   ],
@@ -59,11 +63,16 @@ describe('TrainingCoursesService', () => {
   describe('create', () => {
     it('should create and return a training course', async () => {
       const dto = { name: 'Nouveau cursus' };
-      mockPrismaService.trainingCourse.create.mockResolvedValue({ id: 2, ...dto });
+      mockPrismaService.trainingCourse.create.mockResolvedValue({
+        id: 2,
+        ...dto,
+      });
 
-      const result = await service.create(dto as any);
+      const result = await service.create(dto);
 
-      expect(mockPrismaService.trainingCourse.create).toHaveBeenCalledWith({ data: dto });
+      expect(mockPrismaService.trainingCourse.create).toHaveBeenCalledWith({
+        data: dto,
+      });
       expect(result).toMatchObject({ name: 'Nouveau cursus' });
     });
   });
@@ -93,14 +102,16 @@ describe('TrainingCoursesService', () => {
 
   describe('findAllWithRelatedInfos', () => {
     it('should return courses with studentsCount and teachersCount', async () => {
-      mockPrismaService.trainingCourse.findMany.mockResolvedValue([mockCourseWithRelations]);
+      mockPrismaService.trainingCourse.findMany.mockResolvedValue([
+        mockCourseWithRelations,
+      ]);
 
       const result = await service.findAllWithRelatedInfos();
 
       expect(result[0]).toMatchObject({
         id: 1,
-        studentsCount: 3, // userId 100, 101, 102 — le doublon 101 dédupliqué
-        teachersCount: 2, // supervisorId 10 et 11
+        studentsCount: 2, // userId 100, 101
+        teachersCount: 1, // userId 200 — le doublon dédupliqué
       });
     });
 
@@ -115,11 +126,11 @@ describe('TrainingCoursesService', () => {
       expect(result[0].teachersCount).toBe(0);
     });
 
-    it('should not count null supervisorId as teacher', async () => {
+    it('should not count a member without a TEACHER role as teacher', async () => {
       mockPrismaService.trainingCourse.findMany.mockResolvedValue([
         {
           ...mockCourse,
-          projects: [{ supervisorId: null, members: [] }],
+          projects: [{ members: [withRoles(100, [RoleType.STUDENT])] }],
         },
       ]);
 
@@ -159,7 +170,11 @@ describe('TrainingCoursesService', () => {
       };
       const noDates = { ...mockCourse, id: 3, startDate: null, endDate: null };
 
-      mockPrismaService.trainingCourse.findMany.mockResolvedValue([active, past, noDates]);
+      mockPrismaService.trainingCourse.findMany.mockResolvedValue([
+        active,
+        past,
+        noDates,
+      ]);
 
       const result = await service.findMyActiveCourses(1);
 
@@ -175,7 +190,9 @@ describe('TrainingCoursesService', () => {
 
       const result = await service.findOne(1);
 
-      expect(mockPrismaService.trainingCourse.findUnique).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(mockPrismaService.trainingCourse.findUnique).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
       expect(result).toEqual(mockCourse);
     });
 
@@ -183,7 +200,9 @@ describe('TrainingCoursesService', () => {
       mockPrismaService.trainingCourse.findUnique.mockResolvedValue(null);
 
       await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
-      await expect(service.findOne(999)).rejects.toThrow('TrainingCourse 999 not found');
+      await expect(service.findOne(999)).rejects.toThrow(
+        'TrainingCourse 999 not found',
+      );
     });
   });
 
@@ -194,7 +213,7 @@ describe('TrainingCoursesService', () => {
       const updated = { ...mockCourse, name: 'Cursus modifié' };
       mockPrismaService.trainingCourse.update.mockResolvedValue(updated);
 
-      const result = await service.update(1, { name: 'Cursus modifié' } as any);
+      const result = await service.update(1, { name: 'Cursus modifié' });
 
       expect(mockPrismaService.trainingCourse.update).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -213,7 +232,9 @@ describe('TrainingCoursesService', () => {
 
       const result = await service.remove(1);
 
-      expect(mockPrismaService.trainingCourse.delete).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(mockPrismaService.trainingCourse.delete).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
       expect(result).toEqual(mockCourse);
     });
 
@@ -221,7 +242,9 @@ describe('TrainingCoursesService', () => {
       mockPrismaService.trainingCourse.findUnique.mockResolvedValue(null);
 
       await expect(service.remove(999)).rejects.toThrow(NotFoundException);
-      await expect(service.remove(999)).rejects.toThrow('TrainingCourse 999 not found');
+      await expect(service.remove(999)).rejects.toThrow(
+        'TrainingCourse 999 not found',
+      );
     });
 
     it('should not call delete when course does not exist', async () => {

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { toDtoUser } from './mappers/user.mapper';
-import { USER_WITH_ROLES } from './includes/users.include'
+import { USER_WITH_ROLES } from './includes/users.include';
 
 @Injectable()
 export class UsersService {
@@ -15,7 +15,7 @@ export class UsersService {
       include: USER_WITH_ROLES,
     });
 
-    return users.map(user => toDtoUser(user));
+    return users.map((user) => toDtoUser(user));
   }
 
   findOne(id: number) {

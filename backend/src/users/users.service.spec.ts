@@ -10,10 +10,7 @@ const mockUserWithRoles = {
   email: 'alice@test.com',
   surname: 'Dupont',
   firstname: 'Alice',
-  roles: [
-    { role: { role: 'STUDENT' } },
-    { role: { role: 'COORDINATOR' } },
-  ],
+  roles: [{ role: { role: 'STUDENT' } }, { role: { role: 'COORDINATOR' } }],
 };
 
 const mockProject = {
@@ -85,7 +82,9 @@ describe('UsersService', () => {
       await service.findAll(7);
 
       expect(mockPrismaService.user.findMany).toHaveBeenCalledWith({
-        where: { projectMemberships: { some: { project: { trainingCourseId: 7 } } } },
+        where: {
+          projectMemberships: { some: { project: { trainingCourseId: 7 } } },
+        },
         include: expect.anything(),
       });
     });

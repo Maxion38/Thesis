@@ -48,11 +48,11 @@ export type ToolWithRelations = Prisma.ToolGetPayload<
 >;
 
 export function resolveToolGroup(tool: ToolWithRelations): ModuleToolGroupDto {
-  let state: 'UNTOUCHED' | 'SUBMITTED' | 'CORRECTED' | GridFeedbackStatus = 'UNTOUCHED';
+  let state: 'UNTOUCHED' | 'SUBMITTED' | 'CORRECTED' | GridFeedbackStatus =
+    'UNTOUCHED';
   let date: Date | undefined;
 
   switch (tool.type) {
-
     case 'WORK': {
       const submissions = [...(tool.work?.submissions ?? [])].sort(
         (a, b) => b.submittedAt.getTime() - a.submittedAt.getTime(),
@@ -99,7 +99,9 @@ export function resolveToolGroup(tool: ToolWithRelations): ModuleToolGroupDto {
   }
 
   const linkedToolId =
-    tool.linksAsSource?.[0]?.targetToolId ?? tool.linksAsTarget?.[0]?.sourceToolId ?? undefined;
+    tool.linksAsSource?.[0]?.targetToolId ??
+    tool.linksAsTarget?.[0]?.sourceToolId ??
+    undefined;
 
   return {
     id: tool.id,

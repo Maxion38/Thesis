@@ -7,5 +7,4 @@ import { ModulesController } from './modules.controller';
   providers: [ModulesService],
   exports: [ModulesService],
 })
-
 export class ModulesModule {}

@@ -30,12 +30,17 @@ describe('TrainingCoursesController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [TrainingCoursesController],
       providers: [
-        { provide: TrainingCoursesService, useValue: mockTrainingCoursesService },
+        {
+          provide: TrainingCoursesService,
+          useValue: mockTrainingCoursesService,
+        },
         { provide: ModulesService, useValue: mockModulesService },
       ],
     }).compile();
 
-    controller = module.get<TrainingCoursesController>(TrainingCoursesController);
+    controller = module.get<TrainingCoursesController>(
+      TrainingCoursesController,
+    );
   });
 
   it('should be defined', () => {
@@ -47,7 +52,7 @@ describe('TrainingCoursesController', () => {
       const dto = { name: 'Nouveau cursus' };
       mockTrainingCoursesService.create.mockResolvedValue({ id: 1, ...dto });
 
-      const result = await controller.create(dto as any);
+      const result = await controller.create(dto);
 
       expect(mockTrainingCoursesService.create).toHaveBeenCalledWith(dto);
       expect(result).toMatchObject({ id: 1 });
@@ -71,17 +76,25 @@ describe('TrainingCoursesController', () => {
 
       await controller.findAllWithDetails();
 
-      expect(mockTrainingCoursesService.findAllWithRelatedInfos).toHaveBeenCalled();
+      expect(
+        mockTrainingCoursesService.findAllWithRelatedInfos,
+      ).toHaveBeenCalled();
     });
   });
 
   describe('findMyActiveCourses', () => {
     it('should call service.findMyActiveCourses with the userId from request', async () => {
-      mockTrainingCoursesService.findMyActiveCourses.mockResolvedValue([{ id: 1 }]);
+      mockTrainingCoursesService.findMyActiveCourses.mockResolvedValue([
+        { id: 1 },
+      ]);
 
-      const result = await controller.findMyActiveCourses({ user: { userId: 1 } } as any);
+      const result = await controller.findMyActiveCourses({
+        user: { userId: 1 },
+      } as any);
 
-      expect(mockTrainingCoursesService.findMyActiveCourses).toHaveBeenCalledWith(1);
+      expect(
+        mockTrainingCoursesService.findMyActiveCourses,
+      ).toHaveBeenCalledWith(1);
       expect(result).toHaveLength(1);
     });
   });
@@ -93,7 +106,9 @@ describe('TrainingCoursesController', () => {
       await controller.findModules('5');
 
       // Vérifie que le string '5' est bien converti en number 5
-      expect(mockModulesService.findAllForTrainingCourse).toHaveBeenCalledWith(5);
+      expect(mockModulesService.findAllForTrainingCourse).toHaveBeenCalledWith(
+        5,
+      );
     });
   });
 
@@ -112,7 +127,7 @@ describe('TrainingCoursesController', () => {
       const dto = { name: 'Modifié' };
       mockTrainingCoursesService.update.mockResolvedValue({ id: 1, ...dto });
 
-      await controller.update('1', dto as any);
+      await controller.update('1', dto);
 
       expect(mockTrainingCoursesService.update).toHaveBeenCalledWith(1, dto);
     });

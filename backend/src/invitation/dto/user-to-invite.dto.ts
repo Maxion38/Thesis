@@ -3,8 +3,8 @@ import { RoleType } from '@prisma/client';
 
 export class UserToInviteDto {
   @IsEmail()
-  email!: string; 
-  
+  email!: string;
+
   @IsEnum(RoleType)
-  role!: RoleType
+  role!: RoleType;
 }

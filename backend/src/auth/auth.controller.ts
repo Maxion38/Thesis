@@ -24,12 +24,10 @@ export class AuthController {
     return this.authService.getCurrentUser(req.user.userId);
   }
 
-
   @Get('bootstrap-status')
   async isBootStrapEnabled() {
     return await this.authService.isBootstrapEnabled();
   }
-
 
   @Post('bootstrap-register')
   async bootStrapRegister(
@@ -44,30 +42,28 @@ export class AuthController {
     );
 
     const accessToken = this.authService.generateToken(user);
-    const { token: refreshToken, expiresAt } = await this.authService.issueRefreshToken(user.id);
+    const { token: refreshToken, expiresAt } =
+      await this.authService.issueRefreshToken(user.id);
 
     setAuthCookies(res, accessToken, refreshToken, expiresAt);
 
     return { message: 'bootstrap completed' };
   }
 
-
   @Post('login')
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const user = await this.authService.validateUser(
-      dto.email,
-      dto.password,
-    );
+    const user = await this.authService.validateUser(dto.email, dto.password);
 
     if (!user) {
       throw new UnauthorizedException();
     }
 
     const accessToken = this.authService.generateToken(user);
-    const { token: refreshToken, expiresAt } = await this.authService.issueRefreshToken(user.id);
+    const { token: refreshToken, expiresAt } =
+      await this.authService.issueRefreshToken(user.id);
 
     setAuthCookies(res, accessToken, refreshToken, expiresAt);
 
@@ -99,10 +95,7 @@ export class AuthController {
   }
 
   @Post('logout')
-  async logout(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const rawToken = req.cookies?.['refresh_token'];
 
     if (rawToken) {

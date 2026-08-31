@@ -1,4 +1,9 @@
-import { ConflictException, ForbiddenException, NotFoundException, GoneException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+  GoneException,
+} from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as crypto from 'crypto';
@@ -15,7 +20,7 @@ export class InvitationService {
   ) {}
 
   async inviteUsers(users: UserToInviteDto[]) {
-    const emails = users.map(u => u.email);
+    const emails = users.map((u) => u.email);
 
     const existingUsers = await this.prisma.user.findMany({
       where: {
@@ -26,7 +31,7 @@ export class InvitationService {
 
     if (existingUsers.length > 0) {
       throw new ConflictException(
-        `Users already exist: ${existingUsers.map(u => u.email).join(', ')}`
+        `Users already exist: ${existingUsers.map((u) => u.email).join(', ')}`,
       );
     }
 
@@ -40,7 +45,7 @@ export class InvitationService {
 
     if (existingInvitations.length > 0) {
       throw new ConflictException(
-        `Invitations already sent: ${existingInvitations.map(i => i.email).join(', ')}`
+        `Invitations already sent: ${existingInvitations.map((i) => i.email).join(', ')}`,
       );
     }
 
@@ -73,14 +78,13 @@ export class InvitationService {
     };
   }
 
-
   async verifyActivationLink(token: string) {
     const invitation = await this.prisma.invitation.findUnique({
       where: { token },
     });
 
     if (!invitation) {
-      throw new NotFoundException("User not invited");
+      throw new NotFoundException('User not invited');
     }
 
     if (invitation.used) {
@@ -91,30 +95,29 @@ export class InvitationService {
       throw new GoneException('Invitation has expired');
     }
 
-    return invitation;    
+    return invitation;
   }
 
-  
   async activateAccount(
-    token: string, 
-    surname: string, 
-    password: string, 
-    firstname?: string
+    token: string,
+    surname: string,
+    password: string,
+    firstname?: string,
   ) {
     const invitation = await this.verifyActivationLink(token);
 
     const user = await this.authService.register(
-      invitation.email, 
-      password, 
-      surname, 
-      invitation.role, 
-      firstname
+      invitation.email,
+      password,
+      surname,
+      invitation.role,
+      firstname,
     );
 
     await this.prisma.invitation.update({
       where: { token },
       data: { used: true },
-    })
+    });
 
     return user;
   }

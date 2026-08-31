@@ -17,7 +17,9 @@ import { ConfigModule } from '@nestjs/config/dist/config.module';
         const secret = config.get<string>('JWT_SECRET');
 
         if (!secret) {
-          throw new Error('JWT_SECRET must be set — refusing to start with an insecure default secret');
+          throw new Error(
+            'JWT_SECRET must be set — refusing to start with an insecure default secret',
+          );
         }
 
         return {
@@ -31,5 +33,4 @@ import { ConfigModule } from '@nestjs/config/dist/config.module';
   providers: [AuthService, JwtStrategy],
   exports: [AuthService],
 })
-
 export class AuthModule {}

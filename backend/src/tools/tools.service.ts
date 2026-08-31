@@ -24,7 +24,9 @@ export class ToolsService {
       type: tool.type,
       moduleId: tool.moduleId,
       linkedToolId:
-        tool.linksAsSource[0]?.targetToolId ?? tool.linksAsTarget[0]?.sourceToolId ?? null,
+        tool.linksAsSource[0]?.targetToolId ??
+        tool.linksAsTarget[0]?.sourceToolId ??
+        null,
     }));
   }
 

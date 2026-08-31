@@ -1,4 +1,11 @@
-import { Injectable, ConflictException, ForbiddenException, NotFoundException, GoneException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+  GoneException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
@@ -24,7 +31,7 @@ export class AuthService {
           some: {
             role: {
               role: RoleType.COORDINATOR,
-            }
+            },
           },
         },
       },
@@ -33,9 +40,14 @@ export class AuthService {
     return coordinatorsNumber === 0;
   }
 
-  async bootstrapRegister(email: string, password: string, surname: string, firstname?: string) {
+  async bootstrapRegister(
+    email: string,
+    password: string,
+    surname: string,
+    firstname?: string,
+  ) {
     const bootstrapEnabled = await this.isBootstrapEnabled();
-    
+
     if (!bootstrapEnabled) {
       throw new ForbiddenException('Bootstrap already completed');
     }
@@ -46,10 +58,16 @@ export class AuthService {
       surname,
       RoleType.COORDINATOR,
       firstname,
-    )
+    );
   }
 
-  async register(email: string, password: string, surname: string, role: RoleType, firstname?: string) {
+  async register(
+    email: string,
+    password: string,
+    surname: string,
+    role: RoleType,
+    firstname?: string,
+  ) {
     // 1. is user allready in DB
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
@@ -157,7 +175,9 @@ export class AuthService {
    */
   async rotateRefreshToken(rawToken: string) {
     const tokenHash = this.hashToken(rawToken);
-    const stored = await this.prisma.refreshToken.findUnique({ where: { tokenHash } });
+    const stored = await this.prisma.refreshToken.findUnique({
+      where: { tokenHash },
+    });
 
     if (!stored) {
       throw new UnauthorizedException('Invalid refresh token');
@@ -168,7 +188,9 @@ export class AuthService {
         where: { familyId: stored.familyId, revokedAt: null },
         data: { revokedAt: new Date() },
       });
-      throw new UnauthorizedException('Refresh token reuse detected, session revoked');
+      throw new UnauthorizedException(
+        'Refresh token reuse detected, session revoked',
+      );
     }
 
     if (stored.expiresAt < new Date()) {

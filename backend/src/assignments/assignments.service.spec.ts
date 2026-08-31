@@ -22,7 +22,7 @@ const mockCourseWithMembers = (members: any[]) => ({
     {
       id: 10,
       trainingCourseId: 1,
-      members: members.map(user => ({ user })),
+      members: members.map((user) => ({ user })),
     },
   ],
 });
@@ -55,7 +55,9 @@ describe('AssignmentsService', () => {
     it('should throw NotFoundException when course does not exist', async () => {
       mockPrismaService.trainingCourse.findUnique.mockResolvedValue(null);
 
-      await expect(service.getAssignedUsers(999)).rejects.toThrow(NotFoundException);
+      await expect(service.getAssignedUsers(999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should return mapped unique users across all projects', async () => {
@@ -109,7 +111,9 @@ describe('AssignmentsService', () => {
     it('should throw NotFoundException when course does not exist', async () => {
       mockPrismaService.trainingCourse.findUnique.mockResolvedValue(null);
 
-      await expect(service.getAssignableUsers(999)).rejects.toThrow(NotFoundException);
+      await expect(service.getAssignableUsers(999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should exclude already assigned users', async () => {
@@ -119,13 +123,16 @@ describe('AssignmentsService', () => {
       mockPrismaService.trainingCourse.findUnique.mockResolvedValue(
         mockCourseWithMembers([assignedStudent]),
       );
-      mockPrismaService.user.findMany.mockResolvedValue([assignedStudent, freeTeacher]);
+      mockPrismaService.user.findMany.mockResolvedValue([
+        assignedStudent,
+        freeTeacher,
+      ]);
 
       const result = await service.getAssignableUsers(1);
 
-      const ids = result.map(u => u.id);
-      expect(ids).not.toContain(1);   // déjà assigné
-      expect(ids).toContain(2);       // libre
+      const ids = result.map((u) => u.id);
+      expect(ids).not.toContain(1); // déjà assigné
+      expect(ids).toContain(2); // libre
     });
 
     it('should exclude COORDINATOR role from assignable users', async () => {
@@ -170,7 +177,11 @@ describe('AssignmentsService', () => {
     const setupTx = (overrides: Partial<Record<string, any>> = {}) => {
       const tx = {
         trainingCourse: { findUnique: jest.fn().mockResolvedValue({ id: 1 }) },
-        user: { findMany: jest.fn().mockResolvedValue([mockUserWithRoles(1, RoleType.STUDENT)]) },
+        user: {
+          findMany: jest
+            .fn()
+            .mockResolvedValue([mockUserWithRoles(1, RoleType.STUDENT)]),
+        },
         projectMember: { findMany: jest.fn().mockResolvedValue([]) },
         project: { create: jest.fn().mockResolvedValue({ id: 10 }) },
         ...overrides,
@@ -183,7 +194,7 @@ describe('AssignmentsService', () => {
       mockPrismaService.$transaction.mockImplementation((cb: any) =>
         cb({
           trainingCourse: { findUnique: jest.fn().mockResolvedValue(null) },
-        })
+        }),
       );
 
       await expect(
@@ -194,9 +205,11 @@ describe('AssignmentsService', () => {
     it('should throw NotFoundException when a user does not exist', async () => {
       mockPrismaService.$transaction.mockImplementation((cb: any) =>
         cb({
-          trainingCourse: { findUnique: jest.fn().mockResolvedValue({ id: 1 }) },
+          trainingCourse: {
+            findUnique: jest.fn().mockResolvedValue({ id: 1 }),
+          },
           user: { findMany: jest.fn().mockResolvedValue([]) }, // 0 trouvés sur 1 demandé
-        })
+        }),
       );
 
       await expect(
@@ -216,7 +229,9 @@ describe('AssignmentsService', () => {
     it('should skip already assigned users and report correct counts', async () => {
       setupTx({
         // User 1 déjà membre
-        projectMember: { findMany: jest.fn().mockResolvedValue([{ userId: 1 }]) },
+        projectMember: {
+          findMany: jest.fn().mockResolvedValue([{ userId: 1 }]),
+        },
         project: { create: jest.fn() },
       });
 
@@ -233,7 +248,7 @@ describe('AssignmentsService', () => {
       mockPrismaService.$transaction.mockImplementation((cb: any) =>
         cb({
           trainingCourse: { findUnique: jest.fn().mockResolvedValue(null) },
-        })
+        }),
       );
 
       await expect(
@@ -244,9 +259,11 @@ describe('AssignmentsService', () => {
     it('should return empty result when no matching memberships found', async () => {
       mockPrismaService.$transaction.mockImplementation((cb: any) =>
         cb({
-          trainingCourse: { findUnique: jest.fn().mockResolvedValue({ id: 1 }) },
+          trainingCourse: {
+            findUnique: jest.fn().mockResolvedValue({ id: 1 }),
+          },
           projectMember: { findMany: jest.fn().mockResolvedValue([]) },
-        })
+        }),
       );
 
       const result = await service.unassignUsersFromTrainingCourse(1, [99]);

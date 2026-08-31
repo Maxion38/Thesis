@@ -17,7 +17,10 @@ const mockAuthService = {
   revokeRefreshToken: jest.fn(),
 };
 
-const mockRefreshIssue = { token: 'mock.refresh.token', expiresAt: new Date(Date.now() + 1000) };
+const mockRefreshIssue = {
+  token: 'mock.refresh.token',
+  expiresAt: new Date(Date.now() + 1000),
+};
 
 const mockUserDto = {
   id: 1,
@@ -43,9 +46,7 @@ describe('AuthController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [
-        { provide: AuthService, useValue: mockAuthService },
-      ],
+      providers: [{ provide: AuthService, useValue: mockAuthService }],
     }).compile();
 
     controller = module.get<AuthController>(AuthController);
@@ -103,13 +104,18 @@ describe('AuthController', () => {
       mockAuthService.generateToken.mockReturnValue('mock.jwt.token');
       mockAuthService.issueRefreshToken.mockResolvedValue(mockRefreshIssue);
 
-      const result = await controller.bootStrapRegister(dto as any, mockRes as any);
+      const result = await controller.bootStrapRegister(dto, mockRes as any);
 
       expect(mockAuthService.bootstrapRegister).toHaveBeenCalledWith(
-        dto.email, dto.password, dto.surname, dto.firstname,
+        dto.email,
+        dto.password,
+        dto.surname,
+        dto.firstname,
       );
       expect(mockAuthService.generateToken).toHaveBeenCalledWith(mockUserDto);
-      expect(mockAuthService.issueRefreshToken).toHaveBeenCalledWith(mockUserDto.id);
+      expect(mockAuthService.issueRefreshToken).toHaveBeenCalledWith(
+        mockUserDto.id,
+      );
       // Vérifie que les deux cookies sont bien posés
       expect(mockRes.cookie).toHaveBeenCalledWith(
         'access_token',
@@ -143,9 +149,11 @@ describe('AuthController', () => {
       mockAuthService.generateToken.mockReturnValue('mock.jwt.token');
       mockAuthService.issueRefreshToken.mockResolvedValue(mockRefreshIssue);
 
-      const result = await controller.login(dto as any, mockRes as any);
+      const result = await controller.login(dto, mockRes as any);
 
-      expect(mockAuthService.issueRefreshToken).toHaveBeenCalledWith(mockUserDto.id);
+      expect(mockAuthService.issueRefreshToken).toHaveBeenCalledWith(
+        mockUserDto.id,
+      );
       expect(mockRes.cookie).toHaveBeenCalledWith(
         'access_token',
         'mock.jwt.token',
@@ -166,7 +174,9 @@ describe('AuthController', () => {
     it('should throw UnauthorizedException when no refresh token cookie is present', async () => {
       const req = { cookies: {} } as any;
 
-      await expect(controller.refresh(req, mockRes as any)).rejects.toThrow(UnauthorizedException);
+      await expect(controller.refresh(req, mockRes as any)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should rotate the token, set new cookies and return success message', async () => {
@@ -180,7 +190,9 @@ describe('AuthController', () => {
 
       const result = await controller.refresh(req, mockRes as any);
 
-      expect(mockAuthService.rotateRefreshToken).toHaveBeenCalledWith('old.refresh.token');
+      expect(mockAuthService.rotateRefreshToken).toHaveBeenCalledWith(
+        'old.refresh.token',
+      );
       expect(mockRes.cookie).toHaveBeenCalledWith(
         'access_token',
         'new.jwt.token',
@@ -191,9 +203,13 @@ describe('AuthController', () => {
 
     it('should clear cookies and rethrow when rotation fails', async () => {
       const req = { cookies: { refresh_token: 'stolen.token' } } as any;
-      mockAuthService.rotateRefreshToken.mockRejectedValue(new UnauthorizedException('reuse detected'));
+      mockAuthService.rotateRefreshToken.mockRejectedValue(
+        new UnauthorizedException('reuse detected'),
+      );
 
-      await expect(controller.refresh(req, mockRes as any)).rejects.toThrow(UnauthorizedException);
+      await expect(controller.refresh(req, mockRes as any)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(mockRes.clearCookie).toHaveBeenCalledWith(
         'access_token',
         expect.objectContaining({ httpOnly: true }),
@@ -209,7 +225,9 @@ describe('AuthController', () => {
 
       const result = await controller.logout(req, mockRes as any);
 
-      expect(mockAuthService.revokeRefreshToken).toHaveBeenCalledWith('mock.refresh.token');
+      expect(mockAuthService.revokeRefreshToken).toHaveBeenCalledWith(
+        'mock.refresh.token',
+      );
       expect(mockRes.clearCookie).toHaveBeenCalledWith(
         'access_token',
         expect.objectContaining({ httpOnly: true }),

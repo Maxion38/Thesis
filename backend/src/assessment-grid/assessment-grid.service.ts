@@ -1,7 +1,16 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
-import { GridFeedbackStatus, RoleType, SubRoleType, ToolType } from '@prisma/client';
+import {
+  GridFeedbackStatus,
+  RoleType,
+  SubRoleType,
+  ToolType,
+} from '@prisma/client';
 import {
   CriteriaDto,
   ProjectWithGridsDto,
@@ -45,7 +54,9 @@ export class AssessmentGridService {
         id: true,
         title: true,
         members: {
-          where: { user: { roles: { some: { role: { role: RoleType.STUDENT } } } } },
+          where: {
+            user: { roles: { some: { role: { role: RoleType.STUDENT } } } },
+          },
           select: {
             user: { select: { id: true, firstname: true, surname: true } },
           },
@@ -82,7 +93,9 @@ export class AssessmentGridService {
           }
         }
       }
-      const worksSubmitted = new Set(project.workSubmissions.map((w) => w.workId)).size;
+      const worksSubmitted = new Set(
+        project.workSubmissions.map((w) => w.workId),
+      ).size;
 
       return {
         id: project.id,
@@ -186,7 +199,10 @@ export class AssessmentGridService {
   // PENDING -> CORRECTION dès qu'un enseignant vote (note) ou commente
   // (feedback critère ou discussion interne) sur la grille : "publié"/"vu"
   // restent hors de portée ici (gérés pour l'instant uniquement par le seed démo).
-  private async markGridInCorrection(gridId: number, projectId: number): Promise<void> {
+  private async markGridInCorrection(
+    gridId: number,
+    projectId: number,
+  ): Promise<void> {
     const existing = await this.prisma.gridFeedback.findUnique({
       where: { gridId_projectId: { gridId, projectId } },
       select: { status: true },
@@ -329,7 +345,9 @@ export class AssessmentGridService {
     });
 
     if (criterias.length === 0) {
-      throw new NotFoundException(`AssessmentGrid ${gridId} not found or has no criteria`);
+      throw new NotFoundException(
+        `AssessmentGrid ${gridId} not found or has no criteria`,
+      );
     }
 
     const criteriaIds = criterias.map((c) => c.id);
@@ -364,7 +382,10 @@ export class AssessmentGridService {
 
   // Rapporteur = ProjectMember avec subRole SUPERVISOR sur ce projet : seul
   // ce rôle peut publier une grille (cf. publishGrid).
-  private async isProjectSupervisor(userId: number, projectId: number): Promise<boolean> {
+  private async isProjectSupervisor(
+    userId: number,
+    projectId: number,
+  ): Promise<boolean> {
     const membership = await this.prisma.projectMember.findFirst({
       where: {
         userId,
@@ -379,7 +400,11 @@ export class AssessmentGridService {
   // Statut de correction (GridFeedback.status, PENDING tant qu'aucun
   // enseignant n'a encore écrit de feedback global) + soumission PDF liée
   // via ToolLink (grid <-> work), pour affichage dans l'en-tête de la page.
-  async getGridContext(gridId: number, projectId: number, userId: number): Promise<GridContextDto> {
+  async getGridContext(
+    gridId: number,
+    projectId: number,
+    userId: number,
+  ): Promise<GridContextDto> {
     const grid = await this.prisma.assessmentGrid.findUnique({
       where: { id: gridId },
       select: { id: true },
@@ -412,7 +437,10 @@ export class AssessmentGridService {
 
     let linkedSubmission: GridContextDto['linkedSubmission'] = null;
     if (link) {
-      const workToolId = link.sourceTool.type === ToolType.WORK ? link.sourceToolId : link.targetToolId;
+      const workToolId =
+        link.sourceTool.type === ToolType.WORK
+          ? link.sourceToolId
+          : link.targetToolId;
       const submission = await this.prisma.userWorkSubmission.findFirst({
         where: { workId: workToolId, projectId },
         orderBy: { submittedAt: 'desc' },
@@ -438,7 +466,11 @@ export class AssessmentGridService {
   // Publication de la grille (PENDING/CORRECTION -> PUBLISHED), réservée au
   // rapporteur (SUPERVISOR) du projet : rend les votes/feedback visibles à
   // l'étudiant (cf. getStudentAssessmentView).
-  async publishGrid(gridId: number, projectId: number, userId: number): Promise<GridContextDto['status']> {
+  async publishGrid(
+    gridId: number,
+    projectId: number,
+    userId: number,
+  ): Promise<GridContextDto['status']> {
     const grid = await this.prisma.assessmentGrid.findUnique({
       where: { id: gridId },
       select: { id: true },
@@ -448,7 +480,9 @@ export class AssessmentGridService {
     }
 
     if (!(await this.isProjectSupervisor(userId, projectId))) {
-      throw new ForbiddenException('Seul le rapporteur du projet peut publier cette grille');
+      throw new ForbiddenException(
+        'Seul le rapporteur du projet peut publier cette grille',
+      );
     }
 
     const feedback = await this.prisma.gridFeedback.upsert({
@@ -464,7 +498,10 @@ export class AssessmentGridService {
   // Vue en lecture seule pour l'étudiant : description de la grille + grille
   // + feedback des enseignants pour son propre projet, sans discussions
   // internes (jamais visibles étudiant) ni actions de notation.
-  async getStudentAssessmentView(gridId: number, userId: number): Promise<StudentAssessmentViewDto> {
+  async getStudentAssessmentView(
+    gridId: number,
+    userId: number,
+  ): Promise<StudentAssessmentViewDto> {
     const tool = await this.prisma.tool.findUnique({
       where: { id: gridId },
       select: {
@@ -482,7 +519,10 @@ export class AssessmentGridService {
 
     // n'expose la grille que si l'étudiant a bien un projet dans la même
     // formation que le module qui la contient.
-    const project = await this.usersService.findFirstProject(userId, tool.module.trainingCourseId);
+    const project = await this.usersService.findFirstProject(
+      userId,
+      tool.module.trainingCourseId,
+    );
     if (!project) {
       throw new NotFoundException(`AssessmentGrid ${gridId} not found`);
     }
@@ -499,7 +539,8 @@ export class AssessmentGridService {
     // les votes/feedback ne sont exposés à l'étudiant qu'une fois la grille
     // publiée : tant qu'elle est en attente/en correction, on ne renvoie rien.
     const evaluations =
-      status === GridFeedbackStatus.PUBLISHED || status === GridFeedbackStatus.SEEN
+      status === GridFeedbackStatus.PUBLISHED ||
+      status === GridFeedbackStatus.SEEN
         ? await this.getGridEvaluations(gridId, project.id)
         : [];
 

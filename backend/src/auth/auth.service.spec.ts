@@ -1,5 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { RoleType } from '@prisma/client';
@@ -98,7 +103,12 @@ describe('AuthService', () => {
       mockPrismaService.user.create.mockResolvedValue(mockUserWithRoles);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password');
 
-      const result = await service.bootstrapRegister('alice@test.com', 'pass', 'Dupont', 'Alice');
+      const result = await service.bootstrapRegister(
+        'alice@test.com',
+        'pass',
+        'Dupont',
+        'Alice',
+      );
 
       expect(mockPrismaService.user.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -111,7 +121,10 @@ describe('AuthService', () => {
           }),
         }),
       );
-      expect(result).toMatchObject({ email: 'alice@test.com', roles: [RoleType.COORDINATOR] });
+      expect(result).toMatchObject({
+        email: 'alice@test.com',
+        roles: [RoleType.COORDINATOR],
+      });
     });
   });
 
@@ -134,7 +147,13 @@ describe('AuthService', () => {
       });
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password');
 
-      await service.register('alice@test.com', 'pass', 'Dupont', RoleType.STUDENT, 'Alice');
+      await service.register(
+        'alice@test.com',
+        'pass',
+        'Dupont',
+        RoleType.STUDENT,
+        'Alice',
+      );
 
       expect(bcrypt.hash).toHaveBeenCalledWith('pass', 10);
       expect(mockPrismaService.user.create).toHaveBeenCalledWith(
@@ -154,7 +173,12 @@ describe('AuthService', () => {
       mockPrismaService.user.create.mockResolvedValue(mockUserWithRoles);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password');
 
-      const result = await service.register('alice@test.com', 'pass', 'Dupont', RoleType.COORDINATOR);
+      const result = await service.register(
+        'alice@test.com',
+        'pass',
+        'Dupont',
+        RoleType.COORDINATOR,
+      );
 
       expect(result).toEqual(mockUserDto);
     });
@@ -184,9 +208,15 @@ describe('AuthService', () => {
       mockPrismaService.user.findUnique.mockResolvedValue(mockUserWithRoles);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
-      const result = await service.validateUser('alice@test.com', 'correct_pass');
+      const result = await service.validateUser(
+        'alice@test.com',
+        'correct_pass',
+      );
 
-      expect(bcrypt.compare).toHaveBeenCalledWith('correct_pass', 'hashed_password');
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        'correct_pass',
+        'hashed_password',
+      );
       expect(result).toEqual(mockUserDto);
     });
   });
@@ -197,7 +227,9 @@ describe('AuthService', () => {
     it('should throw NotFoundException when user does not exist', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue(null);
 
-      await expect(service.getCurrentUser(999)).rejects.toThrow(NotFoundException);
+      await expect(service.getCurrentUser(999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should return mapped UserDto for existing user', async () => {
@@ -213,7 +245,7 @@ describe('AuthService', () => {
 
   describe('generateToken', () => {
     it('should call jwtService.sign with correct payload', () => {
-      const result = service.generateToken(mockUserDto as any);
+      const result = service.generateToken(mockUserDto);
 
       expect(mockJwtService.sign).toHaveBeenCalledWith({
         sub: 1,
@@ -252,7 +284,9 @@ describe('AuthService', () => {
       await service.issueRefreshToken(1, 'family-123');
 
       expect(mockPrismaService.refreshToken.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ familyId: 'family-123' }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ familyId: 'family-123' }),
+        }),
       );
     });
   });
@@ -272,14 +306,21 @@ describe('AuthService', () => {
     it('should throw UnauthorizedException when token is not found', async () => {
       mockPrismaService.refreshToken.findUnique.mockResolvedValue(null);
 
-      await expect(service.rotateRefreshToken('unknown')).rejects.toThrow(UnauthorizedException);
+      await expect(service.rotateRefreshToken('unknown')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should revoke the whole family and throw when a revoked token is replayed', async () => {
-      mockPrismaService.refreshToken.findUnique.mockResolvedValue({ ...storedToken, revokedAt: new Date() });
+      mockPrismaService.refreshToken.findUnique.mockResolvedValue({
+        ...storedToken,
+        revokedAt: new Date(),
+      });
       mockPrismaService.refreshToken.updateMany.mockResolvedValue({ count: 2 });
 
-      await expect(service.rotateRefreshToken('stolen')).rejects.toThrow(UnauthorizedException);
+      await expect(service.rotateRefreshToken('stolen')).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(mockPrismaService.refreshToken.updateMany).toHaveBeenCalledWith({
         where: { familyId: 'family-123', revokedAt: null },
         data: { revokedAt: expect.any(Date) },
@@ -292,7 +333,9 @@ describe('AuthService', () => {
         expiresAt: new Date(Date.now() - 1000),
       });
 
-      await expect(service.rotateRefreshToken('expired')).rejects.toThrow(UnauthorizedException);
+      await expect(service.rotateRefreshToken('expired')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should revoke the presented token and issue a new one in the same family', async () => {
@@ -308,7 +351,9 @@ describe('AuthService', () => {
         data: { revokedAt: expect.any(Date) },
       });
       expect(mockPrismaService.refreshToken.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ familyId: 'family-123' }) }),
+        expect.objectContaining({
+          data: expect.objectContaining({ familyId: 'family-123' }),
+        }),
       );
       expect(result.user).toEqual(mockUserDto);
       expect(result.accessToken).toBe('mock.jwt.token');

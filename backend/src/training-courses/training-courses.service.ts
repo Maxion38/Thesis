@@ -11,7 +11,7 @@ export class TrainingCoursesService {
 
   create(createTrainingCourseDto: CreateTrainingCourseDto) {
     return this.prisma.trainingCourse.create({
-      data: createTrainingCourseDto
+      data: createTrainingCourseDto,
     });
   }
 
@@ -27,7 +27,6 @@ export class TrainingCoursesService {
 
     return courses.filter(isTrainingCourseActive);
   }
-
 
   async findAllWithRelatedInfos() {
     // V2 : Project n'a plus de supervisorId. Le "rapporteur" est un
@@ -54,22 +53,26 @@ export class TrainingCoursesService {
       },
     });
 
-    return trainingCourses.map(course => {
-      const allMembers = course.projects.flatMap(project => project.members);
+    return trainingCourses.map((course) => {
+      const allMembers = course.projects.flatMap((project) => project.members);
 
       const studentsCount = new Set(
         allMembers
-          .filter(m => m.user.roles.some(r => r.role.role === RoleType.STUDENT))
-          .map(m => m.userId),
+          .filter((m) =>
+            m.user.roles.some((r) => r.role.role === RoleType.STUDENT),
+          )
+          .map((m) => m.userId),
       ).size;
 
       const teachersCount = new Set(
         allMembers
-          .filter(m => m.user.roles.some(r => r.role.role === RoleType.TEACHER))
-          .map(m => m.userId),
+          .filter((m) =>
+            m.user.roles.some((r) => r.role.role === RoleType.TEACHER),
+          )
+          .map((m) => m.userId),
       ).size;
 
-      const usersCount = new Set(allMembers.map(m => m.userId)).size;
+      const usersCount = new Set(allMembers.map((m) => m.userId)).size;
 
       const { projects, ...courseWithoutProjects } = course;
 
@@ -82,7 +85,6 @@ export class TrainingCoursesService {
     });
   }
 
-  
   async findOne(id: number) {
     const course = await this.prisma.trainingCourse.findUnique({
       where: { id },
@@ -97,14 +99,14 @@ export class TrainingCoursesService {
 
   update(id: number, updateTrainingCourseDto: UpdateTrainingCourseDto) {
     return this.prisma.trainingCourse.update({
-      where: {id},
+      where: { id },
       data: updateTrainingCourseDto,
     });
   }
 
   async remove(id: number) {
     const course = await this.prisma.trainingCourse.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!course) {
@@ -112,7 +114,7 @@ export class TrainingCoursesService {
     }
 
     return this.prisma.trainingCourse.delete({
-      where: { id }
+      where: { id },
     });
   }
 }
