@@ -13,10 +13,18 @@ import { ConfigModule } from '@nestjs/config/dist/config.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '1d' },
-      }),
+      useFactory: (config: ConfigService) => {
+        const secret = config.get<string>('JWT_SECRET');
+
+        if (!secret) {
+          throw new Error('JWT_SECRET must be set — refusing to start with an insecure default secret');
+        }
+
+        return {
+          secret,
+          signOptions: { expiresIn: '15m' },
+        };
+      },
     }),
   ],
   controllers: [AuthController],

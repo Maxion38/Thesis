@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { RoleType } from '@prisma/client';
@@ -221,6 +221,113 @@ describe('AuthService', () => {
         roles: [RoleType.COORDINATOR],
       });
       expect(result).toBe('mock.jwt.token');
+    });
+  });
+
+  // ── issueRefreshToken ────────────────────────────────────────────────────────
+
+  describe('issueRefreshToken', () => {
+    it('should create a hashed refresh token in DB and return the raw token', async () => {
+      mockPrismaService.refreshToken.create.mockResolvedValue({});
+
+      const result = await service.issueRefreshToken(1);
+
+      expect(mockPrismaService.refreshToken.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            userId: 1,
+            familyId: expect.any(String),
+            tokenHash: expect.any(String),
+            expiresAt: expect.any(Date),
+          }),
+        }),
+      );
+      expect(result.token).toEqual(expect.any(String));
+      expect(result.expiresAt).toBeInstanceOf(Date);
+    });
+
+    it('should reuse the given familyId when provided (rotation)', async () => {
+      mockPrismaService.refreshToken.create.mockResolvedValue({});
+
+      await service.issueRefreshToken(1, 'family-123');
+
+      expect(mockPrismaService.refreshToken.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ familyId: 'family-123' }) }),
+      );
+    });
+  });
+
+  // ── rotateRefreshToken ───────────────────────────────────────────────────────
+
+  describe('rotateRefreshToken', () => {
+    const storedToken = {
+      id: 10,
+      userId: 1,
+      familyId: 'family-123',
+      tokenHash: 'irrelevant-in-test',
+      revokedAt: null as Date | null,
+      expiresAt: new Date(Date.now() + 100000),
+    };
+
+    it('should throw UnauthorizedException when token is not found', async () => {
+      mockPrismaService.refreshToken.findUnique.mockResolvedValue(null);
+
+      await expect(service.rotateRefreshToken('unknown')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should revoke the whole family and throw when a revoked token is replayed', async () => {
+      mockPrismaService.refreshToken.findUnique.mockResolvedValue({ ...storedToken, revokedAt: new Date() });
+      mockPrismaService.refreshToken.updateMany.mockResolvedValue({ count: 2 });
+
+      await expect(service.rotateRefreshToken('stolen')).rejects.toThrow(UnauthorizedException);
+      expect(mockPrismaService.refreshToken.updateMany).toHaveBeenCalledWith({
+        where: { familyId: 'family-123', revokedAt: null },
+        data: { revokedAt: expect.any(Date) },
+      });
+    });
+
+    it('should throw UnauthorizedException when the token has expired', async () => {
+      mockPrismaService.refreshToken.findUnique.mockResolvedValue({
+        ...storedToken,
+        expiresAt: new Date(Date.now() - 1000),
+      });
+
+      await expect(service.rotateRefreshToken('expired')).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should revoke the presented token and issue a new one in the same family', async () => {
+      mockPrismaService.refreshToken.findUnique.mockResolvedValue(storedToken);
+      mockPrismaService.user.findUnique.mockResolvedValue(mockUserWithRoles);
+      mockPrismaService.refreshToken.update.mockResolvedValue({});
+      mockPrismaService.refreshToken.create.mockResolvedValue({});
+
+      const result = await service.rotateRefreshToken('valid');
+
+      expect(mockPrismaService.refreshToken.update).toHaveBeenCalledWith({
+        where: { id: 10 },
+        data: { revokedAt: expect.any(Date) },
+      });
+      expect(mockPrismaService.refreshToken.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ familyId: 'family-123' }) }),
+      );
+      expect(result.user).toEqual(mockUserDto);
+      expect(result.accessToken).toBe('mock.jwt.token');
+      expect(result.refreshToken).toEqual(expect.any(String));
+    });
+  });
+
+  // ── revokeRefreshToken ───────────────────────────────────────────────────────
+
+  describe('revokeRefreshToken', () => {
+    it('should mark the matching non-revoked token as revoked', async () => {
+      mockPrismaService.refreshToken.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.revokeRefreshToken('some-token');
+
+      expect(mockPrismaService.refreshToken.updateMany).toHaveBeenCalledWith({
+        where: { tokenHash: expect.any(String), revokedAt: null },
+        data: { revokedAt: expect.any(Date) },
+      });
     });
   });
 });

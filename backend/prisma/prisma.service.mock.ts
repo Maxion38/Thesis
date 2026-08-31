@@ -7,5 +7,6 @@ export const mockPrismaService = {
     work:            { findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
     userWorkSubmission:   { create: jest.fn(), count: jest.fn(), findFirst: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), delete: jest.fn(), },
     invitation:      { findMany: jest.fn(), findUnique: jest.fn(), create: jest.fn(), update: jest.fn(), },
+    refreshToken:    { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn(), },
     $transaction:    jest.fn(),
 };

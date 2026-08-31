@@ -1,54 +1,42 @@
-<div 
-  class="card" 
-  [class.card--centered]="!hasSubmitables && !module.status.locked"
-  [class.card--locked]="module.status.locked"  
+<div
+  class="card"
+  [class.card--centered]="!hasSubmissionTool && !hasAssessment && !card.locked"
+  [class.card--locked]="card.locked"
 >
 
-  <!-- MODULE NORMAL -->
-  <ng-container *ngIf="!module.status.locked; else lockedCard">
+  <!-- CARD NORMAL -->
+  <ng-container *ngIf="!card.locked; else lockedCard">
 
     <div class="title">
-      <span class="title__text">{{ module.name }}</span>
-      <!-- <div 
-        *ngIf="submissionStats.submittableCount - submissionStats.submittedCount > 0"
-        class="title__notifications"
-      >
-        {{ submissionStats.submittableCount - submissionStats.submittedCount }}
-      </div> -->
-      <!-- change needed : notifications should occurs only when a new thing is here eg: an evaluation was just corrected -->
+      <span class="title__text">{{ card.moduleName }}</span>
     </div>
 
-    <div class="tools">
-      <span>{{ toolsSummary }}</span>
-    </div>
+    <div class="state" *ngIf="hasSubmissionTool || hasAssessment">
 
-    <div class="state">
-      
-      <div *ngIf="hasSubmitables" class="state__element">
-        <div
-          class="state__indicator"
-          [class.state__finished-indicator]="submissionStats.submittedCount >= submissionStats.submittableCount"
-        ></div>
-        <span class="state__label">Rendu</span>
-        <span class="state__value">{{ submissionStats.submittedCount }} / {{ submissionStats.submittableCount }}</span>
+      <div *ngIf="hasSubmissionTool" class="state__element">
+        <span class="state__kind">{{ submissionKindLabel }}</span>
+        <div class="state__row">
+          <span
+            class="state__dot"
+            [class.state__dot--done]="submissionTool?.state === 'SUBMITTED'"
+          ></span>
+          <span class="state__label" *ngIf="submissionTool?.state === 'SUBMITTED'; else notSubmitted">
+            Soumis le {{ submissionTool?.date | date: 'dd/MM/yyyy' }}
+          </span>
+          <ng-template #notSubmitted>
+            <span class="state__label">Non soumis</span>
+          </ng-template>
+        </div>
       </div>
 
       <div *ngIf="hasAssessment" class="state__element">
-        <div
-          class="state__indicator"
-          [class.state__finished-indicator]="hasOnlyCorrectedAssessments"
-        ></div>
-        <span class="state__label">Évaluation</span>
-        <span class="state__value">{{ assessmentStateLabel }}</span>
+        <span class="state__kind">Évaluation</span>
+        <div class="state__row">
+          <app-assessment-status-dot [status]="assessmentStatus" size="sm"></app-assessment-status-dot>
+          <span class="state__label">{{ assessmentStateLabel }}</span>
+        </div>
       </div>
 
-    </div>
-
-    <div class="progress-bar" *ngIf="hasSubmitables">
-      <div
-        class="progress-bar__fill"
-        [style.width.%]="progressPercentage"
-      ></div>
     </div>
 
     <div class="actions">
@@ -73,22 +61,22 @@
   </ng-container>
 
 
-  <!-- MODULE LOCKED -->
+  <!-- CARD LOCKED -->
   <ng-template #lockedCard>
 
     <div class="locked-card">
 
       <div class="title">
         <span class="title__text">
-          {{ module.name }}
+          {{ card.moduleName }}
         </span>
         <span class="material-symbols-outlined title__locked-icon">
           lock
         </span>
       </div>
-          
 
-      <div class="locked-by-div" *ngIf="module.status.lockedBy?.length">
+
+      <div class="locked-by-div" *ngIf="card.lockedBy?.length">
         <div class="locked-by-div__title">
           Ce module sera disponible quand
         </div>

@@ -4,6 +4,7 @@ import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { NavbarComponent } from '../../features/components/navbar/navbar.component';
 import { MenuComponent, MenuItem } from '../../features/components/menu/menu.component';
+import { IdleService } from '../../core/services/idle.service';
 
 @Component({
   selector: 'app-main-layout',
@@ -21,7 +22,11 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   menuItems: MenuItem[] = [];
   private routerSubscription: Subscription = new Subscription();
 
-  constructor(private router: Router, private route: ActivatedRoute) {}
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute,
+    private idleService: IdleService,
+  ) {}
 
   ngOnInit() {
     this.menuItems = this.route.snapshot.data['menuItems'] ?? [];
@@ -34,10 +39,13 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
     // Set initial menu name
     this.updateCurrentMenuName(this.router.url);
+
+    this.idleService.start();
   }
 
   ngOnDestroy() {
     this.routerSubscription.unsubscribe();
+    this.idleService.stop();
   }
 
   private updateCurrentMenuName(url: string) {

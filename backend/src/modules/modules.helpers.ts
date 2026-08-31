@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, GridFeedbackStatus } from '@prisma/client';
 import { ModuleToolGroupDto } from './dto/module-overview.dto';
 
 export function buildToolsInclude(userId: number, projectId: number) {
@@ -36,6 +36,8 @@ export function buildToolsInclude(userId: number, projectId: number) {
             },
           },
         },
+        linksAsSource: { select: { targetToolId: true } },
+        linksAsTarget: { select: { sourceToolId: true } },
       },
     },
   } satisfies Prisma.ModuleInclude;
@@ -46,7 +48,7 @@ export type ToolWithRelations = Prisma.ToolGetPayload<
 >;
 
 export function resolveToolGroup(tool: ToolWithRelations): ModuleToolGroupDto {
-  let state: 'UNTOUCHED' | 'SUBMITTED' | 'CORRECTED' = 'UNTOUCHED';
+  let state: 'UNTOUCHED' | 'SUBMITTED' | 'CORRECTED' | GridFeedbackStatus = 'UNTOUCHED';
   let date: Date | undefined;
 
   switch (tool.type) {
@@ -89,15 +91,15 @@ export function resolveToolGroup(tool: ToolWithRelations): ModuleToolGroupDto {
         (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
       );
 
-      if (feedbacks.length > 0) {
-        state = 'CORRECTED';
-        date = feedbacks[0].createdAt;
-      } else {
-        date = tool.createdAt;
-      }
+      const feedback = feedbacks[0];
+      state = feedback?.status ?? GridFeedbackStatus.PENDING;
+      date = feedback?.createdAt ?? tool.createdAt;
       break;
     }
   }
+
+  const linkedToolId =
+    tool.linksAsSource?.[0]?.targetToolId ?? tool.linksAsTarget?.[0]?.sourceToolId ?? undefined;
 
   return {
     id: tool.id,
@@ -105,5 +107,6 @@ export function resolveToolGroup(tool: ToolWithRelations): ModuleToolGroupDto {
     type: tool.type,
     state,
     date,
+    linkedToolId,
   };
 }

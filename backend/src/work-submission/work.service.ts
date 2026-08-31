@@ -2,7 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateWorkDto } from './dto/create-work.dto';
 import { UpdateWorkDto } from './dto/update-work.dto';
-import { ToolType } from '@prisma/client';
+import { RoleType, ToolType } from '@prisma/client';
 import { UsersService } from 'src/users/users.service';
 import path from 'path';
 import * as fs from 'fs';
@@ -196,12 +196,23 @@ export class WorkService {
     });
   }
 
-  async getSubmissionFile(submissionId: number, res: Response) {
+  async getSubmissionFile(
+    submissionId: number,
+    user: { userId: number; roles: string[] },
+    res: Response,
+  ) {
     const submission = await this.prisma.userWorkSubmission.findUnique({
       where: { id: submissionId },
     });
 
     if (!submission) throw new NotFoundException(`Submission ${submissionId} not found`);
+
+    const isOwner = submission.userId === user.userId;
+    const isReviewer = user.roles.includes(RoleType.TEACHER) || user.roles.includes(RoleType.COORDINATOR);
+
+    if (!isOwner && !isReviewer) {
+      throw new ForbiddenException(`You are not allowed to access this submission`);
+    }
 
     const absolutePath = path.resolve(submission.filePath);
 

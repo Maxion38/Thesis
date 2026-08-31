@@ -13,7 +13,7 @@
             *ngFor="let option of taskFilterOptions"
             class="dropdown-item"
             [class.dropdown-item--active]="option.value === selectedTaskFilter"
-            [hidden]="option.value === 'NO_DATE' && noDateModules.length === 0"
+            [hidden]="option.value === 'NO_DATE' && noDateCards.length === 0"
             (click)="selectedTaskFilter = option.value"
           >{{ option.label }}</button>
         </ng-container>
@@ -23,15 +23,20 @@
 
     <div class="tasks-wrapper">
       <!-- <button class="scroll-arrow scroll-arrow--right" *ngIf="canScrollRight" (click)="scrollRight()">›</button> -->
-      <div class="tasks-section vartical-scroll-div" #tasksSection (scroll)="onScrollT()">
+      <div class="tasks-section" #tasksSection (scroll)="onScrollT()">
 
         <app-student-module-card
-          *ngFor="let module of filteredModules"
+          *ngFor="let card of filteredCards"
           class="module-card"
-          [module]="module"
+          [card]="card"
           (ctaClicked)="onModuleCardAction($event)"
         >
         </app-student-module-card>
+
+        <div class="empty-state" *ngIf="filteredCards.length === 0">
+          <span class="material-symbols-outlined empty-state__icon">check_circle</span>
+          <span class="empty-state__text">Vous êtes à jour</span>
+        </div>
 
       </div>
     </div>
@@ -40,34 +45,18 @@
 
   <div>
     <div class="title">
-
-      <app-dropdown class="title__dropdown">
-        <span dropdownTrigger class="title__label">
-          {{ selectedOtherFilterLabel }}
-          <span class="material-symbols-outlined dropdown-icon">stat_minus_1</span>
-        </span>
-        <ng-container dropdownPanel>
-          <button
-            *ngFor="let option of otherFilterOptions"
-            class="dropdown-item"
-            [class.dropdown-item--active]="option.value === selectedOtherFilter"
-            (click)="selectedOtherFilter = option.value"
-          >{{ option.label }}</button>
-        </ng-container>
-      </app-dropdown>
-
+      <span class="title__label">Modules</span>
     </div>
 
-    <div class="other-wrapper">
-      <div class="other-section" #otherSection (scroll)="onScrollO()">
+    <div class="tasks-wrapper">
+      <div class="tasks-section modules-section" #modulesSection>
 
-        <app-student-module-card
-          *ngFor="let module of filteredOtherModules"
+        <app-simple-module-card
+          *ngFor="let module of modules"
           class="module-card"
           [module]="module"
-          (ctaClicked)="onModuleCardAction($event)"
         >
-        </app-student-module-card>
+        </app-simple-module-card>
 
       </div>
     </div>

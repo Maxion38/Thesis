@@ -7,6 +7,7 @@ import { ProjectsService } from '../../services/projects.service';
 import { ProjectWithGridsModel } from '../../models/project-with-grids.model';
 import { ProjectOverviewModuleModel, ProjectOverviewToolModel } from '../../models/project-overview.model';
 import { GridFeedbackStatus, GRID_FEEDBACK_STATUS_LABELS } from '../../../assessments/models/grid-context.model';
+import { AssessmentStatusDotComponent } from '../../../assessments/components/assessment-status-dot/assessment-status-dot.component';
 import { TrainingCourseContextService } from '../../../training-course/services/training-course-context.service';
 import { DropdownComponent } from '../../../components/dropdown/dropdown.component';
 import { BackButtonComponent } from '../../../components/back-button/back-button.component';
@@ -21,7 +22,7 @@ export type ModuleDisplayItem =
 @Component({
   selector: 'app-project-overview',
   standalone: true,
-  imports: [CommonModule, RouterModule, DropdownComponent, BackButtonComponent],
+  imports: [CommonModule, RouterModule, DropdownComponent, BackButtonComponent, AssessmentStatusDotComponent],
   templateUrl: './project-overview.component.html',
   styleUrls: ['./project-overview.component.scss'],
 })

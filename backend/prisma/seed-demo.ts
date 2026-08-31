@@ -1065,8 +1065,6 @@ async function main() {
   });
   await resetDemoData(oldCourses.map((c) => c.id));
 
-  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
-
   // ───────────────────────────────────────────────────────────────────────
   // 1) TRAINING COURSES
   //    4 promotions : 2 inactives (déjà terminées, hors de la fenêtre
@@ -1154,6 +1152,7 @@ async function main() {
     const firstname = faker.person.firstName();
     const surname = faker.person.lastName();
     const email = buildEmail(firstname, surname);
+    const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
     return prisma.user.create({
       data: {
         firstname,
@@ -1203,7 +1202,7 @@ async function main() {
       firstname: 'Testor',
       surname: 'Account',
       email: `testor.account${DEMO_EMAIL_DOMAIN}`,
-      passwordHash,
+      passwordHash: await bcrypt.hash(DEMO_PASSWORD, 10),
       hoursQuota: randomInt(20, 60),
       roles: {
         create: [

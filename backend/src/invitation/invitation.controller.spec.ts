@@ -14,6 +14,10 @@ const mockInvitationService = {
 
 const mockAuthService = {
   generateToken: jest.fn().mockReturnValue('mock.jwt.token'),
+  issueRefreshToken: jest.fn().mockResolvedValue({
+    token: 'mock.refresh.token',
+    expiresAt: new Date(Date.now() + 1000),
+  }),
 };
 
 const mockUserDto = {
@@ -102,11 +106,17 @@ describe('InvitationController', () => {
       expect(mockInvitationService.activateAccount).toHaveBeenCalledWith(
         dto.token, dto.surname, dto.password, dto.firstname,
       );
-      // Auto-login : vérifie que le cookie JWT est posé
+      // Auto-login : vérifie que les cookies JWT + refresh sont posés
       expect(mockAuthService.generateToken).toHaveBeenCalledWith(mockUserDto);
+      expect(mockAuthService.issueRefreshToken).toHaveBeenCalledWith(mockUserDto.id);
       expect(mockRes.cookie).toHaveBeenCalledWith(
         'access_token',
         'mock.jwt.token',
+        expect.objectContaining({ httpOnly: true }),
+      );
+      expect(mockRes.cookie).toHaveBeenCalledWith(
+        'refresh_token',
+        'mock.refresh.token',
         expect.objectContaining({ httpOnly: true }),
       );
       expect(result).toEqual({ message: 'account activated', user: mockUserDto });

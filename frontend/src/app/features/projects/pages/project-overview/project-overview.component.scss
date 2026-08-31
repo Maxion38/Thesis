@@ -186,22 +186,6 @@
         flex-shrink: 0;
         background-color: #a5a5a5;
 
-        .tool-card__status--pending & {
-            background-color: #a5a5a5;
-        }
-
-        .tool-card__status--correction & {
-            background-color: #e8a93c;
-        }
-
-        .tool-card__status--published & {
-            background-color: #00bd3f;
-        }
-
-        .tool-card__status--seen & {
-            background-color: #3a7bd5;
-        }
-
         .tool-card__status--missing & {
             background-color: #a5a5a5;
         }

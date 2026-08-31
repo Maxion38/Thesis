@@ -1,11 +1,14 @@
-import { Injectable, ConflictException, ForbiddenException, NotFoundException, GoneException } from '@nestjs/common';
+import { Injectable, ConflictException, ForbiddenException, NotFoundException, GoneException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { RoleType } from '@prisma/client';
 import { toDtoUser } from 'src/users/mappers/user.mapper';
 import { UserDto } from 'src/users/dto/user.dto';
 import { USER_WITH_ROLES } from 'src/users/includes/users.include';
+
+const REFRESH_TOKEN_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
 @Injectable()
 export class AuthService {
@@ -120,5 +123,80 @@ export class AuthService {
     };
 
     return this.jwtService.sign(payload);
+  }
+
+  private hashToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
+  }
+
+  /**
+   * Issues a new refresh token for a login. `familyId` groups every token
+   * descending from the same login via rotation; omit it to start a new family.
+   */
+  async issueRefreshToken(userId: number, familyId?: string) {
+    const token = crypto.randomBytes(48).toString('hex');
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
+
+    await this.prisma.refreshToken.create({
+      data: {
+        userId,
+        familyId: familyId ?? crypto.randomUUID(),
+        tokenHash: this.hashToken(token),
+        expiresAt,
+      },
+    });
+
+    return { token, expiresAt };
+  }
+
+  /**
+   * Rotates a refresh token: the presented token is consumed (revoked) and a
+   * new one is issued in the same family. Presenting a token that was already
+   * revoked means it has leaked and been replayed, so the whole family (every
+   * token from that login) is revoked, forcing a fresh login.
+   */
+  async rotateRefreshToken(rawToken: string) {
+    const tokenHash = this.hashToken(rawToken);
+    const stored = await this.prisma.refreshToken.findUnique({ where: { tokenHash } });
+
+    if (!stored) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (stored.revokedAt) {
+      await this.prisma.refreshToken.updateMany({
+        where: { familyId: stored.familyId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      throw new UnauthorizedException('Refresh token reuse detected, session revoked');
+    }
+
+    if (stored.expiresAt < new Date()) {
+      throw new UnauthorizedException('Refresh token expired');
+    }
+
+    const user = await this.getCurrentUser(stored.userId);
+
+    const [, refresh] = await Promise.all([
+      this.prisma.refreshToken.update({
+        where: { id: stored.id },
+        data: { revokedAt: new Date() },
+      }),
+      this.issueRefreshToken(stored.userId, stored.familyId),
+    ]);
+
+    return {
+      user,
+      accessToken: this.generateToken(user),
+      refreshToken: refresh.token,
+      refreshTokenExpiresAt: refresh.expiresAt,
+    };
+  }
+
+  async revokeRefreshToken(rawToken: string) {
+    await this.prisma.refreshToken.updateMany({
+      where: { tokenHash: this.hashToken(rawToken), revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
   }
 }

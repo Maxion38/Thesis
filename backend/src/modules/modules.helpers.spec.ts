@@ -109,47 +109,77 @@ describe('resolveToolGroup', () => {
 
   // ───────── ASSESSMENT ─────────
 
-  it('ASSESSMENT avec feedback → CORRECTED', () => {
+  it('ASSESSMENT avec feedback → statut du feedback', () => {
     const feedbackDate = new Date();
 
     const tool = {
       ...base,
       type: 'ASSESSMENT',
-      assessmentGrids: [
-        {
-          gridVersions: [
-            {
-              feedbacks: [{ createdAt: feedbackDate }],
-            },
-          ],
-        },
-      ],
+      assessmentGrid: {
+        feedbacks: [{ status: 'PUBLISHED', createdAt: feedbackDate }],
+      },
     };
 
     const result = resolveToolGroup(tool as any);
 
-    expect(result.state).toBe('CORRECTED');
+    expect(result.state).toBe('PUBLISHED');
     expect(result.date).toEqual(feedbackDate);
   });
 
-  it('ASSESSMENT sans feedback → UNTOUCHED + createdAt', () => {
+  it('ASSESSMENT sans feedback → PENDING + createdAt', () => {
     const tool = {
       ...base,
       type: 'ASSESSMENT',
-      assessmentGrids: [
-        {
-          gridVersions: [
-            {
-              feedbacks: [],
-            },
-          ],
-        },
-      ],
+      assessmentGrid: {
+        feedbacks: [],
+      },
     };
 
     const result = resolveToolGroup(tool as any);
 
-    expect(result.state).toBe('UNTOUCHED');
+    expect(result.state).toBe('PENDING');
     expect(result.date).toEqual(base.createdAt);
+  });
+
+  // ───────── ToolLink ─────────
+
+  it('lien sortant (linksAsSource) → linkedToolId = targetToolId', () => {
+    const tool = {
+      ...base,
+      type: 'WORK',
+      works: [{ dueDate: null, userWorkSubmissions: [] }],
+      linksAsSource: [{ targetToolId: 42 }],
+      linksAsTarget: [],
+    };
+
+    const result = resolveToolGroup(tool as any);
+
+    expect(result.linkedToolId).toBe(42);
+  });
+
+  it('lien entrant (linksAsTarget) → linkedToolId = sourceToolId', () => {
+    const tool = {
+      ...base,
+      type: 'ASSESSMENT',
+      assessmentGrid: { feedbacks: [] },
+      linksAsSource: [],
+      linksAsTarget: [{ sourceToolId: 7 }],
+    };
+
+    const result = resolveToolGroup(tool as any);
+
+    expect(result.linkedToolId).toBe(7);
+  });
+
+  it('aucun lien → linkedToolId undefined', () => {
+    const tool = {
+      ...base,
+      type: 'ACTIVITY',
+      activities: [{ startDateTime: null }],
+    };
+
+    const result = resolveToolGroup(tool as any);
+
+    expect(result.linkedToolId).toBeUndefined();
   });
 });

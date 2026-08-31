@@ -85,11 +85,11 @@ describe('WorkController', () => {
   });
 
   describe('getSubmissionFile', () => {
-    it('should call service with submissionId and res', async () => {
+    it('should call service with submissionId, user and res', async () => {
       const mockRes = { setHeader: jest.fn() } as any;
       mockWorkService.getSubmissionFile.mockResolvedValue(undefined);
-      await controller.getSubmissionFile(1, mockRes);
-      expect(mockWorkService.getSubmissionFile).toHaveBeenCalledWith(1, mockRes);
+      await controller.getSubmissionFile(1, { user: mockReqUser } as any, mockRes);
+      expect(mockWorkService.getSubmissionFile).toHaveBeenCalledWith(1, mockReqUser, mockRes);
     });
   });
 

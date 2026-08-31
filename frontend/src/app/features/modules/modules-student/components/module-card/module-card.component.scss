@@ -1,6 +1,6 @@
 :host {
   display: block;
-  flex: 0 0 clamp(300px, 28vw, 420px);
+  flex: 0 0 clamp(260px, 22vw, 340px);
 }
 
 .card {
@@ -8,7 +8,7 @@
   // height: auto;
   height: 100%;
 
-  min-height: 260px;
+  min-height: 240px;
 
   background-color: #FFFFFF;
   box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.2);
@@ -17,7 +17,7 @@
 
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 1.5rem;
 
   &--centered {
     align-items: center;
@@ -32,11 +32,11 @@
 .title {
   display: flex;
   align-items: center;
-  justify-content: start;
+  justify-content: center;
 
   &__text {
     font-family: 'joan', serif;
-    font-size: 1.3rem;
+    font-size: 1.15rem;
   }
 
   &__locked-icon {
@@ -81,86 +81,58 @@
   }
 }
 
-.tools {
-  font-weight: 300;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .state {
   display: flex;
-  justify-content: space-between;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
 
   &__element {
     display: flex;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  &__kind {
+    font-family: 'joan', serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.3px;
+  }
+
+  &__row {
+    display: flex;
     align-items: center;
-    gap: 10px
+    gap: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   &__label {
-    font-family: 'joan', serif;
-  }
-
-  &__value {
     font-weight: 300;
+    font-size: 0.8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  // &__notifications {
-  //   font-size: 0.7rem;
-  //   width: 18px;
-  //   height: 18px;
-  //   display: flex;
-  //   justify-content: center;
-  //   align-items: center;
-
-  //   background-color: #FFA500;
-  //   color: white;
-  //   border-radius: 50%;
-  // }
-
-  &__indicator {
-    width: 18px;  
-    height: 18px;   
+  &__dot {
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #E6E6E6;
-    border: solid 1px #B1B1B1;
+    flex-shrink: 0;
+    background-color: #a5a5a5;
+
+    &--done {
+      background-color: #00bd3f;
+    }
   }
-
-  &__finished-indicator {
-    background-color: #A9A9A9;
-    border: solid 1px #DADADA;
-  }
-}
-
-.progress-bar {
-  width: 100%;
-  height: 15px;
-  margin: 15px 0;
-  background-color: #D9D9D9;
-  border-radius: 12px;
-  overflow: hidden;
-  position: relative;
-}
-
-.progress-bar__fill {
-  height: 100%;
-  background-color: #89D47A; 
-  border-radius: 12px;
-  transition: width 0.3s ease;
 }
 
 .actions {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 4px;
   gap: 10px;
   margin-top: auto;
 
@@ -170,7 +142,7 @@
     align-items: center;
     justify-self: center;
     width: 80%;
-    height: 30px;
+    height: 26px;
     // border: solid 1px #d6d6d6;
     border-bottom-left-radius: 12px;
     border-bottom-right-radius: 12px;
@@ -189,7 +161,7 @@
 }
 
 button {
-    height: 53px;
+    height: 44px;
     width: 100%;
     // background-color: rgb(241, 241, 241);
     background-color: white;
@@ -198,7 +170,7 @@ button {
     // color: white;
     border: solid 1.5px #1F4541;
     // border: none;
-    border-radius: 25px;
+    border-radius: 22px;
     // box-shadow: 2px 2px 2px rgba(0, 0, 0, 0.25);
     cursor: pointer;
     transition: all ease 0.1s;

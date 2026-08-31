@@ -89,6 +89,7 @@ model User {
   expiresAt      DateTime?
 
   roles                          UserRole[]
+  refreshTokens                  RefreshToken[]
   groups                         UserGroup[]
   projectMemberships             ProjectMember[]
   supervisorPreferencesAsStudent UserSupervisorPreference[] @relation("StudentPreferences")
@@ -145,6 +146,25 @@ model Invitation {
   expiresAt DateTime
 
   createdAt DateTime @default(now())
+}
+
+// A refresh token is single-use: rotateRefreshToken() revokes it and issues a
+// new one on every /auth/refresh call. familyId groups all descendants of one
+// login so that replaying an already-rotated token (a sign of theft) lets us
+// revoke the whole chain instead of just the one row.
+model RefreshToken {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyId   String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([familyId])
 }
 
 // ----------------------------------------------------------------------------

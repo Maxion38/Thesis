@@ -328,11 +328,23 @@ describe('WorkService', () => {
   // ── getSubmissionFile ────────────────────────────────────────────────────────
 
   describe('getSubmissionFile', () => {
+    const owner = { userId: 1, roles: ['STUDENT'] };
+    const otherStudent = { userId: 99, roles: ['STUDENT'] };
+    const teacher = { userId: 42, roles: ['TEACHER'] };
+    const coordinator = { userId: 43, roles: ['COORDINATOR'] };
+
     it('should throw NotFoundException when submission does not exist', async () => {
       mockPrismaService.userWorkSubmission.findUnique.mockResolvedValue(null);
 
       const mockRes = { setHeader: jest.fn() } as any;
-      await expect(service.getSubmissionFile(999, mockRes)).rejects.toThrow(NotFoundException);
+      await expect(service.getSubmissionFile(999, owner, mockRes)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when a different student requests the file', async () => {
+      mockPrismaService.userWorkSubmission.findUnique.mockResolvedValue(mockSubmission);
+
+      const mockRes = { setHeader: jest.fn() } as any;
+      await expect(service.getSubmissionFile(1, otherStudent, mockRes)).rejects.toThrow(ForbiddenException);
     });
 
     it('should throw NotFoundException when file does not exist on disk', async () => {
@@ -340,10 +352,10 @@ describe('WorkService', () => {
       (fs.existsSync as jest.Mock).mockReturnValue(false);
 
       const mockRes = { setHeader: jest.fn() } as any;
-      await expect(service.getSubmissionFile(1, mockRes)).rejects.toThrow(NotFoundException);
+      await expect(service.getSubmissionFile(1, owner, mockRes)).rejects.toThrow(NotFoundException);
     });
 
-    it('should set headers and pipe file to response', async () => {
+    it('should set headers and pipe file to response for the owning student', async () => {
       mockPrismaService.userWorkSubmission.findUnique.mockResolvedValue(mockSubmission);
       (fs.existsSync as jest.Mock).mockReturnValue(true);
 
@@ -351,12 +363,36 @@ describe('WorkService', () => {
       (fs.createReadStream as jest.Mock).mockReturnValue(mockStream);
 
       const mockRes = { setHeader: jest.fn() } as any;
-      await service.getSubmissionFile(1, mockRes);
+      await service.getSubmissionFile(1, owner, mockRes);
 
       expect(mockRes.setHeader).toHaveBeenCalledWith(
         'Content-Disposition',
         expect.stringContaining(mockSubmission.fileName),
       );
+      expect(mockStream.pipe).toHaveBeenCalledWith(mockRes);
+    });
+
+    it('should allow a teacher to access a submission they do not own', async () => {
+      mockPrismaService.userWorkSubmission.findUnique.mockResolvedValue(mockSubmission);
+      (fs.existsSync as jest.Mock).mockReturnValue(true);
+
+      const mockStream = { pipe: jest.fn() };
+      (fs.createReadStream as jest.Mock).mockReturnValue(mockStream);
+
+      const mockRes = { setHeader: jest.fn() } as any;
+      await expect(service.getSubmissionFile(1, teacher, mockRes)).resolves.toBeUndefined();
+      expect(mockStream.pipe).toHaveBeenCalledWith(mockRes);
+    });
+
+    it('should allow a coordinator to access a submission they do not own', async () => {
+      mockPrismaService.userWorkSubmission.findUnique.mockResolvedValue(mockSubmission);
+      (fs.existsSync as jest.Mock).mockReturnValue(true);
+
+      const mockStream = { pipe: jest.fn() };
+      (fs.createReadStream as jest.Mock).mockReturnValue(mockStream);
+
+      const mockRes = { setHeader: jest.fn() } as any;
+      await expect(service.getSubmissionFile(1, coordinator, mockRes)).resolves.toBeUndefined();
       expect(mockStream.pipe).toHaveBeenCalledWith(mockRes);
     });
   });

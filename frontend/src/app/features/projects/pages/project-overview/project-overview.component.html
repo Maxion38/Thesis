@@ -94,8 +94,8 @@
         <span class="tool-card__name" [title]="tool.name">{{ tool.name }}</span>
 
         <ng-container *ngIf="tool.type === 'ASSESSMENT' && tool.feedbackStatus">
-          <span class="tool-card__status" [class]="'tool-card__status--' + tool.feedbackStatus.toLowerCase()">
-            <span class="tool-card__status-dot"></span>
+          <span class="tool-card__status">
+            <app-assessment-status-dot [status]="tool.feedbackStatus" size="sm"></app-assessment-status-dot>
             {{ statusLabel(tool.feedbackStatus) }}
           </span>
         </ng-container>
