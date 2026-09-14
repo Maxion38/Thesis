@@ -52,10 +52,14 @@
             [disabled]="publishingGrid"
             (click)="publishGrid()"
           >Publier la grille</button>
-          <div class="dropdown-empty" *ngIf="!canPublish">
-            {{ gridContext.isSupervisor
-              ? 'Grille déjà publiée'
-              : 'Seul le rapporteur du projet peut publier cette grille' }}
+          <button
+            *ngIf="canUnpublish"
+            class="dropdown-item"
+            [disabled]="unpublishingGrid"
+            (click)="unpublishGrid()"
+          >Annuler la publication</button>
+          <div class="dropdown-empty" *ngIf="!canPublish && !canUnpublish">
+            Seul le rapporteur du projet peut publier cette grille
           </div>
         </ng-container>
       </app-dropdown>

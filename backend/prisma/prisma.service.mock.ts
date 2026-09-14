@@ -13,7 +13,7 @@ export const mockPrismaService = {
     criteria:        { findUnique: jest.fn(), findMany: jest.fn() },
     criteriaAssessment: { upsert: jest.fn(), findMany: jest.fn() },
     gridFeedback:    { findUnique: jest.fn(), create: jest.fn(), update: jest.fn(), upsert: jest.fn() },
-    criteriaDiscussion: { findMany: jest.fn(), create: jest.fn() },
+    criteriaDiscussion: { findMany: jest.fn(), create: jest.fn(), count: jest.fn() },
     toolLink:        { findFirst: jest.fn() },
     $transaction:    jest.fn(),
 };

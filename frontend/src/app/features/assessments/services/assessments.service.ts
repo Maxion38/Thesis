@@ -86,6 +86,14 @@ export class AssessmentGridService {
     );
   }
 
+  unpublishGrid(gridId: number, projectId: number): Observable<{ status: GridContextModel['status'] }> {
+    return this.http.patch<{ status: GridContextModel['status'] }>(
+      `${this.apiUrl}/${gridId}/unpublish`,
+      { projectId },
+      { withCredentials: true }
+    );
+  }
+
   getMyAssessmentView(gridId: number): Observable<StudentAssessmentViewModel> {
     return this.http.get<StudentAssessmentViewModel>(
       `${this.apiUrl}/${gridId}/my-view`,

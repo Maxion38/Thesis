@@ -106,10 +106,12 @@ export class StudentModulesComponent implements OnInit {
       return;
     }
 
+    const segment = event.toolType === 'ASSESSMENT' ? 'assessment' : 'work';
+
     this.router.navigate([
       '/student/modules',
       event.moduleId,
-      'work',
+      segment,
       event.toolId
     ]);
   }
@@ -210,12 +212,17 @@ export class StudentModulesComponent implements OnInit {
         new Date(tool.date) >= this.today
       );
 
-      return hasPendingWorkOrForm || hasPendingActivity;
+      const hasUnseenAssessment = card.tools.some(tool =>
+        tool.type === 'ASSESSMENT' &&
+        tool.state === 'PUBLISHED'
+      );
+
+      return hasPendingWorkOrForm || hasPendingActivity || hasUnseenAssessment;
     });
 
     return filtered.sort((a, b) => {
-      const dateA = a.tools.find(t => t.type === 'WORK' || t.type === 'FORM' || t.type === 'ACTIVITY')?.date;
-      const dateB = b.tools.find(t => t.type === 'WORK' || t.type === 'FORM' || t.type === 'ACTIVITY')?.date;
+      const dateA = a.tools.find(t => t.type === 'WORK' || t.type === 'FORM' || t.type === 'ACTIVITY' || t.type === 'ASSESSMENT')?.date;
+      const dateB = b.tools.find(t => t.type === 'WORK' || t.type === 'FORM' || t.type === 'ACTIVITY' || t.type === 'ASSESSMENT')?.date;
 
       if (dateA == null && dateB == null) return 0;
       if (dateA == null) return 1;  // a sans date → à la fin
@@ -239,7 +246,7 @@ export class StudentModulesComponent implements OnInit {
     return this.cards.filter(card =>
       card.tools.some(tool =>
         tool.type === 'ASSESSMENT' &&
-        (tool.state === 'PUBLISHED' || tool.state === 'SEEN')
+        tool.state === 'PUBLISHED'
       )
     );
   }

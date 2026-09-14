@@ -14,6 +14,7 @@ const mockAssessmentGridService = {
   getGridEvaluations: jest.fn(),
   getGridContext: jest.fn(),
   publishGrid: jest.fn(),
+  unpublishGrid: jest.fn(),
   getStudentAssessmentView: jest.fn(),
 };
 
@@ -182,6 +183,25 @@ describe('AssessmentGridController', () => {
         42,
       );
       expect(result).toEqual({ status: 'PUBLISHED' });
+    });
+  });
+
+  describe('unpublishGrid', () => {
+    it('should call service.unpublishGrid and wrap the result in a status object', async () => {
+      mockAssessmentGridService.unpublishGrid.mockResolvedValue('CORRECTION');
+
+      const result = await controller.unpublishGrid(
+        5,
+        { projectId: 7 },
+        mockReq(42),
+      );
+
+      expect(mockAssessmentGridService.unpublishGrid).toHaveBeenCalledWith(
+        5,
+        7,
+        42,
+      );
+      expect(result).toEqual({ status: 'CORRECTION' });
     });
   });
 
