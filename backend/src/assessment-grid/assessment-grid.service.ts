@@ -189,6 +189,8 @@ export class AssessmentGridService {
 
     if (dto.note !== null) {
       await this.markGridInCorrection(criteria.gridId, dto.projectId);
+    } else {
+      await this.revertGridToPendingIfEmpty(criteria.gridId, dto.projectId);
     }
 
     return {
@@ -216,6 +218,52 @@ export class AssessmentGridService {
       await this.prisma.gridFeedback.update({
         where: { gridId_projectId: { gridId, projectId } },
         data: { status: GridFeedbackStatus.CORRECTION },
+      });
+    }
+  }
+
+  // CORRECTION -> PENDING dès qu'il ne reste plus aucune trace de correction
+  // (note, feedback ou discussion) sur la grille pour ce projet : permet de
+  // revenir en arrière si la seule correction faite est retirée (utile pour
+  // réinitialiser une démo). Sans effet si la grille est déjà PUBLISHED/SEEN.
+  private async revertGridToPendingIfEmpty(
+    gridId: number,
+    projectId: number,
+  ): Promise<void> {
+    const existing = await this.prisma.gridFeedback.findUnique({
+      where: { gridId_projectId: { gridId, projectId } },
+      select: { status: true },
+    });
+    if (!existing || existing.status !== GridFeedbackStatus.CORRECTION) {
+      return;
+    }
+
+    const criterias = await this.prisma.criteria.findMany({
+      where: { gridId },
+      select: { id: true },
+    });
+    const criteriaIds = criterias.map((c) => c.id);
+
+    const [assessments, discussionCount] = await Promise.all([
+      this.prisma.criteriaAssessment.findMany({
+        where: { criteriaId: { in: criteriaIds }, projectId },
+        select: { note: true, commentFeedback: true },
+      }),
+      this.prisma.criteriaDiscussion.count({
+        where: { criteriaId: { in: criteriaIds }, projectId },
+      }),
+    ]);
+
+    const hasRemainingCorrection =
+      discussionCount > 0 ||
+      assessments.some(
+        (a) => a.note !== null || (a.commentFeedback?.trim() ?? '') !== '',
+      );
+
+    if (!hasRemainingCorrection) {
+      await this.prisma.gridFeedback.update({
+        where: { gridId_projectId: { gridId, projectId } },
+        data: { status: GridFeedbackStatus.PENDING },
       });
     }
   }
@@ -253,7 +301,11 @@ export class AssessmentGridService {
       },
     });
 
-    await this.markGridInCorrection(criteria.gridId, dto.projectId);
+    if (dto.commentFeedback.trim() !== '') {
+      await this.markGridInCorrection(criteria.gridId, dto.projectId);
+    } else {
+      await this.revertGridToPendingIfEmpty(criteria.gridId, dto.projectId);
+    }
 
     return {
       note: assessment.note === null ? null : Number(assessment.note),
@@ -495,6 +547,51 @@ export class AssessmentGridService {
     return feedback.status;
   }
 
+  // Dépublication (PUBLISHED/SEEN -> CORRECTION), réservée au rapporteur :
+  // permet de revenir en correction pour corriger une erreur avant que
+  // l'étudiant ne s'appuie dessus, sans perdre les votes/feedback déjà saisis.
+  async unpublishGrid(
+    gridId: number,
+    projectId: number,
+    userId: number,
+  ): Promise<GridContextDto['status']> {
+    const grid = await this.prisma.assessmentGrid.findUnique({
+      where: { id: gridId },
+      select: { id: true },
+    });
+    if (!grid) {
+      throw new NotFoundException(`AssessmentGrid ${gridId} not found`);
+    }
+
+    if (!(await this.isProjectSupervisor(userId, projectId))) {
+      throw new ForbiddenException(
+        'Seul le rapporteur du projet peut dépublier cette grille',
+      );
+    }
+
+    const existing = await this.prisma.gridFeedback.findUnique({
+      where: { gridId_projectId: { gridId, projectId } },
+      select: { status: true },
+    });
+    if (
+      !existing ||
+      (existing.status !== GridFeedbackStatus.PUBLISHED &&
+        existing.status !== GridFeedbackStatus.SEEN)
+    ) {
+      throw new ForbiddenException(
+        'Seule une grille publiée ou vue peut être dépubliée',
+      );
+    }
+
+    const feedback = await this.prisma.gridFeedback.update({
+      where: { gridId_projectId: { gridId, projectId } },
+      data: { status: GridFeedbackStatus.CORRECTION },
+      select: { status: true },
+    });
+
+    return feedback.status;
+  }
+
   // Vue en lecture seule pour l'étudiant : description de la grille + grille
   // + feedback des enseignants pour son propre projet, sans discussions
   // internes (jamais visibles étudiant) ni actions de notation.
@@ -535,11 +632,19 @@ export class AssessmentGridService {
       }),
     ]);
 
-    const status = feedback?.status ?? GridFeedbackStatus.PENDING;
+    let status = feedback?.status ?? GridFeedbackStatus.PENDING;
+    // première consultation par l'étudiant une fois la grille publiée :
+    // PUBLISHED -> SEEN (marque l'évaluation comme lue, cf. filtre étudiant).
+    if (status === GridFeedbackStatus.PUBLISHED) {
+      await this.prisma.gridFeedback.update({
+        where: { gridId_projectId: { gridId, projectId: project.id } },
+        data: { status: GridFeedbackStatus.SEEN },
+      });
+      status = GridFeedbackStatus.SEEN;
+    }
     // les votes/feedback ne sont exposés à l'étudiant qu'une fois la grille
     // publiée : tant qu'elle est en attente/en correction, on ne renvoie rien.
     const evaluations =
-      status === GridFeedbackStatus.PUBLISHED ||
       status === GridFeedbackStatus.SEEN
         ? await this.getGridEvaluations(gridId, project.id)
         : [];

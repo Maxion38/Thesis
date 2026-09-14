@@ -134,6 +134,21 @@ export class AssessmentGridController {
     return { status };
   }
 
+  @Auth(RoleType.COORDINATOR, RoleType.TEACHER)
+  @Patch(':gridId/unpublish')
+  async unpublishGrid(
+    @Param('gridId', ParseIntPipe) gridId: number,
+    @Body() dto: PublishGridDto,
+    @Req() req: any,
+  ) {
+    const status = await this.assessmentGridService.unpublishGrid(
+      gridId,
+      dto.projectId,
+      req.user.userId,
+    );
+    return { status };
+  }
+
   @Auth(RoleType.STUDENT)
   @Get(':gridId/my-view')
   async getMyAssessmentView(

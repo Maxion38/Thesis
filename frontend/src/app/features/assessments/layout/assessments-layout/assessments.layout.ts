@@ -25,6 +25,7 @@ export class AssessmentsLayoutComponent implements OnInit {
   gridContext?: GridContextModel;
   loadingGridContext = false;
   publishingGrid = false;
+  unpublishingGrid = false;
   showPdfViewer = false;
   private openPdfOnLoad = false;
 
@@ -128,6 +129,11 @@ export class AssessmentsLayoutComponent implements OnInit {
     return this.gridContext.status === 'PENDING' || this.gridContext.status === 'CORRECTION';
   }
 
+  get canUnpublish(): boolean {
+    if (!this.gridContext?.isSupervisor) return false;
+    return this.gridContext.status === 'PUBLISHED' || this.gridContext.status === 'SEEN';
+  }
+
   publishGrid(): void {
     const projectId = this.selectedProject?.id;
     const gridId = this.selectedGrid?.id;
@@ -142,6 +148,24 @@ export class AssessmentsLayoutComponent implements OnInit {
       error: (err) => {
         console.error('Erreur publication de la grille:', err);
         this.publishingGrid = false;
+      },
+    });
+  }
+
+  unpublishGrid(): void {
+    const projectId = this.selectedProject?.id;
+    const gridId = this.selectedGrid?.id;
+    if (projectId === undefined || gridId === undefined || !this.canUnpublish || this.unpublishingGrid) return;
+
+    this.unpublishingGrid = true;
+    this.assessmentGridService.unpublishGrid(gridId, projectId).subscribe({
+      next: ({ status }) => {
+        if (this.gridContext) this.gridContext.status = status;
+        this.unpublishingGrid = false;
+      },
+      error: (err) => {
+        console.error('Erreur dépublication de la grille:', err);
+        this.unpublishingGrid = false;
       },
     });
   }

@@ -207,14 +207,81 @@ describe('AssessmentGridService', () => {
       mockPrismaService.criteriaAssessment.upsert.mockResolvedValue({
         note: null,
       });
+      mockPrismaService.gridFeedback.findUnique.mockResolvedValue(null);
 
       const result = await service.setCriteriaNote(1, 42, {
         projectId: 7,
         note: null,
       });
 
-      expect(mockPrismaService.gridFeedback.findUnique).not.toHaveBeenCalled();
+      expect(mockPrismaService.gridFeedback.create).not.toHaveBeenCalled();
+      expect(mockPrismaService.gridFeedback.update).not.toHaveBeenCalled();
       expect(result).toEqual({ note: null });
+    });
+
+    it('should revert the grid to PENDING when the last correction is cancelled', async () => {
+      mockPrismaService.criteria.findUnique.mockResolvedValue({
+        id: 1,
+        gridId: 5,
+      });
+      mockPrismaService.criteriaAssessment.upsert.mockResolvedValue({
+        note: null,
+      });
+      mockPrismaService.gridFeedback.findUnique.mockResolvedValue({
+        status: GridFeedbackStatus.CORRECTION,
+      });
+      mockPrismaService.criteria.findMany.mockResolvedValue([{ id: 1 }]);
+      mockPrismaService.criteriaAssessment.findMany.mockResolvedValue([
+        { note: null, commentFeedback: null },
+      ]);
+      mockPrismaService.criteriaDiscussion.count.mockResolvedValue(0);
+
+      await service.setCriteriaNote(1, 42, { projectId: 7, note: null });
+
+      expect(mockPrismaService.gridFeedback.update).toHaveBeenCalledWith({
+        where: { gridId_projectId: { gridId: 5, projectId: 7 } },
+        data: { status: GridFeedbackStatus.PENDING },
+      });
+    });
+
+    it('should not revert the grid to PENDING when another correction remains', async () => {
+      mockPrismaService.criteria.findUnique.mockResolvedValue({
+        id: 1,
+        gridId: 5,
+      });
+      mockPrismaService.criteriaAssessment.upsert.mockResolvedValue({
+        note: null,
+      });
+      mockPrismaService.gridFeedback.findUnique.mockResolvedValue({
+        status: GridFeedbackStatus.CORRECTION,
+      });
+      mockPrismaService.criteria.findMany.mockResolvedValue([{ id: 1 }]);
+      mockPrismaService.criteriaAssessment.findMany.mockResolvedValue([
+        { note: null, commentFeedback: 'Un autre prof a laissé un avis' },
+      ]);
+      mockPrismaService.criteriaDiscussion.count.mockResolvedValue(0);
+
+      await service.setCriteriaNote(1, 42, { projectId: 7, note: null });
+
+      expect(mockPrismaService.gridFeedback.update).not.toHaveBeenCalled();
+    });
+
+    it('should not revert an already PUBLISHED grid when a note is cancelled', async () => {
+      mockPrismaService.criteria.findUnique.mockResolvedValue({
+        id: 1,
+        gridId: 5,
+      });
+      mockPrismaService.criteriaAssessment.upsert.mockResolvedValue({
+        note: null,
+      });
+      mockPrismaService.gridFeedback.findUnique.mockResolvedValue({
+        status: GridFeedbackStatus.PUBLISHED,
+      });
+
+      await service.setCriteriaNote(1, 42, { projectId: 7, note: null });
+
+      expect(mockPrismaService.criteria.findMany).not.toHaveBeenCalled();
+      expect(mockPrismaService.gridFeedback.update).not.toHaveBeenCalled();
     });
 
     it('should update existing PENDING feedback to CORRECTION', async () => {
@@ -271,7 +338,7 @@ describe('AssessmentGridService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should upsert the comment and always mark the grid in correction', async () => {
+    it('should upsert the comment and mark the grid in correction when non-empty', async () => {
       mockPrismaService.criteria.findUnique.mockResolvedValue({
         id: 1,
         gridId: 5,
@@ -289,6 +356,81 @@ describe('AssessmentGridService', () => {
 
       expect(mockPrismaService.gridFeedback.create).toHaveBeenCalled();
       expect(result).toEqual({ note: null, commentFeedback: 'Bon travail' });
+    });
+
+    it('should not mark the grid in correction when the comment is cleared', async () => {
+      mockPrismaService.criteria.findUnique.mockResolvedValue({
+        id: 1,
+        gridId: 5,
+      });
+      mockPrismaService.criteriaAssessment.upsert.mockResolvedValue({
+        note: null,
+        commentFeedback: '',
+      });
+      mockPrismaService.gridFeedback.findUnique.mockResolvedValue(null);
+
+      await service.setCriteriaFeedback(1, 42, {
+        projectId: 7,
+        commentFeedback: '  ',
+      });
+
+      expect(mockPrismaService.gridFeedback.create).not.toHaveBeenCalled();
+      expect(mockPrismaService.gridFeedback.update).not.toHaveBeenCalled();
+    });
+
+    it('should revert the grid to PENDING when the last comment is cleared', async () => {
+      mockPrismaService.criteria.findUnique.mockResolvedValue({
+        id: 1,
+        gridId: 5,
+      });
+      mockPrismaService.criteriaAssessment.upsert.mockResolvedValue({
+        note: null,
+        commentFeedback: '',
+      });
+      mockPrismaService.gridFeedback.findUnique.mockResolvedValue({
+        status: GridFeedbackStatus.CORRECTION,
+      });
+      mockPrismaService.criteria.findMany.mockResolvedValue([{ id: 1 }]);
+      mockPrismaService.criteriaAssessment.findMany.mockResolvedValue([
+        { note: null, commentFeedback: '' },
+      ]);
+      mockPrismaService.criteriaDiscussion.count.mockResolvedValue(0);
+
+      await service.setCriteriaFeedback(1, 42, {
+        projectId: 7,
+        commentFeedback: '',
+      });
+
+      expect(mockPrismaService.gridFeedback.update).toHaveBeenCalledWith({
+        where: { gridId_projectId: { gridId: 5, projectId: 7 } },
+        data: { status: GridFeedbackStatus.PENDING },
+      });
+    });
+
+    it('should not revert to PENDING when a discussion message still exists', async () => {
+      mockPrismaService.criteria.findUnique.mockResolvedValue({
+        id: 1,
+        gridId: 5,
+      });
+      mockPrismaService.criteriaAssessment.upsert.mockResolvedValue({
+        note: null,
+        commentFeedback: '',
+      });
+      mockPrismaService.gridFeedback.findUnique.mockResolvedValue({
+        status: GridFeedbackStatus.CORRECTION,
+      });
+      mockPrismaService.criteria.findMany.mockResolvedValue([{ id: 1 }]);
+      mockPrismaService.criteriaAssessment.findMany.mockResolvedValue([
+        { note: null, commentFeedback: '' },
+      ]);
+      mockPrismaService.criteriaDiscussion.count.mockResolvedValue(1);
+
+      await service.setCriteriaFeedback(1, 42, {
+        projectId: 7,
+        commentFeedback: '',
+      });
+
+      expect(mockPrismaService.gridFeedback.update).not.toHaveBeenCalled();
     });
   });
 
@@ -639,6 +781,82 @@ describe('AssessmentGridService', () => {
     });
   });
 
+  // ── unpublishGrid ─────────────────────────────────────────────────────────────
+
+  describe('unpublishGrid', () => {
+    it('should throw NotFoundException when grid does not exist', async () => {
+      mockPrismaService.assessmentGrid.findUnique.mockResolvedValue(null);
+
+      await expect(service.unpublishGrid(999, 1, 1)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw ForbiddenException when the user is not the project supervisor', async () => {
+      mockPrismaService.assessmentGrid.findUnique.mockResolvedValue({ id: 5 });
+      mockPrismaService.projectMember.findFirst.mockResolvedValue(null);
+
+      await expect(service.unpublishGrid(5, 7, 99)).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(mockPrismaService.gridFeedback.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw ForbiddenException when the grid is not PUBLISHED or SEEN', async () => {
+      mockPrismaService.assessmentGrid.findUnique.mockResolvedValue({ id: 5 });
+      mockPrismaService.projectMember.findFirst.mockResolvedValue({
+        userId: 1,
+      });
+      mockPrismaService.gridFeedback.findUnique.mockResolvedValue({
+        status: GridFeedbackStatus.CORRECTION,
+      });
+
+      await expect(service.unpublishGrid(5, 7, 1)).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(mockPrismaService.gridFeedback.update).not.toHaveBeenCalled();
+    });
+
+    it('should revert a PUBLISHED grid to CORRECTION when the user is the supervisor', async () => {
+      mockPrismaService.assessmentGrid.findUnique.mockResolvedValue({ id: 5 });
+      mockPrismaService.projectMember.findFirst.mockResolvedValue({
+        userId: 1,
+      });
+      mockPrismaService.gridFeedback.findUnique.mockResolvedValue({
+        status: GridFeedbackStatus.PUBLISHED,
+      });
+      mockPrismaService.gridFeedback.update.mockResolvedValue({
+        status: GridFeedbackStatus.CORRECTION,
+      });
+
+      const result = await service.unpublishGrid(5, 7, 1);
+
+      expect(mockPrismaService.gridFeedback.update).toHaveBeenCalledWith({
+        where: { gridId_projectId: { gridId: 5, projectId: 7 } },
+        data: { status: GridFeedbackStatus.CORRECTION },
+        select: { status: true },
+      });
+      expect(result).toBe(GridFeedbackStatus.CORRECTION);
+    });
+
+    it('should revert a SEEN grid to CORRECTION when the user is the supervisor', async () => {
+      mockPrismaService.assessmentGrid.findUnique.mockResolvedValue({ id: 5 });
+      mockPrismaService.projectMember.findFirst.mockResolvedValue({
+        userId: 1,
+      });
+      mockPrismaService.gridFeedback.findUnique.mockResolvedValue({
+        status: GridFeedbackStatus.SEEN,
+      });
+      mockPrismaService.gridFeedback.update.mockResolvedValue({
+        status: GridFeedbackStatus.CORRECTION,
+      });
+
+      const result = await service.unpublishGrid(5, 7, 1);
+
+      expect(result).toBe(GridFeedbackStatus.CORRECTION);
+    });
+  });
+
   // ── getStudentAssessmentView ──────────────────────────────────────────────────
 
   describe('getStudentAssessmentView', () => {
@@ -711,7 +929,7 @@ describe('AssessmentGridService', () => {
       expect(result.evaluations).toEqual([]);
     });
 
-    it('should expose evaluations once the grid is PUBLISHED', async () => {
+    it('should mark the grid as SEEN and expose evaluations on first view of a PUBLISHED grid', async () => {
       mockPrismaService.tool.findUnique.mockResolvedValue(mockTool);
       mockUsersService.findFirstProject.mockResolvedValue({ id: 7 });
       mockPrismaService.assessmentGrid.findUnique.mockResolvedValue({
@@ -734,7 +952,11 @@ describe('AssessmentGridService', () => {
 
       const result = await service.getStudentAssessmentView(5, 1);
 
-      expect(result.status).toBe(GridFeedbackStatus.PUBLISHED);
+      expect(mockPrismaService.gridFeedback.update).toHaveBeenCalledWith({
+        where: { gridId_projectId: { gridId: 5, projectId: 7 } },
+        data: { status: GridFeedbackStatus.SEEN },
+      });
+      expect(result.status).toBe(GridFeedbackStatus.SEEN);
       expect(result.evaluations).toHaveLength(1);
       expect(result.evaluations[0].note).toBe(9);
     });

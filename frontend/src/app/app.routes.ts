@@ -59,7 +59,7 @@ const coordinatorMenuItems: MenuItem[] = [
 const teacherMenuItems: MenuItem[] = [
   { titre: 'Accueil', iconName: 'home', route: '/teacher', exact: true },
   { titre: 'Projets', iconName: 'work', route: '/teacher/projects'},
-  { titre: 'Rapportage', iconName: 'assignment_ind', route: '/teacher/supervisors'},
+  { titre: 'Rapporteur', iconName: 'assignment_ind', route: '/teacher/supervisors'},
   { titre: 'Utilisateurs', iconName: 'groups', route: '/teacher/users'},
   { titre: 'Notifications', iconName: 'notifications', route: '/teacher/notifications'},
 ];
